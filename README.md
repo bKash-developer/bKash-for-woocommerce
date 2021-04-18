@@ -1,9 +1,10 @@
 # Wordpress (WooCommerce) Plugin For PGW
-
-User Story and Features
-Prepared By: Md. Shahnawaz Ahmed (Asst. Lead Engineer, Solution Engineering, P&T)
-Dated: 13th April 2021
-Version: 1.0.0
+```
+- User Story and Features
+- Prepared By: Md. Shahnawaz Ahmed (Asst. Lead Engineer, Solution Engineering, P&T)
+- Dated: 13th April 2021
+- Version: 1.0.0
+```
 
 ### User Story
 
