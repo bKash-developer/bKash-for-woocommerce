@@ -80,7 +80,6 @@ class AdminDashboard
 
     public function CheckBalances()
     {
-
         try {
             $call = $this->api->checkBalances();
             if (isset($call['status_code']) && $call['status_code'] === 200) {
@@ -212,7 +211,6 @@ class AdminDashboard
 
     public function TransactionSearch()
     {
-
         $trx_id = sanitize_text_field($_POST['trxid']);
         if (!empty($trx_id)) {
             $call = $this->api->searchTransaction($trx_id);
@@ -343,7 +341,6 @@ class AdminDashboard
 
     public function CreateTransactionTable()
     {
-
         global $wpdb;
         $table_name = $wpdb->prefix . "bkash_transactions";
         $my_products_db_version = '1.2.0';
@@ -352,16 +349,16 @@ class AdminDashboard
         if ($wpdb->get_var("SHOW TABLES LIKE '{$table_name}'") != $table_name) {
 
             $sql = "CREATE TABLE $table_name (
-                    ID mediumint(9) NOT NULL AUTO_INCREMENT,
-                    `order_id` text NOT NULL,
-                    `trx_id` text NULL ,
-                    `invoice_id` text NOT NULL UNIQUE,
-                    `payment_id` text NULL ,
-                    `integration_type` text NOT NULL,
+                    ID bigint NOT NULL AUTO_INCREMENT,
+                    `order_id` VARCHAR(100) NOT NULL,
+                    `trx_id` VARCHAR(50) NULL ,
+                    `invoice_id` VARCHAR(100) NOT NULL UNIQUE,
+                    `payment_id` VARCHAR(50) NULL ,
+                    `integration_type` VARCHAR(50) NOT NULL,
                     `amount` decimal(15,2) NOT NULL,
-                    `currency` text NOT NULL,
-                    `refund_id` text NULL,
-                    `status` text NOT NULL default('INITIATED'),
+                    `currency` VARCHAR(10) NOT NULL,
+                    `refund_id` VARCHAR(50) NULL,
+                    `status` VARCHAR(50) NOT NULL default('INITIATED'),
                     `datetime` timestamp NULL,
                     PRIMARY KEY  (ID)
             ) $charset_collate;";
@@ -382,16 +379,16 @@ class AdminDashboard
         if ($wpdb->get_var("SHOW TABLES LIKE '{$table_name}'") != $table_name) {
 
             $sql = "CREATE TABLE $table_name (
-                    ID mediumint(9) NOT NULL AUTO_INCREMENT,
-                    `sender` text NOT NULL,
-                    `receiver` text NOT NULL,
-                    `receiver_name` text NULL,
-                    `trx_id` text NOT NULL UNIQUE,
-                    `status` text NOT NULL,
-                    `type` text NOT NULL,
-                    `amount` text NOT NULL,
-                    `currency` text NOT NULL,
-                    `reference` text NOT NULL,
+                    ID bigint NOT NULL AUTO_INCREMENT,
+                    `sender` VARCHAR(20) NOT NULL,
+                    `receiver` VARCHAR(20) NOT NULL,
+                    `receiver_name` VARCHAR(100) NULL,
+                    `trx_id` VARCHAR(50) NOT NULL UNIQUE,
+                    `status` VARCHAR(30) NOT NULL,
+                    `type` VARCHAR(50) NOT NULL,
+                    `amount` decimal(15,2) NOT NULL,
+                    `currency` VARCHAR(10) NOT NULL,
+                    `reference` VARCHAR(100) NOT NULL,
                     `datetime` int(9) NOT NULL,
                     PRIMARY KEY  (ID)
             ) $charset_collate;";
@@ -412,10 +409,10 @@ class AdminDashboard
         if ($wpdb->get_var("SHOW TABLES LIKE '{$table_name}'") != $table_name) {
 
             $sql = "CREATE TABLE $table_name (
-                    ID mediumint(9) NOT NULL AUTO_INCREMENT,
-                    `phone` text NOT NULL,
-                    `user_id` text NOT NULL,
-                    `agreement_token` text NOT NULL,
+                    ID bigint NOT NULL AUTO_INCREMENT,
+                    `phone` VARCHAR(20) NOT NULL,
+                    `user_id` bigint NOT NULL,
+                    `agreement_token` VARCHAR(300) NOT NULL,
                     `datetime` timestamp NOT NULL,
                     PRIMARY KEY  (ID)
             ) $charset_collate;";
