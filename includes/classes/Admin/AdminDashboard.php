@@ -211,7 +211,7 @@ class AdminDashboard
 
     public function TransactionSearch()
     {
-        $trx_id = sanitize_text_field($_POST['trxid']);
+        $trx_id = isset($_POST['trxid']) ? sanitize_text_field($_POST['trxid']) : null;
         if (!empty($trx_id)) {
             $call = $this->api->searchTransaction($trx_id);
             if (isset($call['status_code']) && $call['status_code'] === 200) {
