@@ -211,7 +211,7 @@ class AdminDashboard
 
     public function TransactionSearch()
     {
-        $trx_id = isset($_POST['trxid']) ? sanitize_text_field($_POST['trxid']) : null;
+        $trx_id = isset($_REQUEST['trxid']) ? sanitize_text_field($_REQUEST['trxid']) : null;
         if (!empty($trx_id)) {
             $call = $this->api->searchTransaction($trx_id);
             if (isset($call['status_code']) && $call['status_code'] === 200) {
@@ -220,6 +220,9 @@ class AdminDashboard
                 // If any error
                 if (isset($trx['statusMessage']) && $trx['statusMessage'] !== 'Successful') {
                     $trx = $trx['statusMessage'];
+                }
+                if (isset($trx['errorMessage']) && !empty($trx['errorMessage'])) {
+                    $trx = $trx['errorMessage'];
                 }
             } else {
                 $trx = "Cannot find the transaction from bKash server right now, try again";
@@ -240,6 +243,7 @@ class AdminDashboard
 
         $trx = "";
         $trx_id = sanitize_text_field($_REQUEST['trxid'] ?? '');
+        $fill_trx_id = sanitize_text_field($_REQUEST['fill_trx_id'] ?? '');
         $reason = sanitize_text_field($_REQUEST['reason'] ?? '');
         $amount = sanitize_text_field($_REQUEST['amount'] ?? '');
         if (!empty($trx_id)) {

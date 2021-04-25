@@ -2,18 +2,18 @@
 global $wpdb;
 $table_name = $wpdb->prefix . "bkash_transactions";
 
-$pagenum = isset( $_GET['pagenum'] ) ? absint( $_GET['pagenum'] ) : 1;
+$pagenum = isset($_GET['pagenum']) ? absint($_GET['pagenum']) : 1;
 
 $limit = 10; // number of rows in page
-$offset = ( $pagenum - 1 ) * $limit;
-$total = $wpdb->get_var( "select count(*) as total from $table_name" );
-$num_of_pages = ceil( $total / $limit );
+$offset = ($pagenum - 1) * $limit;
+$total = $wpdb->get_var("select count(*) as total from $table_name");
+$num_of_pages = ceil($total / $limit);
 
-$rows = $wpdb->get_results( "SELECT * from $table_name ORDER BY id DESC limit  $offset, $limit" );
+$rows = $wpdb->get_results("SELECT * from $table_name ORDER BY id DESC limit  $offset, $limit");
 $rowcount = $wpdb->num_rows;
 
 ?>
-    <link type="text/css" href="<?php echo WP_PLUGIN_URL; ?>mywp/sinetiks-schools/style-admin.css" rel="stylesheet" />
+    <link type="text/css" href="<?php echo WP_PLUGIN_URL; ?>mywp/sinetiks-schools/style-admin.css" rel="stylesheet"/>
 
     <div class="wrap abs">
         <h2>All bKash Transactions</h2>
@@ -41,7 +41,7 @@ $rowcount = $wpdb->num_rows;
                 <th>&nbsp;</th>
             </tr>
             <?php
-            if($rowcount>0){
+            if ($rowcount > 0) {
                 foreach ($rows as $row) { ?>
                     <tr>
                         <td class="manage-column ss-list-width"><?php echo $row->ID ?? ''; ?></td>
@@ -49,31 +49,37 @@ $rowcount = $wpdb->num_rows;
                         <td class="manage-column ss-list-width"><?php echo $row->invoice_id ?? ''; ?></td>
                         <td class="manage-column ss-list-width"><?php echo $row->payment_id ?? ''; ?></td>
                         <td class="manage-column ss-list-width"><?php echo $row->trx_id ?? ''; ?></td>
-                        <td class="manage-column ss-list-width"><?php echo ($row->amount ?? '') .' '. ($row->currency ?? ''); ?></td>
+                        <td class="manage-column ss-list-width"><?php echo ($row->amount ?? '') . ' ' . ($row->currency ?? ''); ?></td>
                         <td class="manage-column ss-list-width"><?php echo $row->integration_type; ?></td>
                         <td class="manage-column ss-list-width"><?php echo $row->status; ?></td>
                         <td class="manage-column ss-list-width"><?php echo !empty($row->refund_id) ? "YES ($row->refund_id)" : 'NO'; ?></td>
-                        <td><a href="<?php echo admin_url('admin.php?page=wp_schools_update&id=' . $row->ID); ?>">Update</a></td>
-                        <td><a href="<?php echo admin_url('admin.php?page=wp_schools_delete&id=' . $row->ID); ?>">Delete</a></td>
-
+                        <?php if (isset($row->trx_id) && !empty($row->trx_id)) { ?>
+                            <td>
+                                <a href="<?php echo admin_url('admin.php?page=bkash_admin_menu_120beta/search&trxid=' . $row->trx_id); ?>">Search</a>
+                            </td>
+                            <td>
+                                <a href="<?php echo admin_url('admin.php?page=bkash_admin_menu_120beta/refund&fill_trx_id=' . $row->trx_id); ?>">Refund</a>
+                            </td>
+                        <?php } ?>
 
                     </tr>
-                <?php } }else{
+                <?php }
+            } else {
                 echo "<tr><td cols=an='5'>No records found</td></tr>";
             } ?>
         </table>
     </div>
 <?php
 
-$page_links = paginate_links( array(
-    'base' => add_query_arg( 'pagenum', '%#%' ),
+$page_links = paginate_links(array(
+    'base' => add_query_arg('pagenum', '%#%'),
     'format' => '',
-    'prev_text' => __( '&laquo;', 'text-domain' ),
-    'next_text' => __( '&raquo;', 'text-domain' ),
+    'prev_text' => __('&laquo;', 'text-domain'),
+    'next_text' => __('&raquo;', 'text-domain'),
     'total' => $num_of_pages,
     'current' => $pagenum
-) );
+));
 
-if ( $page_links ) {
+if ($page_links) {
     echo '<div class="tablenav" style="width: 99%;"><div class="tablenav-pages" style="margin: 1em 0">' . $page_links . '</div></div>';
 }

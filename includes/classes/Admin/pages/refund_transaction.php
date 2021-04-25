@@ -14,7 +14,7 @@
             </td>
             <td>
                 <input name="trxid" type="text" id="trxid" placeholder="Transaction ID" class="form-text-input"
-                       value="<?php echo $trx_id ?? ''; ?>"/>
+                       value="<?php echo !empty($fill_trx_id) ? $fill_trx_id : (!empty($trx_id) ? $trx_id : '') ?> "/>
             </td>
         </tr>
         <tr>

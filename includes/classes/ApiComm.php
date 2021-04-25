@@ -1,5 +1,7 @@
 <?php
+
 namespace bKash\PGW;
+
 use BadMethodCallException;
 use UnexpectedValueException;
 
@@ -19,7 +21,7 @@ class ApiComm
 
     private $log;
 
-    public function __construct()
+    public function __construct($token = true)
     {
         global $wpdb;
         /* Initializing parameters using required fields from calling class */
@@ -95,13 +97,11 @@ class ApiComm
     protected function processToken(): void
     {
         $token = get_option("bkash_grant_token");
-        if (!is_null($token)) {
-            $expiry = get_option("bkash_grant_token_expiry");
-            if (($expiry - time() > 0)) { // if expiry time in seconds is greater than current time
-                $this->token = $token;
-            } else {
-                $this->readTokenFromAPI();
-            }
+        $expiry = get_option("bkash_grant_token_expiry");
+        $product = get_option("bkash_integration_product");
+
+        if ($this->integration_product === $product && !is_null($token) && ($expiry - time() > 0)) { // if expiry time in seconds is greater than current time
+            $this->token = $token;
         } else {
             $this->readTokenFromAPI();
         }
@@ -110,7 +110,7 @@ class ApiComm
     protected function readTokenFromAPI()
     {
         $get_token = $this->getToken();
-        if (isset($get_token['status_code']) && $get_token['status_code'] == 200) {
+        if (isset($get_token['status_code']) && $get_token['status_code'] === 200) {
             $response = json_decode($get_token['response'], true);
             if (isset($response['id_token']) && !is_null($response['id_token'])) {
                 $this->token = $response['id_token'];
@@ -118,23 +118,16 @@ class ApiComm
 
                 $this->addOrUpdateOption("bkash_grant_token", $this->token);
                 $this->addOrUpdateOption("bkash_grant_token_expiry", $expiry);
+                $this->addOrUpdateOption("bkash_integration_product", $this->integration_product);
             } else {
-                // throw new \RuntimeException("Response has no token");
+                Log::error("Cannot read token from server, response ==> " . $get_token);
+//                 throw new \RuntimeException("Response has no token");
             }
         } else {
 //            throw new \RuntimeException("No token from server");
+            Log::error("Cannot get response from get token API, response ==>" . $get_token);
         }
     }
-
-    protected function addOrUpdateOption($key, $value)
-    {
-        if (!get_option($key)) {
-            add_option($key, $value);
-        } else {
-            update_option($key, $value);
-        }
-    }
-
 
     /**
      * Get Grant Token
@@ -161,6 +154,120 @@ class ApiComm
         ];
     }
 
+    public function httpRequest($api_title, $url, &$http_status, $method = "POST", $post_data = null, &$header = null, $grantHeader = false)
+    {
+
+        /*$response = wp_remote_post( $url, array(
+                'method'      => 'POST',
+                'timeout'     => 45,
+                'redirection' => 5,
+                'httpversion' => '1.0',
+                'blocking'    => true,
+                'headers'     => array(),
+                'body'        => array(
+                    'username' => 'bob',
+                    'password' => '1234xyz'
+                ),
+                'cookies'     => array()
+            )
+        );
+
+        if ( is_wp_error( $response ) ) {
+            $error_message = $response->get_error_message();
+            echo "Something went wrong: $error_message";
+        } else {
+            echo 'Response:<pre>';
+            print_r( $response );
+            echo '</pre>';
+        }*/
+
+        $log = "\n======== bKash PGW REQUEST LOG ========== \n\nAPI TITLE: $api_title \n";
+        $log .= "REQUEST METHOD: $method \n";
+
+
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
+
+        $headers = [];
+        $headers[] = 'Accept: application/json';
+        $headers[] = 'Content-Type: application/json';
+        if ($grantHeader) {
+            $headers[] = 'username:' . $this->username;
+            $headers[] = 'password:' . $this->password;
+        } else {
+            $headers[] = 'authorization:' . $this->token;
+            $headers[] = 'x-app-key:' . $this->app_key;
+        }
+
+        if (!is_null($header)) {
+            $headers = array_merge($headers, $header);
+        }
+        // post_data
+        if (!is_null($post_data)) {
+            curl_setopt($ch, CURLOPT_POST, 1);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($post_data));
+        }
+
+        $log .= "HEADERS: " . json_encode($headers) . "\n";
+        $log .= "BODY: " . json_encode($post_data) . "\n";
+
+
+        curl_setopt($ch, CURLOPT_HEADER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+
+        curl_setopt($ch, CURLOPT_VERBOSE, false);
+
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+
+        $response = curl_exec($ch);
+        $log .= "RESPONSE: " . json_encode($response) . "\n\n";
+
+        $body = null;
+        // error
+        if (!$response) {
+            $body = curl_error($ch);
+            // HostNotFound, No route to Host, etc  Network related error
+            $http_status = -1;
+            Log::error("CURL Error: = " . $body);
+        } else {
+            //parsing http status code
+            $http_status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+
+            if (!is_null($http_status) && $http_status === 401) {
+                $this->readTokenFromAPI();
+            }
+
+            if (!is_null($header)) {
+                $header_size = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
+
+                $header = substr($response, 0, $header_size);
+                $body = substr($response, $header_size);
+            } else {
+                $header_size = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
+                $body = substr($response, $header_size);
+            }
+        }
+
+        curl_close($ch);
+
+        Log::debug($log);
+
+        return $body;
+    }
+
+    protected function addOrUpdateOption($key, $value)
+    {
+        if (!get_option($key)) {
+            add_option($key, $value);
+        } else {
+            update_option($key, $value);
+        }
+    }
 
     /**
      * Get Refresh Token
@@ -186,7 +293,6 @@ class ApiComm
             'response' => $response
         ];
     }
-
 
     /**
      * Create Payment
@@ -259,87 +365,7 @@ class ApiComm
         $decoded_response = isset($response['response']) && is_string($response['response']) ?
             json_decode($response['response'], true) : [];
 
-        if( $http_status !== 200 || isset($decoded_response['message'])) {
-            return $this->queryPayment($payment_id);
-        }
-
-        return [
-            'status_code' => $http_status,
-            'header' => $header,
-            'response' => $response
-        ];
-    }
-
-    /**
-     * Capture Payment
-     *
-     * For intent authorize only. For capturing an authorized amount, one can call this API to bring payment amount from bKash to merchant wallet.
-     * @param string $payment_id
-     * @return array
-     */
-    public function capturePayment(string $payment_id): array
-    {
-        $api_path = $this->integration_product === 'checkout' ? 'payment/capture' : 'payment/confirm';
-
-        if ($this->integration_product === 'checkout') {
-            $url = $this->constructed_url . $api_path . '/' . $payment_id;
-
-            $response = $this->httpRequest("Checkout Capture Payment", $url, $http_status, "POST", null, $header);
-        } else {
-            $url = $this->constructed_url . $api_path . '/capture';
-
-            $body = array(
-                'paymentID' => $payment_id
-            );
-
-            $response = $this->httpRequest("Tokenized Capture Payment", $url, $http_status, "POST", $body, $header);
-        }
-
-        // QUERY PAYMENT IN CASE OF ANY NETWORK OR NO RESPONSE OR TIMED OUT ISSUE
-        $decoded_response = isset($response['response']) && is_string($response['response']) ?
-            json_decode($response['response'], true) : [];
-        if( $http_status !== 200 || isset($decoded_response['message'])) {
-            return $this->queryPayment($payment_id);
-        }
-
-        return [
-            'status_code' => $http_status,
-            'header' => $header,
-            'response' => $response
-        ];
-    }
-
-
-    /**
-     * Void Payment
-     *
-     * For intent authorize only. For voiding an authorized amount on failure to provide service,
-     * one can call this API to return payment amount from bKash to customer bKash account.
-     * @param string $payment_id
-     * @return array
-     */
-    public function voidPayment(string $payment_id): array
-    {
-        $api_path = $this->integration_product === 'checkout' ? 'payment/void' : 'payment/confirm';
-
-        if ($this->integration_product === 'checkout') {
-            $url = $this->constructed_url . $api_path . '/' . $payment_id;
-
-            $response = $this->httpRequest("Checkout Void Payment", $url, $http_status, "POST", null, $header);
-        } else {
-            $url = $this->constructed_url . $api_path . '/void';
-
-            $body = array(
-                'paymentID' => $payment_id
-            );
-
-            $response = $this->httpRequest("Tokenized Void Payment", $url, $http_status, "POST", $body, $header);
-        }
-
-        // QUERY PAYMENT IN CASE OF ANY NETWORK OR NO RESPONSE OR TIMED OUT ISSUE
-        $decoded_response = isset($response['response']) && is_string($response['response']) ?
-            json_decode($response['response'], true) : [];
-        if( $http_status !== 200 || isset($decoded_response['message'])) {
+        if ($http_status !== 200 || isset($decoded_response['message'])) {
             return $this->queryPayment($payment_id);
         }
 
@@ -382,6 +408,85 @@ class ApiComm
     }
 
     /**
+     * Capture Payment
+     *
+     * For intent authorize only. For capturing an authorized amount, one can call this API to bring payment amount from bKash to merchant wallet.
+     * @param string $payment_id
+     * @return array
+     */
+    public function capturePayment(string $payment_id): array
+    {
+        $api_path = $this->integration_product === 'checkout' ? 'payment/capture' : 'payment/confirm';
+
+        if ($this->integration_product === 'checkout') {
+            $url = $this->constructed_url . $api_path . '/' . $payment_id;
+
+            $response = $this->httpRequest("Checkout Capture Payment", $url, $http_status, "POST", null, $header);
+        } else {
+            $url = $this->constructed_url . $api_path . '/capture';
+
+            $body = array(
+                'paymentID' => $payment_id
+            );
+
+            $response = $this->httpRequest("Tokenized Capture Payment", $url, $http_status, "POST", $body, $header);
+        }
+
+        // QUERY PAYMENT IN CASE OF ANY NETWORK OR NO RESPONSE OR TIMED OUT ISSUE
+        $decoded_response = isset($response['response']) && is_string($response['response']) ?
+            json_decode($response['response'], true) : [];
+        if ($http_status !== 200 || isset($decoded_response['message'])) {
+            return $this->queryPayment($payment_id);
+        }
+
+        return [
+            'status_code' => $http_status,
+            'header' => $header,
+            'response' => $response
+        ];
+    }
+
+    /**
+     * Void Payment
+     *
+     * For intent authorize only. For voiding an authorized amount on failure to provide service,
+     * one can call this API to return payment amount from bKash to customer bKash account.
+     * @param string $payment_id
+     * @return array
+     */
+    public function voidPayment(string $payment_id): array
+    {
+        $api_path = $this->integration_product === 'checkout' ? 'payment/void' : 'payment/confirm';
+
+        if ($this->integration_product === 'checkout') {
+            $url = $this->constructed_url . $api_path . '/' . $payment_id;
+
+            $response = $this->httpRequest("Checkout Void Payment", $url, $http_status, "POST", null, $header);
+        } else {
+            $url = $this->constructed_url . $api_path . '/void';
+
+            $body = array(
+                'paymentID' => $payment_id
+            );
+
+            $response = $this->httpRequest("Tokenized Void Payment", $url, $http_status, "POST", $body, $header);
+        }
+
+        // QUERY PAYMENT IN CASE OF ANY NETWORK OR NO RESPONSE OR TIMED OUT ISSUE
+        $decoded_response = isset($response['response']) && is_string($response['response']) ?
+            json_decode($response['response'], true) : [];
+        if ($http_status !== 200 || isset($decoded_response['message'])) {
+            return $this->queryPayment($payment_id);
+        }
+
+        return [
+            'status_code' => $http_status,
+            'header' => $header,
+            'response' => $response
+        ];
+    }
+
+    /**
      * Search Transaction
      *
      * Searching a transaction using bKash transaction ID directly from bKash server. Will work for both Checkout and Tokenized
@@ -411,7 +516,6 @@ class ApiComm
             'response' => $response
         ];
     }
-
 
     /**
      * Refund a transaction
@@ -446,7 +550,6 @@ class ApiComm
         ];
     }
 
-
     /**
      * Get Status of a Refunded transaction
      *
@@ -465,14 +568,13 @@ class ApiComm
             'trxID' => $trxID
         );
 
-        $response = $this->httpRequest("Refund Status" , $url, $http_status, "POST", $body, $header);
+        $response = $this->httpRequest("Refund Status", $url, $http_status, "POST", $body, $header);
         return [
             'status_code' => $http_status,
             'header' => $header,
             'response' => $response
         ];
     }
-
 
     /**
      * Check Merchant Balances
@@ -498,7 +600,6 @@ class ApiComm
 
         throw  new UnexpectedValueException("Query organization balance is only available in Checkout integration");
     }
-
 
     /**
      * Intra Account Transfer
@@ -533,7 +634,6 @@ class ApiComm
 
         throw  new UnexpectedValueException("Intra Account Transfer is only available in Checkout integration");
     }
-
 
     /**
      * B2C Payout - Disbursement
@@ -572,7 +672,6 @@ class ApiComm
         throw  new \http\Exception\BadMethodCallException("B2C Payout is only available in Checkout integration");
     }
 
-
     /**
      * Agreement Status
      *
@@ -596,7 +695,6 @@ class ApiComm
         ];
     }
 
-
     /**
      * Agreement Cancellation
      *
@@ -612,94 +710,12 @@ class ApiComm
             'agreementID' => $agreement_id
         );
 
-        $response = $this->httpRequest("Agreement Cancel",$url, $http_status, "POST", $body, $header);
+        $response = $this->httpRequest("Agreement Cancel", $url, $http_status, "POST", $body, $header);
         return [
             'status_code' => $http_status,
             'header' => $header,
             'response' => $response
         ];
-    }
-
-
-    public function httpRequest($api_title, $url, &$http_status, $method = "POST", $post_data = null, &$header = null, $grantHeader = false)
-    {
-        $log = "\n======== bKash PGW REQUEST LOG ========== \n\nAPI TITLE: $api_title \n";
-        $log .= "REQUEST METHOD: $method \n";
-
-
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
-
-        $headers = [];
-        $headers[] = 'Accept: application/json';
-        $headers[] = 'Content-Type: application/json';
-        if ($grantHeader) {
-            $headers[] = 'username:' . $this->username;
-            $headers[] = 'password:' . $this->password;
-        } else {
-            $headers[] = 'authorization:' . $this->token;
-            $headers[] = 'x-app-key:' . $this->app_key;
-        }
-
-        if (!is_null($header)) {
-            $headers = array_merge($headers, $header);
-        }
-        // post_data
-        if (!is_null($post_data)) {
-            curl_setopt($ch, CURLOPT_POST, 1);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($post_data));
-        }
-
-        $log .= "HEADERS: " . json_encode($headers) ."\n";
-        $log .= "BODY: " . json_encode($post_data) ."\n";
-
-
-        curl_setopt($ch, CURLOPT_HEADER, true);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-
-        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-
-        curl_setopt($ch, CURLOPT_VERBOSE, false);
-
-        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-
-        $response = curl_exec($ch);
-        $log .= "RESPONSE: " . json_encode($response) ."\n\n";
-
-        $body = null;
-        // error
-        if (!$response) {
-            $body = curl_error($ch);
-            // HostNotFound, No route to Host, etc  Network related error
-            $http_status = -1;
-            Log::error("CURL Error: = " . $body);
-        } else {
-            //parsing http status code
-            $http_status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-
-            if (!is_null($http_status) && $http_status === 401) {
-                $this->readTokenFromAPI();
-            }
-
-            if (!is_null($header)) {
-                $header_size = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
-
-                $header = substr($response, 0, $header_size);
-                $body = substr($response, $header_size);
-            } else {
-                $header_size = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
-                $body = substr($response, $header_size);
-            }
-        }
-
-        curl_close($ch);
-
-        Log::debug($log);
-
-        return $body;
     }
 
     public function prepareResponse(int $status_code, string $response = "", $headers = null): array
@@ -749,6 +765,17 @@ class Log
         self::write_log($str);
     }
 
+    private static function write_log($log)
+    {
+        if (true === WP_DEBUG) {
+            if (is_array($log) || is_object($log)) {
+                error_log(print_r($log, true));
+            } else {
+                error_log($log);
+            }
+        }
+    }
+
     public static function info($str)
     {
         self::write_log("INFO: ");
@@ -759,16 +786,5 @@ class Log
     {
         self::write_log("ERROR: ");
         self::write_log($str);
-    }
-
-    private static function write_log($log)
-    {
-        if (true === WP_DEBUG) {
-            if (is_array($log) || is_object($log)) {
-                error_log(print_r($log, true));
-            } else {
-                error_log($log);
-            }
-        }
     }
 }

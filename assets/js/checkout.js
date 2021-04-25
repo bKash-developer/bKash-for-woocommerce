@@ -14,11 +14,12 @@ jQuery(function ($) {
         body.appendChild(button);
 
         var paymentObj = {paymentID: "", orderID: ""}
+        var paymentReq = {amount: '0', intent: 'sale'};
 
         if (bKash !== undefined) {
             bKash.init({
                 paymentMode: 'checkout',
-                paymentRequest: {amount: '100.50', intent: 'sale'},
+                paymentRequest: paymentReq,
 
                 createRequest: function (request) {
                     $.blockUI({message: ''});
@@ -33,6 +34,7 @@ jQuery(function ($) {
                         success: function (result) {
                             if (result.result && result.result === 'success') {
                                 paymentObj = result.order;
+                                paymentReq.amount = result?.response?.amount;
                                 bKash.create().onSuccess(result.response);
                             } else {
                                 bKash.execute().onError();

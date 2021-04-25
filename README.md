@@ -46,6 +46,8 @@ As a merchant I can set up my payment option in WooCommerce platform with bKash.
 * Install WooCommerce bKash plugin from zip file by uploading it on Wordpress plugin menu.
 * Activate the plugin, and go to WooCommerce Setting → Payments, find bKash PGW there and set it up with relevant information.
 * Now bKash PGW should be available for use.
+* Important! Change Permalink from Wordpress Settings → Reading to Post Name.
+* Align .htaccess file accordingly with the guidance of Wordpress.
 
 ### Available Payment Methods in this plugin
 * Checkout Sale (Regular Checkout)
