@@ -1,17 +1,21 @@
 jQuery(function ($) {
     $('form.woocommerce-checkout').on('click', "#place_order", function (event) {
         event.preventDefault();
+        console.log("Init bkash");
         InitiatebKashPayment();
     });
 
     function InitiatebKashPayment() {
-        var button = document.createElement("button");
-        button.id = "bKash_button";
-        button.disabled = false;
-        button.style.display = "hidden";
+        var button = document.getElementById("bKash_button");
+        if(!button) {
+            button = document.createElement("button");
+            button.id = "bKash_button";
+            button.disabled = false;
+            button.style.display = "hidden";
 
-        var body = document.getElementsByTagName("body")[0];
-        body.appendChild(button);
+            var body = document.getElementsByTagName("body")[0];
+            body.appendChild(button);
+        }
 
         var paymentObj = {paymentID: "", orderID: ""}
         var paymentReq = {amount: '0', intent: 'sale'};
@@ -86,6 +90,7 @@ jQuery(function ($) {
                     });
                 },
                 onClose: function () {
+                    bKash.execute().onError();
                     submit_error("You have chosen to cancel the payment");
                 }
             });
