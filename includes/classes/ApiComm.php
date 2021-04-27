@@ -109,24 +109,26 @@ class ApiComm
 
     protected function readTokenFromAPI()
     {
-        $get_token = $this->getToken();
-        if (isset($get_token['status_code']) && $get_token['status_code'] === 200) {
-            $response = json_decode($get_token['response'], true);
-            if (isset($response['id_token']) && !is_null($response['id_token'])) {
-                $this->token = $response['id_token'];
-                $expiry = time() + $response['expires_in'];
+    	if( empty($this->app_key) || empty($this->app_secret) ){
+    		Log::error("App key or secret is not set, required for bKash APIs");
+	    } else {
+		    $get_token = $this->getToken();
+		    if ( isset( $get_token['status_code'] ) && $get_token['status_code'] === 200 ) {
+			    $response = json_decode( $get_token['response'], true );
+			    if ( isset( $response['id_token'] ) && ! is_null( $response['id_token'] ) ) {
+				    $this->token = $response['id_token'];
+				    $expiry      = time() + $response['expires_in'];
 
-                $this->addOrUpdateOption("bkash_grant_token", $this->token);
-                $this->addOrUpdateOption("bkash_grant_token_expiry", $expiry);
-                $this->addOrUpdateOption("bkash_integration_product", $this->integration_product);
-            } else {
-                Log::error("Cannot read token from server, response ==> " . $get_token);
-//                 throw new \RuntimeException("Response has no token");
-            }
-        } else {
-//            throw new \RuntimeException("No token from server");
-            Log::error("Cannot get response from get token API, response ==>" . $get_token);
-        }
+				    $this->addOrUpdateOption( "bkash_grant_token", $this->token );
+				    $this->addOrUpdateOption( "bkash_grant_token_expiry", $expiry );
+				    $this->addOrUpdateOption( "bkash_integration_product", $this->integration_product );
+			    } else {
+				    Log::error( "Cannot read token from server, response ==> " . json_encode( $get_token ) );
+			    }
+		    } else {
+			    Log::error( "Cannot get response from get token API, response ==>" . json_encode( $get_token ) );
+		    }
+	    }
     }
 
     /**

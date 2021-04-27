@@ -450,8 +450,8 @@ class AdminDashboard
                     `transactionStatus` VARCHAR(30) NOT NULL,
                     `b2cFee` VARCHAR(40) NULL,
                     `initiationTime` timestamp NULL,
-                    `completedTime` timestamp NULL
-                    PRIMARY KEY  (ID)
+                    `completedTime` timestamp NULL,
+                    PRIMARY KEY (ID)
             ) $charset_collate;";
 
             require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
