@@ -1,7 +1,6 @@
 jQuery(function ($) {
     $('form.woocommerce-checkout').on('click', "#place_order", function (event) {
         event.preventDefault();
-        console.log("Init bkash");
         InitiatebKashPayment();
     });
 
@@ -42,7 +41,7 @@ jQuery(function ($) {
                                 bKash.create().onSuccess(result.response);
                             } else {
                                 bKash.execute().onError();
-                                submit_error(result.messages)
+                                submit_error(result.message)
                             }
                             $.unblockUI();
                         },
@@ -77,7 +76,7 @@ jQuery(function ($) {
                                     window.location.href = resp.redirect;
                                 }
                             } else {
-                                submit_error(resp.messages);
+                                submit_error(resp.message);
                                 bKash.execute().onError();
                             }
                             $.unblockUI();

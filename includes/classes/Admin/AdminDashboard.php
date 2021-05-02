@@ -15,11 +15,6 @@ class AdminDashboard
     private $slug = 'bkash_admin_menu_120beta';
     private $api;
 
-    public function __construct()
-    {
-        $this->api = new ApiComm();
-    }
-
     static function GetInstance()
     {
 
@@ -71,8 +66,8 @@ class AdminDashboard
         );
 
         foreach ($subMenus as $subMenu) {
-            $int_type = $this->api->get_option("integration_type");
-            $restrict = null;
+            // $int_type = $this->api->get_option("integration_type");
+            // $restrict = null;
             add_submenu_page($this->slug, $subMenu[0], $subMenu[1], 'manage_options', $this->slug . $subMenu[2], array($this, $subMenu[3]));
         }
     }
@@ -81,6 +76,7 @@ class AdminDashboard
     public function CheckBalances()
     {
         try {
+	        $this->api = new ApiComm();
             $call = $this->api->checkBalances();
             if (isset($call['status_code']) && $call['status_code'] === 200) {
                 $balances = isset($call['response']) && is_string($call['response']) ? json_decode($call['response'], true) : [];
@@ -211,23 +207,29 @@ class AdminDashboard
 
     public function TransactionSearch()
     {
-        $trx_id = isset($_REQUEST['trxid']) ? sanitize_text_field($_REQUEST['trxid']) : null;
-        if (!empty($trx_id)) {
-            $call = $this->api->searchTransaction($trx_id);
-            if (isset($call['status_code']) && $call['status_code'] === 200) {
-                $trx = isset($call['response']) && is_string($call['response']) ? json_decode($call['response'], true) : [];
+    	try {
+		    $trx_id = isset( $_REQUEST['trxid'] ) ? sanitize_text_field( $_REQUEST['trxid'] ) : null;
+		    if ( ! empty( $trx_id ) ) {
+			    $this->api = new ApiComm();
+			    $call = $this->api->searchTransaction( $trx_id );
+			    if ( isset( $call['status_code'] ) && $call['status_code'] === 200 ) {
+				    $trx = isset( $call['response'] ) && is_string( $call['response'] ) ? json_decode( $call['response'], true ) : [];
 
-                // If any error
-                if (isset($trx['statusMessage']) && $trx['statusMessage'] !== 'Successful') {
-                    $trx = $trx['statusMessage'];
-                }
-                if (isset($trx['errorMessage']) && !empty($trx['errorMessage'])) {
-                    $trx = $trx['errorMessage'];
-                }
-            } else {
-                $trx = "Cannot find the transaction from bKash server right now, try again";
-            }
-        }
+				    // If any error
+				    if ( isset( $trx['statusMessage'] ) && $trx['statusMessage'] !== 'Successful' ) {
+					    $trx = $trx['statusMessage'];
+				    }
+				    if ( isset( $trx['errorMessage'] ) && ! empty( $trx['errorMessage'] ) ) {
+					    $trx = $trx['errorMessage'];
+				    }
+			    } else {
+				    $trx = "Cannot find the transaction from bKash server right now, try again";
+			    }
+		    }
+	    }
+	    catch (\Exception $ex){
+    		$trx = $ex->getMessage();
+	    }
 
         include_once "pages/transaction_search.php";
     }

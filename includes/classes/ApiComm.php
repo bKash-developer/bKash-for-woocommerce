@@ -31,11 +31,7 @@ class ApiComm
         $this->constructURL();
 
         /* Initiate Token Generate Process */
-        try {
-            $this->processToken();
-        } catch (\Exception $e) {
-            return;
-        }
+	    $this->processToken();
     }
 
     /**
@@ -96,19 +92,24 @@ class ApiComm
      */
     protected function processToken(): void
     {
-        $token = get_option("bkash_grant_token");
-        $expiry = get_option("bkash_grant_token_expiry");
-        $product = get_option("bkash_integration_product");
+    	try {
+		    $token   = get_option( "bkash_grant_token" );
+		    $expiry  = get_option( "bkash_grant_token_expiry" );
+		    $product = get_option( "bkash_integration_product" );
 
-        if ($this->integration_product === $product && !is_null($token) && ($expiry - time() > 0)) { // if expiry time in seconds is greater than current time
-            $this->token = $token;
-        } else {
-            $this->readTokenFromAPI();
-        }
+		    if ( $this->integration_product === $product && ! is_null( $token ) && ( $expiry - time() > 0 ) ) { // if expiry time in seconds is greater than current time
+			    $this->token = $token;
+		    } else {
+			    $this->readTokenFromAPI();
+		    }
+	    }
+	    catch (\Exception $e) {
+    		Log::debug($e);
+    		Log::error("bKash PGW ERROR: exception generated while processing token, ". $e->getMessage());
+	    }
     }
 
-    protected function readTokenFromAPI()
-    {
+    protected function readTokenFromAPI(): void {
     	if( empty($this->app_key) || empty($this->app_secret) ){
     		Log::error("App key or secret is not set, required for bKash APIs");
 	    } else {

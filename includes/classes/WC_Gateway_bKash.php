@@ -121,31 +121,30 @@ final class WC_Gateway_bKash {
         add_action( 'init', array( $this, 'load_plugin_textdomain' ) );
 
         // Is WooCommerce activated?
-        if( !in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', get_option( 'active_plugins' ) ) ) ) {
+        if( ! in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', get_option( 'active_plugins' ) ), true ) ) {
             add_action('admin_notices', array( $this, 'woocommerce_missing_notice' ) );
             return false;
         }
-        else{
-            // Check we have the minimum version of WooCommerce required before loading the gateway.
-            if( defined( 'WC_VERSION' ) && version_compare( WC_VERSION, '2.2', '>=' ) ) {
-                if( class_exists( 'WC_Payment_Gateway' ) ) {
-                    // $this->installer();
-                     $this->includes();
 
-                    add_filter( 'woocommerce_payment_gateways', array( $this, 'add_gateway' ) );
-                    add_filter( 'woocommerce_currencies', array( $this, 'add_currency' ) );
-                    add_filter( 'woocommerce_currency_symbol', array( $this, 'add_currency_symbol' ), 10, 2 );
-                }
-            }
-            else {
-                add_action( 'admin_notices', array( $this, 'upgrade_notice' ) );
-                return false;
-            }
-        }
+		// Check we have the minimum version of WooCommerce required before loading the gateway.
+	    if( defined( 'WC_VERSION' ) && version_compare( WC_VERSION, '2.2', '>=' ) ) {
+	        if( class_exists( 'WC_Payment_Gateway' ) ) {
+	            // $this->installer();
+	             $this->includes();
+
+	            add_filter( 'woocommerce_payment_gateways', array( $this, 'add_gateway' ) );
+	            add_filter( 'woocommerce_currencies', array( $this, 'add_currency' ) );
+	            add_filter( 'woocommerce_currency_symbol', array( $this, 'add_currency_symbol' ), 10, 2 );
+	        }
+	    }
+	    else {
+	        add_action( 'admin_notices', array( $this, 'upgrade_notice' ) );
+	        return false;
+	    }
     }
 
 
-    function installer(){
+    public function installer(): void {
         $dashboard = AdminDashboard::GetInstance();
         $dashboard->BeginInstall();
     }
@@ -155,8 +154,6 @@ final class WC_Gateway_bKash {
      *
      * @access public
      * */
-
-
     public function bKash_dashboard()
     {
         $dashboard = AdminDashboard::GetInstance();

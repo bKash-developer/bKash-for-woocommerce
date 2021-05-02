@@ -255,8 +255,6 @@ class WC_bKash extends WC_Payment_Gateway
     protected function init_gateway_sdk()
     {
         // TODO: Insert your gateway sdk script here and call it.
-        $this->bKashObj = new ApiComm();
-
     }
 
     public function Hooks(): void
@@ -480,12 +478,12 @@ class WC_bKash extends WC_Payment_Gateway
      */
     public function checks()
     {
-        if ($this->enabled == 'no') {
+        if ( $this->enabled === 'no' ) {
             return;
         }
 
         // PHP Version.
-        if (version_compare(phpversion(), '5.3', '<')) {
+        if ( PHP_VERSION_ID < 50300 ) {
             echo '<div class="error"><p>' . sprintf(__('bKash PGW Error: bKash PGW requires PHP 5.3 and above. You are using version %s.', 'woocommerce-payment-gateway-bkash'), phpversion()) . '</p></div>';
         } // Check required fields.
         else if (!$this->app_key || !$this->app_secret) {
@@ -496,7 +494,21 @@ class WC_bKash extends WC_Payment_Gateway
         else if ('no' == get_option('woocommerce_force_ssl_checkout') && !class_exists('WordPressHTTPS')) {
             echo '<div class="error"><p>' . sprintf(__('bKash PGW is enabled, but the <a href="%s">force SSL option</a> is disabled; your checkout may not be secure! Please enable SSL and ensure your server has a valid SSL certificate - bKash PGW will only work in sandbox mode.', 'woocommerce-payment-gateway-bkash'), admin_url('admin.php?page=wc-settings&tab=checkout')) . '</p></div>';
         }
+
+        // APP KEY APP SECRET CHECK
+	    if(empty($this->app_key) || empty($this->app_secret) || empty($this->username) || empty($this->password)) {
+	    	$this->app_key_missing_notice();
+	    }
     }
+	/**
+	 * WooCommerce Payment Gateway App key missing Notice.
+	 *
+	 * @access public
+	 */
+	public function app_key_missing_notice(): void {
+		$notice =  '<div class="error woocommerce-message wc-connect"><p>' . sprintf( __( 'Please set bKash PGW credentials for accepting payments!', 'payment-gateway-bkash' ), "Payment Gateway bKash" ) . '</p></div>';
+		add_action( 'admin_notices', $notice );
+	}
 
     /**
      * Payment form on checkout page.
@@ -640,6 +652,7 @@ class WC_bKash extends WC_Payment_Gateway
         //To receive order id
         $order = wc_get_order($order_id);
 
+        $this->bKashObj = new ApiComm();
         $execute = $this->bKashObj->executePayment($payment_id);
         if (($execute['success'] ?? false)) {
             $response = $execute['response'] ?? null;

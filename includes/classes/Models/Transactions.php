@@ -33,7 +33,6 @@ class Transactions
         global $wpdb;
         $this->wpdb = $wpdb;
         $this->tableName = $wpdb->prefix . "bkash_transactions";
-        $this->dateTime = date('now');
     }
 
     /**
@@ -428,7 +427,7 @@ class Transactions
             'currency' => $this->currency ?? 'BDT',
             'refund_id' => $this->refundID ?? null,
             'status' => $this->status ?? 'CREATED',
-            'datetime' => $this->dateTime,
+            'datetime' => date('Y-m-d H:i:s'),
         ]);
 
         $this->errorMessage = $this->wpdb->last_error; // set if any error or null
