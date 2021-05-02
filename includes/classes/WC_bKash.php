@@ -581,8 +581,8 @@ class WC_bKash extends WC_Payment_Gateway
                 'sandbox' => $this->sandbox,
                 'submit_order' => WC_AJAX::get_endpoint('checkout'),
                 'ajaxURL' => admin_url('admin-ajax.php'),
-                'wcAjaxURL' => $this->siteUrl . "//wc-api/" . $this->EXECUTE_URL,
-                'cancelAgreement' => $this->siteUrl . "//wc-api/" . $this->CANCEL_AGREEMENT_URL
+                'wcAjaxURL' => $this->siteUrl . "/wc-api/" . $this->EXECUTE_URL,
+                'cancelAgreement' => $this->siteUrl . "/wc-api/" . $this->CANCEL_AGREEMENT_URL
             ));
 
             wp_enqueue_script('woocommerce-payment-gateway-bkash');
@@ -598,7 +598,7 @@ class WC_bKash extends WC_Payment_Gateway
             wp_localize_script('woocommerce-payment-gateway-bkash', 'bKash_objects', array(
                 'apiVersion' => $this->api_version,
                 'sandbox' => $this->sandbox,
-                'cancelAgreement' => $this->siteUrl . "//wc-api/" . $this->CANCEL_AGREEMENT_URL
+                'cancelAgreement' => $this->siteUrl . "/wc-api/" . $this->CANCEL_AGREEMENT_URL
             ));
 
             wp_enqueue_script('woocommerce-payment-gateway-bkash');
@@ -634,7 +634,7 @@ class WC_bKash extends WC_Payment_Gateway
 
     public function process_payment($order_id)
     {
-        $cbURL = get_site_url() . "//wc-api/" . $this->CALLBACK_URL . '?orderId=' . $order_id;
+        $cbURL = get_site_url() . "/wc-api/" . $this->CALLBACK_URL . '?orderId=' . $order_id;
         $processPayment = new ProcessPayments($this->integration_type);
         return $processPayment->createPayment($order_id, $this->intent, $cbURL);
     }
@@ -723,7 +723,7 @@ class WC_bKash extends WC_Payment_Gateway
         $order = wc_get_order($order_id);
         if ($order) {
 
-            $cbURL = get_site_url() . "//wc-api/" . $this->CALLBACK_URL . '?orderId=' . $order_id;
+            $cbURL = get_site_url() . "/wc-api/" . $this->CALLBACK_URL . '?orderId=' . $order_id;
 
             $process = new ProcessPayments($this->integration_type);
             $process->executePayment($this->get_return_url($order), $cbURL);
