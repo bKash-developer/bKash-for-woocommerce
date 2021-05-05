@@ -35,7 +35,7 @@ class Webhook {
 		} else if ( $this->messageType === 'Notification' ) {
 			$this->storeNotification( $this->payload->Message );
 		} else {
-			$this->writeLog("No method present to process the webhook");
+			$this->writeLog( "No method present to process the webhook" );
 		}
 	}
 
@@ -48,8 +48,13 @@ class Webhook {
 
 				if ( isset( $this->payload->SubscribeURL ) ) {
 					$this->writeLog( "Subscribing to ==> " . $this->payload->SubscribeURL );
-					//$subscriptionResponse = wp_remote_get( $this->payload->SubscribeURL );
-					//$this->writeLog( $subscriptionResponse );
+					$subscriptionResponse = wp_remote_get( $this->payload->SubscribeURL );
+					if ( is_wp_error( $subscriptionResponse ) ) {
+						$this->writeLog( "Getting error in subscribing the URL... " . json_encode( $subscriptionResponse ) );
+					} else {
+						$subscriptionResponse = wp_remote_retrieve_body( $subscriptionResponse );
+						$this->writeLog( $subscriptionResponse );
+					}
 				} else {
 					$this->writeLog( "Could not found subscription URL" );
 				}
@@ -70,11 +75,15 @@ class Webhook {
 			$isValidURL = $this->validateURL( $this->signingCertURL );
 			if ( $isValidURL ) {
 				$publicCert = $this->getContent( $this->signingCertURL );
-				$signature  = isset( $this->payload->Signature ) ? base64_decode( $this->payload->Signature ) : null;
+				$this->writeLog( $publicCert );
+				$signature = isset( $this->payload->Signature ) ? base64_decode( $this->payload->Signature ) : null;
 
 				$formattedString = $this->getStringToSign( $this->payload );
 				if ( $formattedString ) {
-					return openssl_verify( $formattedString, $signature, $publicCert, OPENSSL_ALGO_SHA1 );
+					$verify = openssl_verify( $formattedString, $signature, $publicCert, OPENSSL_ALGO_SHA1 );
+					$this->writeLog( "Verifying ..." . json_encode( $verify ) );
+
+					return $verify;
 				}
 			}
 		}
@@ -94,7 +103,21 @@ class Webhook {
 	}
 
 	public function getContent( $url ) {
-		return wp_remote_get( $url );
+		$body     = '';
+		$response = wp_remote_get( $url );
+		if ( is_wp_error( $response ) ) {
+			$this->writeLog("Error in getting content.. ". json_encode($response));
+		} else {
+			$body = wp_remote_retrieve_body( $response );
+		}
+
+		return $body;
+	}
+
+	public function writeLog( $logging_item ) {
+		if ( $this->log ) {
+			$this->log->debug( $logging_item, $this->context );
+		}
 	}
 
 	public function getStringToSign( $message ) {
@@ -124,12 +147,6 @@ class Webhook {
 		}
 
 		return $stringToSign;
-	}
-
-	public function writeLog( $logging_item ) {
-		if ( $this->log ) {
-			$this->log->debug( $logging_item, $this->context );
-		}
 	}
 
 	/**
@@ -162,6 +179,6 @@ class Webhook {
 
 		return false;
 	}
-	
+
 
 }

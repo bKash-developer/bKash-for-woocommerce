@@ -935,6 +935,8 @@ class WC_bKash extends WC_Payment_Gateway
 
 		$payload  = (array) json_decode( file_get_contents( 'php://input' ), true );
 		$this->log->add($this->id, 'WEBHOOK => BODY: ' . print_r($payload, true));
+
+		die();
 	}
 
     /**
