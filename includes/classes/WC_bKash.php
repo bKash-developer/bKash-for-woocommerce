@@ -39,6 +39,7 @@ class WC_bKash extends WC_Payment_Gateway
     private $API_SESSION_CREATE_ENDPOINT = "/checkout/v1/session/create";
     private $EXECUTE_URL = "bk_execute";
     private $CANCEL_AGREEMENT_URL = "bk_cancel_agreement";
+    private $WEBHOOK_URL = "bkash_webhook";
 
     /**
      * Constructor for the gateway.
@@ -283,6 +284,9 @@ class WC_bKash extends WC_Payment_Gateway
 
         add_action('woocommerce_api_' . $this->EXECUTE_URL, array($this, 'create_payment_callback_process'));
         add_action('woocommerce_api_' . $this->CANCEL_AGREEMENT_URL, array($this, 'cancel_agreement_api'));
+
+        // Webhook
+	    add_action( 'woocommerce_api_' . $this->WEBHOOK_URL, array( $this, 'webhook' ));
     }
 
     /**
@@ -917,6 +921,17 @@ class WC_bKash extends WC_Payment_Gateway
             return new WP_Error('capture-error', sprintf(__('There was an error voiding the transaction. Reason: %1$s', 'woo-payment-gateway'), wc_braintree_errors_from_object($e)));
         }
     }
+
+
+	/**
+	 * Webhook Integration
+	 *
+	 * @return void
+	 */
+	public function webhook(): void {
+
+		// $order = wc_get_order( $_GET['id'] );
+	}
 
     /**
      * Output for the order received page.
