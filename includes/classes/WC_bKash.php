@@ -55,7 +55,7 @@ class WC_bKash extends WC_Payment_Gateway
         add_action('admin_notices', array($this, 'display_flash_notices'), 12);
     }
 
-    public function Initiate(): void
+    public function Initiate()
     {
         $this->id = 'bkash_pgw';
         $this->icon = apply_filters('woocommerce_payment_gateway_bkash_icon', plugins_url('../assets/images/logo.png', dirname(__FILE__)));
@@ -258,7 +258,7 @@ class WC_bKash extends WC_Payment_Gateway
         // TODO: Insert your gateway sdk script here and call it.
     }
 
-    public function Hooks(): void
+    public function Hooks()
     {
 
         // Hooks.
@@ -320,7 +320,7 @@ class WC_bKash extends WC_Payment_Gateway
                                 $trx = $captured['statusMessage'];
                             } // If any error for checkout
                             else if (isset($captured['errorCode'])) {
-                                $trx = $captured['errorMessage'] ?? '';
+                                $trx = isset($captured['errorMessage']) ? $captured['errorMessage'] : '';
                             } else if (isset($captured['transactionStatus']) && $captured['transactionStatus'] === 'Completed') {
                                 $trx = $captured;
 
@@ -420,7 +420,7 @@ class WC_bKash extends WC_Payment_Gateway
                                 $trx = $captured['statusMessage'];
                             } // If any error for checkout
                             else if (isset($captured['errorCode'])) {
-                                $trx = $captured['errorMessage'] ?? '';
+                                $trx = isset($captured['errorMessage']) ? $captured['errorMessage'] : '';
                             } else if (isset($captured['transactionStatus']) && $captured['transactionStatus'] === 'Completed') {
                                 $trx = $captured;
 
@@ -509,7 +509,7 @@ class WC_bKash extends WC_Payment_Gateway
 	 *
 	 * @access public
 	 */
-	public function app_key_missing_notice(): void {
+	public function app_key_missing_notice() {
 		$notice =  '<div class="error woocommerce-message wc-connect"><p>' . sprintf( __( 'Please set bKash PGW credentials for accepting payments!', 'payment-gateway-bkash' ), "Payment Gateway bKash" ) . '</p></div>';
 		add_action( 'admin_notices', $notice );
 	}
@@ -928,9 +928,10 @@ class WC_bKash extends WC_Payment_Gateway
 	 *
 	 * @return void
 	 */
-	public function webhook(): void {
+	public function webhook() {
 
-		// $order = wc_get_order( $_GET['id'] );
+		$webhook = new Webhook(wc_get_logger(), true);
+		$webhook->processRequest();
 
 		$payload  = (array) json_decode( file_get_contents( 'php://input' ), true );
 		$this->log->add($this->id, 'WEBHOOK => BODY: ' . print_r($payload, true));
