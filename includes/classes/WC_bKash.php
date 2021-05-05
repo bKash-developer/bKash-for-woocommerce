@@ -26,7 +26,7 @@ if (!defined('ABSPATH')) {
  */
 class WC_bKash extends WC_Payment_Gateway
 {
-
+	public $log;
     public $bKashObj;
     public $refundObj;
     public $refundError;
@@ -931,6 +931,7 @@ class WC_bKash extends WC_Payment_Gateway
 	public function webhook(): void {
 
 		// $order = wc_get_order( $_GET['id'] );
+		$this->log->add($this->id, 'WEBHOOK => BODY: ' . print_r($_REQUEST, true));
 	}
 
     /**
