@@ -144,7 +144,7 @@ final class WC_Gateway_bKash {
     }
 
 
-    public function installer(): void {
+    public function installer() {
         $dashboard = AdminDashboard::GetInstance();
         $dashboard->BeginInstall();
     }
