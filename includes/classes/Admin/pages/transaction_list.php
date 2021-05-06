@@ -60,10 +60,10 @@ $rowcount = $wpdb->num_rows;
                         <td class="manage-column ss-list-width"><?php echo $row->intent; ?></td>
                         <td class="manage-column ss-list-width"><?php echo $row->mode; ?></td>
                         <td class="manage-column ss-list-width"><?php echo !empty($row->refund_id) ? "YES ($row->refund_id)" : 'NO'; ?></td>
-                        <td class="manage-column ss-list-width"><?php echo $row->refundID; ?></td>
-                        <td class="manage-column ss-list-width"><?php echo $row->refundAmount; ?></td>
+                        <td class="manage-column ss-list-width"><?php echo $row->refund_id; ?></td>
+                        <td class="manage-column ss-list-width"><?php echo $row->refund_amount; ?></td>
                         <td class="manage-column ss-list-width"><?php echo $row->status; ?></td>
-                        <td class="manage-column ss-list-width"><?php echo $row->dateTime; ?></td>
+                        <td class="manage-column ss-list-width"><?php echo $row->datetime; ?></td>
                         <?php if (isset($row->trx_id) && !empty($row->trx_id)) { ?>
                             <td>
                                 <a href="<?php echo admin_url('admin.php?page=bkash_admin_menu_120beta/search&trxid=' . $row->trx_id); ?>">Search</a>
