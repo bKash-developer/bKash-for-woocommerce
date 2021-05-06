@@ -29,8 +29,15 @@ $rowcount = $wpdb->num_rows;
         <table class='wp-list-table widefat fixed striped posts'>
             <tr>
                 <th class="manage-column ss-list-width">ID</th>
-                <th class="manage-column ss-list-width">TRXID</th>
+                <th class="manage-column ss-list-width">TRX_ID</th>
+                <th class="manage-column ss-list-width">SENDER</th>
+                <th class="manage-column ss-list-width">RECEIVER</th>
+                <th class="manage-column ss-list-width">RECEIVER NAME</th>
                 <th class="manage-column ss-list-width">AMOUNT</th>
+                <th class="manage-column ss-list-width">REFERENCE</th>
+                <th class="manage-column ss-list-width">TYPE</th>
+                <th class="manage-column ss-list-width">STATUS</th>
+                <th class="manage-column ss-list-width">DATETIME</th>
                 <th>&nbsp;</th>
                 <th>&nbsp;</th>
             </tr>
@@ -40,11 +47,14 @@ $rowcount = $wpdb->num_rows;
                     <tr>
                         <td class="manage-column ss-list-width"><?php echo $row->ID; ?></td>
                         <td class="manage-column ss-list-width"><?php echo $row->trx_id; ?></td>
-                        <td class="manage-column ss-list-width"><?php echo $row->amount; ?></td>
-                        <td><a href="<?php echo admin_url('admin.php?page=wp_schools_update&id=' . $row->id); ?>">Update</a></td>
-                        <td><a href="<?php echo admin_url('admin.php?page=wp_schools_delete&id=' . $row->id); ?>">Delete</a></td>
-
-
+                        <td class="manage-column ss-list-width"><?php echo $row->sender; ?></td>
+                        <td class="manage-column ss-list-width"><?php echo $row->receiver; ?></td>
+                        <td class="manage-column ss-list-width"><?php echo $row->receiver_name; ?></td>
+                        <td class="manage-column ss-list-width"><?php echo $row->amount . '' . $row->currency; ?></td>
+                        <td class="manage-column ss-list-width"><?php echo $row->reference; ?></td>
+                        <td class="manage-column ss-list-width"><?php echo $row->type; ?></td>
+                        <td class="manage-column ss-list-width"><?php echo $row->status; ?></td>
+                        <td class="manage-column ss-list-width"><?php echo $row->datetime; ?></td>
                     </tr>
                 <?php } }else{
                 echo "<tr><td cols=an='5'>No records found</td></tr>";

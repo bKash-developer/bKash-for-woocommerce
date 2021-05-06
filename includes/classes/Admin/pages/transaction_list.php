@@ -35,11 +35,17 @@ $rowcount = $wpdb->num_rows;
                 <th class="manage-column ss-list-width">TRANSACTION ID</th>
                 <th class="manage-column ss-list-width">AMOUNT</th>
                 <th class="manage-column ss-list-width">INTEGRATION TYPE</th>
-                <th class="manage-column ss-list-width">STATUS</th>
+                <th class="manage-column ss-list-width">INTENT</th>
+                <th class="manage-column ss-list-width">MODE</th>
                 <th class="manage-column ss-list-width">REFUNDED?</th>
+                <th class="manage-column ss-list-width">REFUND ID</th>
+                <th class="manage-column ss-list-width">REFUND AMOUNT</th>
+                <th class="manage-column ss-list-width">STATUS</th>
+                <th class="manage-column ss-list-width">DATETIME?</th>
                 <th>&nbsp;</th>
                 <th>&nbsp;</th>
             </tr>
+
             <?php
             if ($rowcount > 0) {
                 foreach ($rows as $row) { ?>
@@ -51,8 +57,13 @@ $rowcount = $wpdb->num_rows;
                         <td class="manage-column ss-list-width"><?php echo $row->trx_id ?? ''; ?></td>
                         <td class="manage-column ss-list-width"><?php echo ($row->amount ?? '') . ' ' . ($row->currency ?? ''); ?></td>
                         <td class="manage-column ss-list-width"><?php echo $row->integration_type; ?></td>
-                        <td class="manage-column ss-list-width"><?php echo $row->status; ?></td>
+                        <td class="manage-column ss-list-width"><?php echo $row->intent; ?></td>
+                        <td class="manage-column ss-list-width"><?php echo $row->mode; ?></td>
                         <td class="manage-column ss-list-width"><?php echo !empty($row->refund_id) ? "YES ($row->refund_id)" : 'NO'; ?></td>
+                        <td class="manage-column ss-list-width"><?php echo $row->refundID; ?></td>
+                        <td class="manage-column ss-list-width"><?php echo $row->refundAmount; ?></td>
+                        <td class="manage-column ss-list-width"><?php echo $row->status; ?></td>
+                        <td class="manage-column ss-list-width"><?php echo $row->dateTime; ?></td>
                         <?php if (isset($row->trx_id) && !empty($row->trx_id)) { ?>
                             <td>
                                 <a href="<?php echo admin_url('admin.php?page=bkash_admin_menu_120beta/search&trxid=' . $row->trx_id); ?>">Search</a>

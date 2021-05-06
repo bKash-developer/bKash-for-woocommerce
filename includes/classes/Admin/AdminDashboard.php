@@ -50,7 +50,7 @@ class AdminDashboard
     /**
      * Add submenu for bKash PGW in WP Admin
      */
-    protected function AddSubMenus(): void
+    protected function AddSubMenus()
     {
         $subMenus = array(
             // [Page Title, Menu Title, Route, Function to render, (0=All)(1=Checkout)(2=Tokenized)]
@@ -66,9 +66,15 @@ class AdminDashboard
         );
 
         foreach ($subMenus as $subMenu) {
-            // $int_type = $this->api->get_option("integration_type");
+            $int_type = $this->api->get_option("integration_type");
             // $restrict = null;
-            add_submenu_page($this->slug, $subMenu[0], $subMenu[1], 'manage_options', $this->slug . $subMenu[2], array($this, $subMenu[3]));
+	        if($int_type !== 'checkout') {
+				if(isset($subMenu[4]) && $subMenu[4]) {
+					// restrict these menus
+				} else {
+					add_submenu_page($this->slug, $subMenu[0], $subMenu[1], 'manage_options', $this->slug . $subMenu[2], array($this, $subMenu[3]));
+				}
+	        }
         }
     }
 

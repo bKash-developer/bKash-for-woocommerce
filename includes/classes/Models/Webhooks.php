@@ -171,11 +171,18 @@ class Webhooks {
 	 * @return mixed
 	 */
 	public function save() {
-		if ( empty( $this->agreementID ) ) {
-			$this->errorMessage = "Order ID field is missing, both are required";
+		if ( empty( $this->trx_id ) ) {
+			$this->errorMessage = "Transaction ID field is missing, both are required";
 
 			return false;
 		}
+
+		// Check if transaction already exists
+		$transaction = $this->wpdb->get_row($this->wpdb->prepare("SELECT * FROM $this->tableName WHERE `trx_id` = %s", $this->trx_id));
+		if($transaction) {
+			return false;
+		}
+
 
 		$insert = $this->wpdb->insert( $this->tableName, [
 			'sender'        => $this->sender,
