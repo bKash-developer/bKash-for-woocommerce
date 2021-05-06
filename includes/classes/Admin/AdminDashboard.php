@@ -66,7 +66,7 @@ class AdminDashboard
         );
 
         foreach ($subMenus as $subMenu) {
-            $int_type = $this->api->get_option("integration_type");
+            $int_type = get_option("integration_type");
             // $restrict = null;
 	        if($int_type !== 'checkout') {
 				if(isset($subMenu[4]) && $subMenu[4]) {
