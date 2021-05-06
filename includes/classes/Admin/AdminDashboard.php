@@ -74,6 +74,8 @@ class AdminDashboard
 				} else {
 					add_submenu_page($this->slug, $subMenu[0], $subMenu[1], 'manage_options', $this->slug . $subMenu[2], array($this, $subMenu[3]));
 				}
+	        } else {
+		        add_submenu_page($this->slug, $subMenu[0], $subMenu[1], 'manage_options', $this->slug . $subMenu[2], array($this, $subMenu[3]));
 	        }
         }
     }
