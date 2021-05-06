@@ -119,22 +119,22 @@ class ProcessPayments
                                 // Add order note.
                                 $order->add_order_note(sprintf(__('bKash PGW payment approved (ID: %s)', 'woocommerce-payment-gateway-bkash'), $paymentResp['trxID']));
 
-                                if ($this->debug == 'yes') {
-                                    $this->log->add($this->id, 'bKash PGW payment approved (ID: ' . $response['trxID'] . ')');
+                                if($this->log) {
+	                                $this->log->add( $this->id, 'bKash PGW payment approved (ID: ' . $response['trxID'] . ')' );
                                 }
 
                                 // Reduce stock levels.
                                 wc_reduce_stock_levels($order_id);
 
-                                if ($this->debug == 'yes') {
-                                    $this->log->add($this->id, 'Stocked reduced.');
+                                if($this->log) {
+	                                $this->log->add( $this->id, 'Stocked reduced.' );
                                 }
 
                                 // Remove items from cart.
                                 WC()->cart->empty_cart();
 
-                                if ($this->debug == 'yes') {
-                                    $this->log->add($this->id, 'Cart emptied.');
+                                if($this->log) {
+	                                $this->log->add( $this->id, 'Cart emptied.' );
                                 }
 
                                 // Return thank you page redirect.

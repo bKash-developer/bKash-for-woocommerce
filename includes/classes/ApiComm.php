@@ -2,7 +2,6 @@
 
 namespace bKash\PGW;
 
-use BadMethodCallException;
 use UnexpectedValueException;
 
 class ApiComm
@@ -648,7 +647,7 @@ class ApiComm
      * @param string $invoiceNumber
      * @param string $receiver
      * @return array
-     * @throws BadMethodCallException
+     * @throws UnexpectedValueException
      * @see https://developer.bka.sh/reference#b2cpaymentusingpost
      */
     public function b2cPayout($amount, string $invoiceNumber, string $receiver): array
@@ -672,7 +671,7 @@ class ApiComm
             ];
         }
 
-        throw  new \http\Exception\BadMethodCallException("B2C Payout is only available in Checkout integration");
+        throw  new UnexpectedValueException("B2C Payout is only available in Checkout integration");
     }
 
     /**
