@@ -6,7 +6,7 @@ jQuery(function ($) {
 
     function InitiatebKashPayment() {
         var button = document.getElementById("bKash_button");
-        if(!button) {
+        if (!button) {
             button = document.createElement("button");
             button.id = "bKash_button";
             button.disabled = false;
@@ -41,7 +41,7 @@ jQuery(function ($) {
                                 bKash.create().onSuccess(result.response);
                             } else {
                                 bKash.execute().onError();
-                                submit_error(result.message)
+                                submit_error(result.message, result.messages)
                             }
                             $.unblockUI();
                         },
@@ -103,10 +103,17 @@ jQuery(function ($) {
     }
 
 
-    function submit_error(error_message, group = "error") {
+    function submit_error(error_message, error_messages, group = "error") {
+
         var checkout_form = $('form.checkout');
         $('.woocommerce-NoticeGroup-checkout, .woocommerce-error, .woocommerce-message').remove();
-        checkout_form.prepend('<div class="woocommerce-' + group + ' woocommerce-NoticeGroup-checkout">' + error_message + '</div>'); // eslint-disable-line max-len
+        if (error_message) {
+            checkout_form.prepend('<div class="woocommerce-' + group + ' woocommerce-NoticeGroup-checkout">' + error_messages + '</div>'); // eslint-disable-line max-len
+        } else if (error_messages) {
+            checkout_form.prepend(error_messages);
+        } else {
+            checkout_form.prepend('<div class="woocommerce-' + group + ' woocommerce-NoticeGroup-checkout"> Something went wrong! Try again</div>')
+        }
         checkout_form.removeClass('processing').unblock();
         checkout_form.find('.input-text, select, input:checkbox').trigger('validate').blur();
         scroll_to_notices();

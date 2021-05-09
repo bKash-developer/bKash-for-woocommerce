@@ -16,7 +16,7 @@ $rowcount = $wpdb->num_rows;
     <link type="text/css" href="<?php echo WP_PLUGIN_URL; ?>mywp/sinetiks-schools/style-admin.css" rel="stylesheet" />
 
     <div class="wrap abs">
-        <h2>All bKash Transactions</h2>
+        <h2>Transfer History</h2>
         <div class="tablenav top">
             <div class="alignleft actions">
             </div>
@@ -42,7 +42,7 @@ $rowcount = $wpdb->num_rows;
             if($rowcount>0){
                 foreach ($rows as $row) { ?>
                     <tr>
-                        <td class="manage-column ss-list-width"><?php echo $row->id ?? ''; ?></td>
+                        <td class="manage-column ss-list-width"><?php echo $row->ID ?? ''; ?></td>
                         <td class="manage-column ss-list-width"><?php echo $row->receiver ?? ''; ?></td>
                         <td class="manage-column ss-list-width"><?php echo ($row->amount ?? '') .' '. ($row->currency ?? ''); ?></td>
                         <td class="manage-column ss-list-width"><?php echo $row->trx_id ?? ''; ?></td>

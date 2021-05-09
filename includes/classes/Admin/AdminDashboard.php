@@ -171,7 +171,7 @@ class AdminDashboard
             $receiver = sanitize_text_field($_REQUEST['receiver'] ?? '');
             $amount = sanitize_text_field($_REQUEST['amount'] ?? '');
             $invoice_no = sanitize_text_field($_REQUEST['invoice_no'] ?? '');
-            $initTime = date('now');
+            $initTime = date('Y-m-d H:i:s');
 
             if (!empty($receiver) && !empty($amount) && !empty($invoice_no)) {
                 $comm = new ApiComm();
