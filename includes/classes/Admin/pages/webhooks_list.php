@@ -9,7 +9,7 @@ $offset = ( $pagenum - 1 ) * $limit;
 $total = $wpdb->get_var( "select count(*) as total from $table_name" );
 $num_of_pages = ceil( $total / $limit );
 
-$rows = $wpdb->get_results( "SELECT * from $table_name limit  $offset, $limit" );
+$rows = $wpdb->get_results( "SELECT * from $table_name ORDER BY id DESC limit  $offset, $limit" );
 $rowcount = $wpdb->num_rows;
 
 ?>
@@ -38,8 +38,6 @@ $rowcount = $wpdb->num_rows;
                 <th class="manage-column ss-list-width">TYPE</th>
                 <th class="manage-column ss-list-width">STATUS</th>
                 <th class="manage-column ss-list-width">DATETIME</th>
-                <th>&nbsp;</th>
-                <th>&nbsp;</th>
             </tr>
             <?php
             if($rowcount>0){

@@ -33,7 +33,7 @@ class Webhook {
 		if ( $this->messageType === 'SubscriptionConfirmation' ) {
 			$this->subscribe();
 		} else if ( $this->messageType === 'Notification' ) {
-			$this->storeNotification( $this->payload->Message );
+			$this->storeNotification();
 		} else {
 			$this->writeLog( "No method present to process the webhook" );
 		}
@@ -134,13 +134,19 @@ class Webhook {
 
 		$stringToSign = '';
 
-		if ( isset( $message->SignatureVersion ) && $message->SignatureVersion !== '1' ) {
+		if ( isset( $message->SignatureVersion ) && $message->SignatureVersion != '1' ) {
 			$errorLog = "The SignatureVersion \"{$message->SignatureVersion}\" is not supported.";
 			$this->writeLog( $errorLog );
 		} else {
 			foreach ( $signAbleKeys as $key ) {
 				if ( isset( $message->$key ) ) {
-					$stringToSign .= "{$key}\n{$message->$key}\n";
+					$data = "";
+					if(is_string($message->$key)) {
+						$data = $message->$key;
+					} else {
+						$data = json_encode($message->$key);
+					}
+					$stringToSign .= "{$key}\n{$data}\n";
 				}
 			}
 			$this->writeLog( $stringToSign . "\n" );
@@ -156,24 +162,42 @@ class Webhook {
 	 *
 	 * @return bool
 	 */
-	public function storeNotification( $message ) {
-		if ( $message ) {
-			$webhooks = new Webhooks();
-			$webhooks->set_sender( isset( $message->debitMSISDN ) ? $message->debitMSISDN : '' );
-			$webhooks->set_receiver( isset( $message->creditShortCode ) ? $message->creditShortCode : '' );
-			$webhooks->set_amount( isset( $message->amount ) ? (float) $message->amount : '' );
-			$webhooks->set_trx_id( isset( $message->trxID ) ? $message->trxID : '' );
-			$webhooks->set_currency( isset( $message->currency ) ? $message->currency : '' );
-			$webhooks->set_datetime(
-				isset( $message->dateTime ) ? date_create_from_format( 'YmdHis', $message->dateTime ) : ''
-			);
-			$webhooks->set_type( isset( $message->transactionType ) ? $message->transactionType : '' );
-			$webhooks->set_receiver_name( isset( $message->creditOrganizationName ) ? $message->creditOrganizationName : '' );
-			$webhooks->save();
-			if ( $webhooks ) {
-				$this->writeLog( "Payment added successfully, " . json_encode( $message ) );
+	public function storeNotification() {
 
-				return true;
+		if ( $this->payload && $this->verifySource() ) {
+			if ( is_string( $this->payload->Message ) ) {
+				$this->payload->Message = json_decode( $this->payload->Message, false );
+			}
+			$message = $this->payload->Message;
+			if ( $message ) {
+				// process date format
+				try {
+					$parseDate = \DateTime::createFromFormat( 'YmdHis', $message->dateTime );
+				} catch ( \Exception $e ) {
+					$parseDate = date( 'Y-m-d H:i:s' );
+				}
+
+
+				$webhooks = new Webhooks();
+				$webhooks->set_sender( isset( $message->debitMSISDN ) ? $message->debitMSISDN : '' );
+				$webhooks->set_receiver( isset( $message->creditShortCode ) ? $message->creditShortCode : '' );
+				$webhooks->set_amount( isset( $message->amount ) ? (float) $message->amount : '' );
+				$webhooks->set_trx_id( isset( $message->trxID ) ? $message->trxID : '' );
+				$webhooks->set_currency( isset( $message->currency ) ? $message->currency : '' );
+				$webhooks->set_datetime(
+					$parseDate->format( "Y-m-d H:i:s" )
+				);
+				$webhooks->set_type( isset( $message->transactionType ) ? $message->transactionType : '' );
+				$webhooks->set_receiver_name( isset( $message->creditOrganizationName ) ? $message->creditOrganizationName : '' );
+				$webhooks->set_status( isset( $message->transactionStatus ) ? $message->transactionStatus : '' );
+				$isSaved = $webhooks->save();
+				$this->writeLog( "Saving webhook payment, " . json_encode( $isSaved ) );
+				if ( $isSaved ) {
+					$this->writeLog( "Payment added successfully, " . json_encode( $message ) );
+					return true;
+				} else {
+					$this->writeLog( "Payment can't be added, " . json_encode( $webhooks->errorMessage ) );
+				}
 			}
 		}
 

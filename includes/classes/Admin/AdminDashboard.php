@@ -66,8 +66,26 @@ class AdminDashboard
         );
 
         foreach ($subMenus as $subMenu) {
-            $int_type = get_option("integration_type");
-            // $restrict = null;
+            $int_type = 'checkout';
+
+            if(WC()) {
+            	$payment_gateways = WC()->payment_gateways->payment_gateways();
+            	if(isset($payment_gateways['bkash_pgw'])) {
+		            $int_type = WC()->payment_gateways->payment_gateways()['bkash_pgw']->integration_type;
+	            }
+            }
+
+            if($subMenu[4] === 0) {
+	            add_submenu_page($this->slug, $subMenu[0], $subMenu[1], 'manage_options', $this->slug . $subMenu[2], array($this, $subMenu[3]));
+            } else if($subMenu[4] === 1 && $int_type === 'checkout') {
+	            add_submenu_page($this->slug, $subMenu[0], $subMenu[1], 'manage_options', $this->slug . $subMenu[2], array($this, $subMenu[3]));
+            } else if($subMenu[4] === 2 && ( strpos( $int_type, 'tokenized' ) === 0 )) {
+	            add_submenu_page($this->slug, $subMenu[0], $subMenu[1], 'manage_options', $this->slug . $subMenu[2], array($this, $subMenu[3]));
+            }
+
+
+
+	        // $restrict = null;
 
 	        /*if(isset($subMenu[4]) && $subMenu[4]) {
 	        	if($int_type === 'checkout') {
@@ -77,7 +95,7 @@ class AdminDashboard
 		        add_submenu_page($this->slug, $subMenu[0], $subMenu[1], 'manage_options', $this->slug . $subMenu[2], array($this, $subMenu[3]));
 	        }*/
 
-	        add_submenu_page($this->slug, $subMenu[0], $subMenu[1], 'manage_options', $this->slug . $subMenu[2], array($this, $subMenu[3]));
+	        // add_submenu_page($this->slug, $subMenu[0], $subMenu[1], 'manage_options', $this->slug . $subMenu[2], array($this, $subMenu[3]));
 
         }
     }
@@ -407,9 +425,9 @@ class AdminDashboard
                     `status` VARCHAR(30) NOT NULL,
                     `type` VARCHAR(50) NOT NULL,
                     `amount` decimal(15,2) NOT NULL,
-                    `currency` VARCHAR(10) NOT NULL,
-                    `reference` VARCHAR(100) NOT NULL,
-                    `datetime` int(9) NOT NULL,
+                    `currency` VARCHAR(10) NULL,
+                    `reference` VARCHAR(100) NULL,
+                    `datetime` timestamp NULL,
                     PRIMARY KEY  (ID)
             ) $charset_collate;";
 

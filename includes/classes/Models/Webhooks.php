@@ -180,6 +180,7 @@ class Webhooks {
 		// Check if transaction already exists
 		$transaction = $this->wpdb->get_row($this->wpdb->prepare("SELECT * FROM $this->tableName WHERE `trx_id` = %s", $this->trx_id));
 		if($transaction) {
+			$this->errorMessage = "Transaction is already saved";
 			return false;
 		}
 
@@ -194,7 +195,7 @@ class Webhooks {
 			'amount'        => $this->amount,
 			'currency'      => $this->currency,
 			'reference'     => $this->reference,
-			'datetime'      => date( 'Y-m-d H:i:s' )
+			'datetime'      => $this->datetime //date( 'Y-m-d H:i:s' )
 		] );
 
 		$this->errorMessage = $this->wpdb->last_error; // set if any error or null
