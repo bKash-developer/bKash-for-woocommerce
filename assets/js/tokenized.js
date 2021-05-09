@@ -11,6 +11,7 @@ jQuery(function ($) {
 
     function CancelAgreement(agreementID) {
         if (confirm("Are you sure to cancel this?")) {
+            var that = $(this);
             $.ajax({
                 type: 'POST',
                 url: bKash_objects.cancelAgreement,
@@ -24,7 +25,8 @@ jQuery(function ($) {
                     }
 
                     if (result.result && result.result === 'success') {
-                        $(this).closest('tr').remove();
+                        submit_error(result.message ? result.message : "Deleted", null, 'info');
+                        that.closest('tr').remove();
                     } else {
                         submit_error(result.message ? result.message : "Cannot remove the agreement right now");
                     }
@@ -43,8 +45,8 @@ jQuery(function ($) {
         var checkout_form = $('form.checkout');
         $('.woocommerce-NoticeGroup-checkout, .woocommerce-error, .woocommerce-message').remove();
         if (error_message) {
-            checkout_form.prepend('<div class="woocommerce-' + group + ' woocommerce-NoticeGroup-checkout">' + error_messages + '</div>'); // eslint-disable-line max-len
-        } else if (error_messages) {
+            checkout_form.prepend('<div class="woocommerce-' + group + ' woocommerce-NoticeGroup-checkout">' + error_message + '</div>'); // eslint-disable-line max-len
+        } else if (error_messages !== false) {
             checkout_form.prepend(error_messages);
         } else {
             checkout_form.prepend('<div class="woocommerce-' + group + ' woocommerce-NoticeGroup-checkout"> Something went wrong! Try again</div>')
