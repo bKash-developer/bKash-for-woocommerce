@@ -3,15 +3,14 @@ jQuery(function ($) {
     $('form.woocommerce-checkout').on('click', ".cancelAgreementButton", function (event) {
         var agreement = $(this).data('agreement');
         if (agreement) {
-            CancelAgreement(agreement);
+            CancelAgreement(agreement, $(this));
         } else {
             submit_error("Please select a valid agreement to cancel");
         }
     });
 
-    function CancelAgreement(agreementID) {
+    function CancelAgreement(agreementID, that) {
         if (confirm("Are you sure to cancel this?")) {
-            var that = $(this);
             $.ajax({
                 type: 'POST',
                 url: bKash_objects.cancelAgreement,
