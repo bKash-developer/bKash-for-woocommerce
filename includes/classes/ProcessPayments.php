@@ -17,7 +17,7 @@ class ProcessPayments
         $this->bKashObj = new ApiComm();
     }
 
-    public function executePayment(string $orderPageURL, string $callbackURL = ""): ?string
+    public function executePayment(string $orderPageURL, string $callbackURL = "")
     {
         $message = "";
 
@@ -62,7 +62,7 @@ class ProcessPayments
                                 $agreementObj->setUserID($order->get_user_id());
                                 $stored = $agreementObj->save();
 
-                                if ($stored > 0) {
+                                if ($stored) {
 
                                     $transaction->update(['mode' => '0001'], ['payment_id' => $transaction->getPaymentID()]);
                                     add_post_meta($order->get_id(), '_bkmode', '0001', true);
@@ -119,21 +119,21 @@ class ProcessPayments
                                 // Add order note.
                                 $order->add_order_note(sprintf(__('bKash PGW payment approved (ID: %s)', 'woocommerce-payment-gateway-bkash'), $paymentResp['trxID']));
 
-                                if($this->log) {
+                                if(isset($this->log) && $this->log) {
 	                                $this->log->add( $this->id, 'bKash PGW payment approved (ID: ' . $response['trxID'] . ')' );
                                 }
 
                                 // Reduce stock levels.
                                 wc_reduce_stock_levels($order_id);
 
-                                if($this->log) {
+                                if(isset($this->log) && $this->log) {
 	                                $this->log->add( $this->id, 'Stocked reduced.' );
                                 }
 
                                 // Remove items from cart.
                                 WC()->cart->empty_cart();
 
-                                if($this->log) {
+                                if(isset($this->log) && $this->log) {
 	                                $this->log->add( $this->id, 'Cart emptied.' );
                                 }
 
