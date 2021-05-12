@@ -13,7 +13,21 @@ $rows = $wpdb->get_results("SELECT * from $table_name ORDER BY id DESC limit  $o
 $rowcount = $wpdb->num_rows;
 
 ?>
-    <link type="text/css" href="<?php echo WP_PLUGIN_URL; ?>mywp/sinetiks-schools/style-admin.css" rel="stylesheet"/>
+    <style>
+        .pagination-links .page-numbers {
+            font-size: 15px;
+            padding: 5px 10px;
+            border: 1px solid #b3b3b3;
+            text-decoration: none;
+        }
+
+        .pagination-links .page-numbers.current {
+            font-weight: bold;
+            background: #fff;
+            color: #7e7e7e;
+            border: 1px solid #999;
+        }
+    </style>
 
     <div class="wrap abs">
         <h2>All bKash Transactions</h2>
@@ -90,5 +104,5 @@ $page_links = paginate_links(array(
 ));
 
 if ($page_links) {
-    echo '<div class="tablenav" style="width: 99%;"><div class="tablenav-pages" style="margin: 1em 0">' . $page_links . '</div></div>';
+    echo '<div class="tablenav pagination-links" style="width: 99%;"><div class="tablenav-pages" style="margin: 1em 0">' . $page_links . '</div></div>';
 }

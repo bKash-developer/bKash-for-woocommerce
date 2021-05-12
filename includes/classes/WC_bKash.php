@@ -100,6 +100,7 @@ class WC_bKash extends WC_Payment_Gateway
                 $this->log = isset($woocommerce) ? $woocommerce->logger() : null;
             }
         }
+        $this->is_webhook = $this->get_option('webhook');
 
         $this->init_gateway_sdk();
     }
@@ -180,6 +181,13 @@ class WC_bKash extends WC_Payment_Gateway
                 'label' => __('Enable logging', 'woocommerce-payment-gateway-bkash'),
                 'default' => 'no',
                 'description' => sprintf(__('Log bKash PGW events inside <code>%s</code>', 'woocommerce-payment-gateway-bkash'), wc_get_log_file_path($this->id))
+            ),
+            'webhook' => array(
+                'title' => __('Webhook', 'woocommerce-payment-gateway-bkash'),
+                'type' => 'checkbox',
+                'label' => __('Enable Webhook listener', 'woocommerce-payment-gateway-bkash'),
+                'default' => 'no',
+                'description' => sprintf(__('Share this webhook URL to bKash team - <code>%s</code>', 'woocommerce-payment-gateway-bkash'), $this->siteUrl . "/wc-api/" . $this->WEBHOOK_URL)
             ),
             'sandbox' => array(
                 'title' => __('Sandbox', 'woocommerce-payment-gateway-bkash'),
@@ -842,7 +850,14 @@ class WC_bKash extends WC_Payment_Gateway
                         if (isset($trx['refundTrxID']) && !empty($trx['refundTrxID'])) {
                             $this->refundObj = $trx; // so that another class can get the information
 
-                            $order->update_status('refunded', __('Payment refunded via bKash PGW.', 'woocommerce-payment-gateway-bkash'));
+	                        $refund = wc_create_refund( array(
+		                        'amount'         => $amount,
+		                        'reason'         => $reason,
+		                        'order_id'       => $order_id,
+		                        // 'line_items'     => $line_items,
+		                        'refund_payment' => false
+	                        ));
+
                             $order->add_order_note(sprintf(__('bKash PGW: Refunded %s - Refund ID: %s', 'woocommerce-payment-gateway-bkash'), $refundAmount, $trx['refundTrxID']));
 
 
@@ -930,8 +945,12 @@ class WC_bKash extends WC_Payment_Gateway
 	 */
 	public function webhook() {
 
-		$webhook = new Webhook(wc_get_logger(), true);
-		$webhook->processRequest();
+		if(isset($this->is_webhook) && $this->is_webhook === 'yes') {
+			$webhook = new Webhook( wc_get_logger(), true );
+			$webhook->processRequest();
+		} else {
+			$this->log->add($this->id, 'Webhook is not enabled in settings');
+		}
 
 		$payload  = (array) json_decode( file_get_contents( 'php://input' ), true );
 		$this->log->add($this->id, 'WEBHOOK => BODY: ' . print_r($payload, true));

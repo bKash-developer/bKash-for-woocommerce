@@ -82,21 +82,6 @@ class AdminDashboard
             } else if($subMenu[4] === 2 && ( strpos( $int_type, 'tokenized' ) === 0 )) {
 	            add_submenu_page($this->slug, $subMenu[0], $subMenu[1], 'manage_options', $this->slug . $subMenu[2], array($this, $subMenu[3]));
             }
-
-
-
-	        // $restrict = null;
-
-	        /*if(isset($subMenu[4]) && $subMenu[4]) {
-	        	if($int_type === 'checkout') {
-			        add_submenu_page($this->slug, $subMenu[0], $subMenu[1], 'manage_options', $this->slug . $subMenu[2], array($this, $subMenu[3]));
-		        }
-	        } else {
-		        add_submenu_page($this->slug, $subMenu[0], $subMenu[1], 'manage_options', $this->slug . $subMenu[2], array($this, $subMenu[3]));
-	        }*/
-
-	        // add_submenu_page($this->slug, $subMenu[0], $subMenu[1], 'manage_options', $this->slug . $subMenu[2], array($this, $subMenu[3]));
-
         }
     }
 

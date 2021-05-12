@@ -55,7 +55,21 @@ $rows = $wpdb->get_results("SELECT * from $table_name limit  $offset, $limit");
 $rowcount = $wpdb->num_rows;
 
 ?>
-    <link type="text/css" href="<?php echo WP_PLUGIN_URL; ?>mywp/sinetiks-schools/style-admin.css" rel="stylesheet"/>
+    <style>
+        .pagination-links .page-numbers {
+            font-size: 15px;
+            padding: 5px 10px;
+            border: 1px solid #b3b3b3;
+            text-decoration: none;
+        }
+
+        .pagination-links .page-numbers.current {
+            font-weight: bold;
+            background: #fff;
+            color: #7e7e7e;
+            border: 1px solid #999;
+        }
+    </style>
 
     <div class="wrap abs">
         <h2>All bKash Agreements</h2>
