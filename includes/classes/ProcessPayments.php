@@ -199,7 +199,7 @@ class ProcessPayments
      * @param string $callbackURL
      * @return array|null
      * */
-    public function createPayment(string $order_id, string $intent = 'sale', string $callbackURL = ""): ?array
+    public function createPayment(string $order_id, string $intent = 'sale', string $callbackURL = "")
     {
         global $woocommerce;
         $message = '';
@@ -286,8 +286,6 @@ class ProcessPayments
                 $response = isset($createResponse['response']) && is_string($createResponse['response']) ? json_decode($createResponse['response'], true) : [];
 
                 if ($response) {
-                    // $response = json_decode($createResponse['response'], true);
-
                     // If any error for tokenized
                     if (isset($response['statusMessage']) && $response['statusMessage'] !== 'Successful') {
                         $message = $response['statusMessage'];

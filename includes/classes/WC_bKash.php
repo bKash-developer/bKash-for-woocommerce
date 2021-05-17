@@ -33,15 +33,27 @@ class WC_bKash extends WC_Payment_Gateway
     private $CALLBACK_URL = "bkash_payment_process";
     private $SUCCESS_CALLBACK_URL = "bkash_payment_success";
     private $FAILURE_CALLBACK_URL = "bkash_payment_failure";
-    private $SUCCESS_REDIRECT_URL = "/checkout/order-received/";
-    private $FAILURE_REDIRECT_URL = "/checkout/order-received/";
-    private $API_HOST = " ";
-    private $API_SESSION_CREATE_ENDPOINT = "/checkout/v1/session/create";
     private $EXECUTE_URL = "bk_execute";
     private $CANCEL_AGREEMENT_URL = "bk_cancel_agreement";
     private $WEBHOOK_URL = "bkash_webhook";
+	/**
+	 * @var false
+	 */
+	private $credit_fields;
+	/**
+	 * @var string
+	 */
+	private $notify_url;
+	/**
+	 * @var string
+	 */
+	private $siteUrl;
+	/**
+	 * @var string
+	 */
+	private $is_webhook;
 
-    /**
+	/**
      * Constructor for the gateway.
      *
      * @access public
@@ -58,7 +70,7 @@ class WC_bKash extends WC_Payment_Gateway
     public function Initiate()
     {
         $this->id = 'bkash_pgw';
-        $this->icon = apply_filters('woocommerce_payment_gateway_bkash_icon', plugins_url('../assets/images/logo.png', dirname(__FILE__)));
+        $this->icon = apply_filters('woocommerce_payment_gateway_bkash_icon', plugins_url('../assets/images/logo.png', __DIR__ ));
         $this->has_fields = true;
         $this->credit_fields = false;
         $this->order_button_text = __('Pay with bKash', 'woocommerce-payment-gateway-bkash');
@@ -67,10 +79,9 @@ class WC_bKash extends WC_Payment_Gateway
         $this->notify_url = WC()->api_request_url('WC_Gateway_bKash');
         $this->siteUrl = get_site_url();
         $this->supports = array(
-            'products',
-            'refunds'
+            'products'
         );
-        $this->view_transaction_url = 'https://developer.bka.sh';
+        $this->view_transaction_url = '';
 
         // Load the form fields.
         $this->init_form_fields();
@@ -349,13 +360,13 @@ class WC_bKash extends WC_Payment_Gateway
                         $trx = "Cannot capture using bKash server right now, try again";
                     }
                 } else {
-                    // $trx = "Transaction is not in authorized state, thus ignore, try again";
+                    $trx = "Transaction is not in authorized state, thus ignore, try again";
                 }
             } else {
-                // $trx = "no transaction found with this order, try again";
+                $trx = "no transaction found with this order, try again";
             }
         } else {
-            // $trx = "payment gateway is not bKash, try again";
+            $trx = "payment gateway is not bKash, try again";
         }
 
         if (isset($trx) && !empty($trx) && is_string($trx)) {
@@ -449,13 +460,13 @@ class WC_bKash extends WC_Payment_Gateway
                         $trx = "Cannot void using bKash server right now, try again";
                     }
                 } else {
-                    // $trx = "Transaction is not in authorized state, thus ignore, try again";
+                    $trx = "Transaction is not in authorized state, thus ignore, try again";
                 }
             } else {
-                // $trx = "no transaction found with this order, try again";
+                $trx = "no transaction found with this order, try again";
             }
         } else {
-            // $trx = "payment gateway is not bKash, try again";
+            $trx = "payment gateway is not bKash, try again";
         }
 
         if (isset($trx) && !empty($trx) && is_string($trx)) {
@@ -566,7 +577,7 @@ class WC_bKash extends WC_Payment_Gateway
         if ('no' === $this->enabled) {
             return;
         }
-        // do not work with card detailes without SSL unless your website is in a test mode
+        // do not work with bKash PGW without SSL unless your website is in a test mode
         if ($this->sandbox === 'no' && !is_ssl()) {
             return;
         }
@@ -649,81 +660,6 @@ class WC_bKash extends WC_Payment_Gateway
         $cbURL = get_site_url() . "/wc-api/" . $this->CALLBACK_URL . '?orderId=' . $order_id;
         $processPayment = new ProcessPayments($this->integration_type);
         return $processPayment->createPayment($order_id, $this->intent, $cbURL);
-    }
-
-    public function executePayment()
-    {
-        check_ajax_referer('bkash-ajax-nonce', 'security');
-        //        array(6) { ["action"]=> string(10) "bk_execute" ["security"]=> string(10) "daa93f77f6" ["paymentID"]=> string(20) "IR5VHPT1613573630602" ["woocommerce-login-nonce"]=> NULL ["_wpnonce"]=> NULL ["woocommerce-reset-password-nonce"]=> NULL } Live
-
-        $order_id = sanitize_text_field($_GET['orderId']);
-        $payment_id = sanitize_text_field($_GET['paymentID']);
-        $invoice_id = sanitize_text_field($_GET['invoiceID']);
-
-        global $woocommerce;
-        //To receive order id
-        $order = wc_get_order($order_id);
-
-        $this->bKashObj = new ApiComm();
-        $execute = $this->bKashObj->executePayment($payment_id);
-        if (($execute['success'] ?? false)) {
-            $response = $execute['response'] ?? null;
-            if ($response) {
-                $updated = $transaction->update([
-                    'status' => $response['transactionStatus'] ?? 'NO_STATUS_EXECUTE',
-                    'trx_id' => $response['trxID'] ?? 'NO_STATUS_EXECUTE'
-                ]);
-
-                if ($updated && isset($response['trxID']) && !empty($response['trxID'])) {
-
-                    // Payment complete.
-                    if ($response['transactionStatus'] === 'Authorized') {
-                        $order->update_status('on-hold');
-                    } elseif ($response['transactionStatus'] === 'Completed') {
-                        $order->payment_complete();
-                    } else {
-                        $order->update_status('pending');
-                    }
-
-                    // Store the transaction ID for WC 2.2 or later.
-                    add_post_meta($order->get_id(), '_transaction_id', $response['trxID'], true);
-
-                    // Add order note.
-                    $order->add_order_note(sprintf(__('bKash PGW payment approved (ID: %s)', 'woocommerce-payment-gateway-bkash'), $response['trxID']));
-
-                    if ($this->debug == 'yes') {
-                        $this->log->add($this->id, 'bKash PGW payment approved (ID: ' . $response['trxID'] . ')');
-                    }
-
-                    // Reduce stock levels.
-                    wc_reduce_stock_levels($order_id);
-
-                    if ($this->debug == 'yes') {
-                        $this->log->add($this->id, 'Stocked reduced.');
-                    }
-
-                    // Remove items from cart.
-                    WC()->cart->empty_cart();
-
-                    if ($this->debug == 'yes') {
-                        $this->log->add($this->id, 'Cart emptied.');
-                    }
-                    die();
-                } else {
-                    // could not update
-                    $message = "Could not update transaction status";
-                }
-            } else {
-                // not a valid response
-                $message = "Response cannot be processed";
-            }
-        } else {
-            // fail response from bKash.
-            $message = "Failed, " . $execute['message'];
-        }
-
-
-        die("Live");
     }
 
     public function create_payment_callback_process()
@@ -1059,13 +995,6 @@ class WC_bKash extends WC_Payment_Gateway
      */
     public function get_transaction_url($order)
     {
-        // will be used later
-        if ($this->sandbox == 'yes') {
-            // $this->view_transaction_url = 'https://www.sandbox.payment-gateway.com/?trans_id=%s';
-        } else {
-            // $this->view_transaction_url = 'https://www.payment-gateway.com/?trans_id=%s';
-        }
-
         return parent::get_transaction_url($order);
     }
 

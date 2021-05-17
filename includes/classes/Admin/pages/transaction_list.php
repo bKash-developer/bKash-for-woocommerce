@@ -24,7 +24,7 @@ $rowcount = $wpdb->num_rows;
         .pagination-links .page-numbers.current {
             font-weight: bold;
             background: #fff;
-            color: #7e7e7e;
+            color: #e2136e;
             border: 1px solid #999;
         }
     </style>
@@ -54,7 +54,7 @@ $rowcount = $wpdb->num_rows;
                 <th class="manage-column ss-list-width">REFUNDED?</th>
                 <th class="manage-column ss-list-width">REFUND AMOUNT</th>
                 <th class="manage-column ss-list-width">STATUS</th>
-                <th class="manage-column ss-list-width">DATETIME?</th>
+                <th class="manage-column ss-list-width">DATETIME</th>
                 <th>&nbsp;</th>
                 <th>&nbsp;</th>
             </tr>

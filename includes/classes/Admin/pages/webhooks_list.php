@@ -24,7 +24,7 @@ $rowcount = $wpdb->num_rows;
         .pagination-links .page-numbers.current {
             font-weight: bold;
             background: #fff;
-            color: #7e7e7e;
+            color: #e2136e;
             border: 1px solid #999;
         }
     </style>

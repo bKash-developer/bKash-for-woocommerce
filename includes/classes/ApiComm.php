@@ -39,7 +39,7 @@ class ApiComm
      * Get all required properties for this class to operate
      * @return void
      */
-    public function initializeParams(): void
+    public function initializeParams()
     {
         $this->integration_product = $this->get_option('integration_type', 'checkout');
         $this->intent = $this->get_option('intent', 'sale');
@@ -89,7 +89,7 @@ class ApiComm
      * @return void
      * @throws \Exception
      */
-    protected function processToken(): void
+    protected function processToken()
     {
     	try {
 		    $token   = get_option( "bkash_grant_token" );
@@ -108,7 +108,7 @@ class ApiComm
 	    }
     }
 
-    protected function readTokenFromAPI(): void {
+    protected function readTokenFromAPI() {
     	if( empty($this->app_key) || empty($this->app_secret) ){
     		Log::error("App key or secret is not set, required for bKash APIs");
 	    } else {

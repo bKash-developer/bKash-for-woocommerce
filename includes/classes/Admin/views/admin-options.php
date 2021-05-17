@@ -12,7 +12,7 @@
     </ul>
 
     <?php if (empty($this->public_key)) { ?>
-        <p><a href="https://www.gateway-domain.com" target="_blank"
+        <p><a href="https://www.bkash.com" target="_blank"
               class="button button-primary"><?php _e('Sign up for Gateway Name', 'woocommerce-payment-gateway-bkash'); ?></a>
             <a href="https://developer.bka.sh" target="_blank"
                class="button"><?php _e('Developer page', 'woocommerce-payment-gateway-bkash'); ?></a></p>

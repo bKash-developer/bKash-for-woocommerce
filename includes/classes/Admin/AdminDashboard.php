@@ -35,7 +35,7 @@ class AdminDashboard
     /**
      * Add menu for bKash PGW in WP Admin
      */
-    protected function AddMainMenu(): void
+    protected function AddMainMenu()
     {
         add_menu_page(
             'Woocommerce Payment Gateway - bKash',
@@ -262,72 +262,30 @@ class AdminDashboard
         $reason = sanitize_text_field($_REQUEST['reason'] ?? '');
         $amount = sanitize_text_field($_REQUEST['amount'] ?? '');
         if (!empty($trx_id)) {
-            $trxObject = new Transactions();
-            $transaction = $trxObject->getTransaction("", $trx_id);
-            if ($transaction) {
-                $wcB = new WC_bKash();
-                $refund = $wcB->process_refund($transaction->getOrderID(), $amount, $reason);
-                if ($refund) {
-                    $trx = $wcB->refundObj;
-                } else {
-                    $trx = "Refund is not successful, " . ($wcB->refundError ?? '');
-                }
-            } else {
-                $trx = "Cannot find the transaction in your database, try again";
-            }
+        	if($amount > 0) {
+		        $trxObject   = new Transactions();
+		        $transaction = $trxObject->getTransaction( "", $trx_id );
+		        if ( $transaction ) {
+		        	if($amount <= $transaction->getAmount()) {
+				        $wcB    = new WC_bKash();
+				        $refund = $wcB->process_refund( $transaction->getOrderID(), $amount, $reason );
+				        if ( $refund ) {
+					        $trx = $wcB->refundObj;
+				        } else {
+					        $trx = "Refund is not successful, " . ( $wcB->refundError ?? '' );
+				        }
+			        } else {
+				        $trx = "Refund amount cannot be greater than transaction amount";
+			        }
+		        } else {
+			        $trx = "Cannot find the transaction in your database, try again";
+		        }
+	        } else {
+        		$trx = "Refund amount should be greater than zero";
+	        }
         }
 
         include_once "pages/refund_transaction.php";
-    }
-
-    /**
-     * Process Order Refund through Code
-     * @return WC_Order_Refund|WP_Error
-     * @throws Exception
-     */
-    function wc_refund_order_after_bkash_refund_is_done($order_id, $amount, $refund_reason = '')
-    {
-
-        $order = wc_get_order($order_id);
-
-        // If it's something else such as a WC_Order_Refund, we don't want that.
-        if (!$order instanceof \WC_Order) {
-            return new WP_Error('wc-order', __('Provided ID is not a WC Order', 'woocommerce-payment-gateway-bkash'));
-        }
-
-        if ('refunded' === $order->get_status()) {
-            return new WP_Error('wc-order', __('Order has been already refunded', 'woocommerce-payment-gateway-bkash'));
-        }
-
-
-        // Get Items
-        $order_items = $order->get_items();
-
-        // Refund Amount
-        $refund_amount = wc_format_decimal($amount);
-
-        if ($order_items) {
-            foreach ($order_items as $item_id => $item) {
-
-                $item_meta = $order->get_meta($item_id);
-                $tax_data = $item_meta['_line_tax_data'] ?? [];
-                $refund_tax = 0;
-                if (isset($tax_data[0]) && is_array($tax_data[0])) {
-                    $refund_tax = array_map('wc_format_decimal', $tax_data[0]);
-                }
-            }
-        }
-
-        // Order Items were processed. We can now create a refund
-
-        $refund = wc_create_refund(array(
-            'amount' => $refund_amount,
-            'reason' => $refund_reason,
-            'order_id' => $order_id,
-            'refund_payment' => true
-        ));
-
-        return $refund;
     }
 
     public function Webhooks()
@@ -345,7 +303,7 @@ class AdminDashboard
         include_once "pages/transaction_list.php";
     }
 
-    public function Initiate(): void
+    public function Initiate()
     {
         add_action('admin_menu', array($this, 'PluginMenu'));
     }

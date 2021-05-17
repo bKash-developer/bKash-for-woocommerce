@@ -18,8 +18,7 @@ if ($action === 'cancel') {
                     // Cancelled
 
                     $deleteAgreement = $agreementObj->delete('', $id);
-                    // var_dump($deleteAgreement);
-                    echo $agreementObj->errorMessage;
+                    // echo $agreementObj->errorMessage;
                     if($deleteAgreement) {
                         echo "Agreement Deleted!";
                     } else {
@@ -66,7 +65,7 @@ $rowcount = $wpdb->num_rows;
         .pagination-links .page-numbers.current {
             font-weight: bold;
             background: #fff;
-            color: #7e7e7e;
+            color: #e2136e;
             border: 1px solid #999;
         }
     </style>
