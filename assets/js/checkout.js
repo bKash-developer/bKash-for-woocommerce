@@ -2,8 +2,11 @@ jQuery.noConflict();
 (function ($) {
     $(function () {
         $('form.woocommerce-checkout').on('click', "#place_order", function (event) {
-            event.preventDefault();
-            InitiatebKashPayment();
+            var payment_method = $('form.checkout').find('input[name^="payment_method"]:checked').val();
+            if(payment_method === 'bkash_pgw') {
+                event.preventDefault();
+                InitiatebKashPayment();
+            }
         });
 
         function InitiatebKashPayment() {
