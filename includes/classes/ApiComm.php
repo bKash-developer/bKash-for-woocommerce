@@ -185,6 +185,7 @@ class ApiComm
 
         $log = "\n======== bKash PGW REQUEST LOG ========== \n\nAPI TITLE: $api_title \n";
         $log .= "REQUEST METHOD: $method \n";
+        $log .= "REQUEST URL: $url \n";
 
 
         $ch = curl_init();
