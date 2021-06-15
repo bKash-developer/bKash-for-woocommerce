@@ -7,7 +7,8 @@ class Operations
     public static function CheckoutScriptURL(bool $sandbox = false, string $version = "1.2.0-beta"): string
     {
         $version = str_replace("v", "", $version);
-        return "https://scripts." . ($sandbox ? 'sandbox' : 'pay') . ".bka.sh/versions/$version/checkout/bKash-checkout-sandbox.js";
+        return "https://scripts." . ($sandbox ? 'sandbox' : 'pay') .
+               ".bka.sh/versions/$version/checkout/bKash-checkout".($sandbox ? '-sandbox' : '').".js";
     }
 
     public static function getTokenizedPaymentMode($integration_type, $order_id = "", $isAgreement = false, $agreementID = ""): string
