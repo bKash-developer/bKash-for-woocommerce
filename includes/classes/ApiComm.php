@@ -73,7 +73,7 @@ class ApiComm
     {
         $url_prefix = $this->integration_product === 'checkout' ? 'checkout' : 'tokenized'; // the subdomain for bka.sh
         $url_suffix = $this->integration_product === 'checkout' ? 'checkout' : 'tokenized/checkout'; // integration name after version
-        $env = $this->sandbox ? 'sandbox' : 'pay'; // set the environment, either Sandbox or Pay  (Production)
+        $env = $this->sandbox == 'yes' ? 'sandbox' : 'pay'; // set the environment, either Sandbox or Pay  (Production)
 
         $this->constructed_url = "https://" . $url_prefix . "." . $env . ".bka.sh/"
             . $this->api_version . "/" . $url_suffix . "/"; // rest of the part is related with individual api call
