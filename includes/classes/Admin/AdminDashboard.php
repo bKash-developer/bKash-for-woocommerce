@@ -339,7 +339,7 @@ class AdminDashboard
                     `currency` VARCHAR(10) NOT NULL,
                     `refund_id` VARCHAR(50) NULL,
                     `refund_amount` decimal(15,2) NULL,
-                    `status` VARCHAR(50) NOT NULL default('CREATED'),
+                    `status` VARCHAR(50) NULL,
                     `datetime` timestamp NULL,
                     PRIMARY KEY  (ID)
             ) $charset_collate;";

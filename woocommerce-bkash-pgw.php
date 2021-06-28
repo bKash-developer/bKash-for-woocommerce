@@ -5,7 +5,7 @@ namespace bKash\PGW;
  * Plugin Name:       bKash for WooCommerce
  * Plugin URI:        https://developer.bka.sh
  * Description:       A bKash payment gateway plugin for WooCommerce.
- * Version:           0.0.1-dev
+ * Version:           0.0.2-dev
  * Author:            bKash Limited
  * Author URI:        http://developer.bka.sh
  * Requires at least: 4.0
