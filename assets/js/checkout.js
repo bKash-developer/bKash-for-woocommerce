@@ -1,11 +1,24 @@
 jQuery.noConflict();
 (function ($) {
     $(function () {
+        var paymentObj = {paymentID: "", orderID: ""};
+        var paymentReq = {amount: '0', intent: 'sale'};
+        InitiatebKashPayment();
+
         $('form.woocommerce-checkout').on('click', "#place_order", function (event) {
             var payment_method = $('form.checkout').find('input[name^="payment_method"]:checked').val();
             if (payment_method === 'bkash_pgw') {
                 event.preventDefault();
-                InitiatebKashPayment();
+
+                if(bKash !== undefined) {
+                    var button = document.getElementById("bKash_button");
+                    bKash.reconfigure({
+                        paymentReq
+                    });
+                    button.click();
+                } else {
+                    submit_error("bKash JS SDK is missing");
+                }
             }
         });
 
@@ -20,9 +33,6 @@ jQuery.noConflict();
                 var body = document.getElementsByTagName("body")[0];
                 body.appendChild(button);
             }
-
-            var paymentObj = {paymentID: "", orderID: ""}
-            var paymentReq = {amount: '0', intent: 'sale'};
 
             if (bKash !== undefined) {
                 bKash.init({
@@ -99,9 +109,6 @@ jQuery.noConflict();
                         submit_error("You have chosen to cancel the payment", null, 'cancel');
                     }
                 });
-
-                button.click();
-
 
             } else {
                 console.log("bKash SDK is not set properly!");
