@@ -10,7 +10,7 @@ jQuery.noConflict();
             if (payment_method === 'bkash_pgw') {
                 event.preventDefault();
 
-                if(bKash !== undefined) {
+                if (bKash !== undefined) {
                     var button = document.getElementById("bKash_button");
                     bKash.reconfigure({
                         paymentReq
@@ -40,7 +40,7 @@ jQuery.noConflict();
                     paymentRequest: paymentReq,
 
                     createRequest: function (request) {
-                        $.blockUI({message: ''});
+                        blockUI();
                         var post_data = $('form.checkout').serialize()
                         post_data['action'] = 'ajax_order';
                         $.ajax({
@@ -58,10 +58,10 @@ jQuery.noConflict();
                                     bKash.execute().onError();
                                     submit_error(result.message, result.messages)
                                 }
-                                $.unblockUI();
+                                blockUI(true);
                             },
                             error: function (error) {
-                                $.unblockUI();
+                                blockUI(true);
                                 bKash.execute().onError();
                                 submit_error(error)
                             }
@@ -70,7 +70,7 @@ jQuery.noConflict();
                     },
                     executeRequestOnAuthorization: function () {
 
-                        $.blockUI({message: ''});
+                        blockUI();
                         $.ajax({
                             type: 'POST',
                             url: bKash_objects.wcAjaxURL,
@@ -94,10 +94,10 @@ jQuery.noConflict();
                                     submit_error(resp.message);
                                     bKash.execute().onError();
                                 }
-                                $.unblockUI();
+                                blockUI(true);
                             },
                             error: function (error) {
-                                $.unblockUI();
+                                blockUI(true);
                                 submit_error(error)
                                 bKash.execute().onError();
                             }
@@ -133,7 +133,11 @@ jQuery.noConflict();
             } else {
                 checkout_form.prepend('<div class="woocommerce-' + group + ' woocommerce-NoticeGroup-checkout">' + header + ' Something went wrong! Try again</div>')
             }
-            checkout_form.removeClass('processing').unblock();
+
+            if (checkout_form.removeClass('processing').unblock === 'function') {
+                checkout_form.removeClass('processing').unblock();
+            }
+
             checkout_form.find('.input-text, select, input:checkbox').trigger('validate').blur();
             scroll_to_notices();
             $(document.body).trigger('checkout_error', [error_message]);
@@ -146,6 +150,18 @@ jQuery.noConflict();
                 scrollElement = $('.form.checkout');
             }
             $.scroll_to_notices(scrollElement);
+        }
+
+        function blockUI(unblock = false) {
+            if (unblock) {
+                if (typeof $.unblockUI() === 'function') {
+                    $.unblockUI();
+                }
+            } else {
+                if (typeof $.blockUI() === 'function') {
+                    $.blockUI({message: ''});
+                }
+            }
         }
     });
 })(jQuery);
