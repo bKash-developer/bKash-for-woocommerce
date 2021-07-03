@@ -1,4 +1,5 @@
 jQuery(function ($) {
+    window.$ = $.noConflict(true);
 
     $('form.woocommerce-checkout').on('click', ".cancelAgreementButton", function (event) {
         var agreement = $(this).data('agreement');
@@ -11,6 +12,7 @@ jQuery(function ($) {
 
     function CancelAgreement(agreementID, that) {
         if (confirm("Are you sure to cancel this?")) {
+            blockUI();
             $.ajax({
                 type: 'POST',
                 url: bKash_objects.cancelAgreement,
@@ -29,11 +31,11 @@ jQuery(function ($) {
                     } else {
                         submit_error(result.message ? result.message : "Cannot remove the agreement right now");
                     }
-                    $.unblockUI();
+                    blockUI(true);
                 },
                 error: function (error) {
                     submit_error("Cannot remove the agreement right now");
-                    $.unblockUI();
+                    blockUI(true);
                 }
             });
         }
@@ -52,19 +54,43 @@ jQuery(function ($) {
         } else {
             checkout_form.prepend('<div class="woocommerce-' + group + ' woocommerce-NoticeGroup-checkout">' + header + ' Something went wrong! Try again</div>')
         }
-        checkout_form.removeClass('processing').unblock();
+
+        if (checkout_form.removeClass('processing').unblock === 'function') {
+            checkout_form.removeClass('processing').unblock();
+        }
         checkout_form.find('.input-text, select, input:checkbox').trigger('validate').blur();
         scroll_to_notices();
         $(document.body).trigger('checkout_error', [error_message]);
     }
-
+    
     function scroll_to_notices() {
-        var scrollElement = $('.woocommerce-NoticeGroup-updateOrderReview, .woocommerce-NoticeGroup-checkout');
+        var scrollElement = $('.woocommerce-error, .woocommerce-NoticeGroup-updateOrderReview, .woocommerce-NoticeGroup-checkout');
 
         if (!scrollElement.length) {
             scrollElement = $('.form.checkout');
         }
-        $.scroll_to_notices(scrollElement);
+        if (typeof $.scroll_to_notices === 'function') {
+            $.scroll_to_notices(scrollElement);
+        } else {
+            $('html, body').animate(
+                {
+                    scrollTop: scrollElement.offset().top - 50,
+                },
+                1000
+            );
+        }
+    }
+
+    function blockUI(unblock = false) {
+        if (unblock) {
+            if (typeof $.unblockUI === 'function') {
+                $.unblockUI();
+            }
+        } else {
+            if (typeof $.blockUI === 'function') {
+                $.blockUI({message: ''});
+            }
+        }
     }
 });
 
