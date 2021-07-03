@@ -68,7 +68,7 @@ class AdminDashboard
         foreach ($subMenus as $subMenu) {
             $int_type = 'checkout';
 
-            if(WC()) {
+            if(function_exists('WC()')) {
             	$payment_gateways = WC()->payment_gateways->payment_gateways();
             	if(isset($payment_gateways['bkash_pgw'])) {
 		            $int_type = WC()->payment_gateways->payment_gateways()['bkash_pgw']->integration_type;
