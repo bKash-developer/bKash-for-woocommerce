@@ -75,15 +75,26 @@ class AdminDashboard
 	            }
             }
 
+            $sub_page = "";
             if($subMenu[4] === 0) {
-	            add_submenu_page($this->slug, $subMenu[0], $subMenu[1], 'manage_options', $this->slug . $subMenu[2], array($this, $subMenu[3]));
+	            $sub_page = add_submenu_page($this->slug, $subMenu[0], $subMenu[1], 'manage_options', $this->slug . $subMenu[2], array($this, $subMenu[3]));
             } else if($subMenu[4] === 1 && $int_type === 'checkout') {
-	            add_submenu_page($this->slug, $subMenu[0], $subMenu[1], 'manage_options', $this->slug . $subMenu[2], array($this, $subMenu[3]));
+	            $sub_page = add_submenu_page($this->slug, $subMenu[0], $subMenu[1], 'manage_options', $this->slug . $subMenu[2], array($this, $subMenu[3]));
             } else if($subMenu[4] === 2 && ( strpos( $int_type, 'tokenized' ) === 0 )) {
-	            add_submenu_page($this->slug, $subMenu[0], $subMenu[1], 'manage_options', $this->slug . $subMenu[2], array($this, $subMenu[3]));
+	            $sub_page = add_submenu_page($this->slug, $subMenu[0], $subMenu[1], 'manage_options', $this->slug . $subMenu[2], array($this, $subMenu[3]));
             }
+	        add_action('admin_print_styles-' . $sub_page, array($this, "admin_styles"));
         }
     }
+
+	/**
+	 * Outputs styles used for the bKash gateway admin in wp.
+	 *
+	 * @access public
+	 */
+	public function admin_styles() {
+		wp_enqueue_style('bfw-admin-css', plugins_url('../../../assets/css/admin.css', __FILE__));
+	}
 
 
     public function CheckBalances()

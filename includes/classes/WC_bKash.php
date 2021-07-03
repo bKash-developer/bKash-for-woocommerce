@@ -272,7 +272,6 @@ class WC_bKash extends WC_Payment_Gateway {
 	}
 
 	public function Hooks() {
-
 		// Hooks.
 		if ( is_admin() ) {
 			// add_action('wp_enqueue_scripts', array($this, 'payment_scripts'));
@@ -604,9 +603,6 @@ class WC_bKash extends WC_Payment_Gateway {
 			wp_enqueue_script( 'woocommerce-payment-gateway-bkash' );
 
 		} else {
-			// let's suppose it is our payment processor JavaScript that allows to obtain a token
-			wp_enqueue_script( 'bKash_jquery', plugins_url( '../../assets/js/jquery-3.3.1.min.js', __FILE__ ) );
-
 			// and this is our custom JS in your plugin directory that works with token.js
 			wp_register_script( 'woocommerce-payment-gateway-bkash', plugins_url( '../../assets/js/tokenized.js?' . time(), __FILE__ ), array( 'bKash_jquery' ) );
 

@@ -62,7 +62,7 @@ jQuery(function ($) {
         scroll_to_notices();
         $(document.body).trigger('checkout_error', [error_message]);
     }
-    
+
     function scroll_to_notices() {
         var scrollElement = $('.woocommerce-error, .woocommerce-NoticeGroup-updateOrderReview, .woocommerce-NoticeGroup-checkout');
 

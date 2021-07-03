@@ -3,7 +3,7 @@
 if (isset($balances) && is_string($balances)) {
     // FAILED TO GET BALANCES
     ?>
-    <div id="message" class="updated woocommerce-message error">
+    <div id="message" class="woocommerce-message bKash-hero-div bKash-error-div">
         <p><?php echo $balances ?? '' ?></p>
     </div>
     <?php
@@ -12,7 +12,7 @@ if (isset($balances) && is_string($balances)) {
     // GOT BALANCES
     foreach ($balances['organizationBalance'] as $balance) {
         ?>
-        <div class="gateway-banner updated">
+        <div class="gateway-banner bKash-hero-div bKash-success">
             <img style="max-width: 90px; margin: 10px 5px"
                  src="<?php echo \bKash\PGW\WC_Gateway_bKash()->plugin_url() . '/assets/images/logo.png'; ?>"/>
             <p class="main">

@@ -44,7 +44,7 @@
 if (isset($trx) && is_string($trx) && !empty($trx)) {
     // FAILED TO GET BALANCES
     ?>
-    <div id="message" class="updated woocommerce-message error">
+    <div id="message" class="bKash-hero-div woocommerce-message bKash-error">
         <p><?php echo $trx ?? '' ?></p>
     </div>
     <?php
@@ -52,7 +52,7 @@ if (isset($trx) && is_string($trx) && !empty($trx)) {
 } else if (isset($trx['refundTrxID']) && is_array($trx)) {
     // GOT TRANSACTION
     ?>
-    <div class="gateway-banner updated">
+    <div class="gateway-banner bKash-hero-div bKash-success">
         <img style="max-width: 90px; margin: 10px 5px"
              src="<?php echo \bKash\PGW\WC_Gateway_bKash()->plugin_url() . '/assets/images/logo.png'; ?>"/>
         <p class="main">

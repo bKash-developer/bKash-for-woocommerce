@@ -1,6 +1,7 @@
+<link rel="stylesheet" href="<?php echo plugins_url('../../../../assets/css/admin.css', __FILE__); ?>">
 <h3><?php _e('bKash Payment Gateway', 'woocommerce-payment-gateway-bkash'); ?></h3>
 
-<div class="gateway-banner updated">
+<div class="gateway-banner bKash-hero-div bKash-success">
     <img src="<?php echo \bKash\PGW\WC_Gateway_bKash()->plugin_url() . '/assets/images/logo.png'; ?>"/>
     <p class="main"><strong><?php _e('Getting started', 'woocommerce-payment-gateway-bkash'); ?></strong></p>
     <p><?php _e('A payment gateway description can be placed here.', 'woocommerce-payment-gateway-bkash'); ?></p>
@@ -13,7 +14,7 @@
 
     <?php if (empty($this->public_key)) { ?>
         <p><a href="https://www.bkash.com" target="_blank"
-              class="button button-primary"><?php _e('Sign up for Gateway Name', 'woocommerce-payment-gateway-bkash'); ?></a>
+              class="button button-primary"><?php _e('Sign up for bKash Payment Gateway', 'woocommerce-payment-gateway-bkash'); ?></a>
             <a href="https://developer.bka.sh" target="_blank"
                class="button"><?php _e('Developer page', 'woocommerce-payment-gateway-bkash'); ?></a></p>
     <?php } ?>
