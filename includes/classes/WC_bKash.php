@@ -4,6 +4,7 @@ namespace bKash\PGW;
 
 use bKash\PGW\Models\Agreement;
 use bKash\PGW\Models\Transactions;
+use Exception;
 use WC_AJAX;
 use WC_Logger;
 use WC_Order;
@@ -574,6 +575,7 @@ class WC_bKash extends WC_Payment_Gateway {
 		if ( $this->sandbox === 'no' && ! is_ssl() ) {
 			return;
 		}
+
 		// no reason to enqueue JavaScript if API keys are not set
 		if ( empty( $this->app_key ) || empty( $this->app_secret ) ) {
 			return;
@@ -644,10 +646,21 @@ class WC_bKash extends WC_Payment_Gateway {
 	}
 
 	public function process_payment( $order_id ) {
-		$cbURL          = get_site_url() . "/wc-api/" . $this->CALLBACK_URL . '?orderId=' . $order_id;
-		$processPayment = new ProcessPayments( $this->integration_type );
 
-		return $processPayment->createPayment( $order_id, $this->intent, $cbURL );
+		if ( isset( $_REQUEST['pay_for_order'] ) ) { // if clicked pay from order review page in my-account.
+			$order = wc_get_order( $order_id );
+
+			return array(
+				'result'   => 'success',
+				'redirect' => $this->get_return_url( $order )
+			);
+		} else { // came from checkout page.
+
+			$cbURL          = get_site_url() . "/wc-api/" . $this->CALLBACK_URL . '?orderId=' . $order_id;
+			$processPayment = new ProcessPayments( $this->integration_type );
+
+			return $processPayment->createPayment( $order_id, $this->intent, $cbURL );
+		}
 	}
 
 	public function create_payment_callback_process() {
@@ -730,6 +743,7 @@ class WC_bKash extends WC_Payment_Gateway {
 	 * @param string $reason
 	 *
 	 * @return bool|WP_Error
+	 * @throws Exception
 	 */
 	public function process_refund( $order_id, $amount = null, $reason = '' ) {
 
@@ -819,6 +833,55 @@ class WC_bKash extends WC_Payment_Gateway {
 		}
 
 		return false;
+	}
+
+	/**
+	 * Query refund.
+	 * WooCommerce 2.2 or later
+	 *
+	 * @access public
+	 *
+	 * @param int $order_id
+	 *
+	 * @return bool|WP_Error
+	 * @throws Exception
+	 */
+	public function query_refund( $order_id ) {
+
+		$order = wc_get_order( $order_id );
+		$id    = $order->get_transaction_id();
+
+		$response = ''; // TODO: Use this variable to fetch a response from your payment gateway, if any.
+
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+
+		$trxObject   = new Transactions();
+		$transaction = $trxObject->getTransaction( "", $id );
+		if ( $transaction ) {
+			if ( ! empty( $transaction->getRefundID() ) ) {
+				$refundAmount = $transaction->getAmount();
+
+
+				$comm = new ApiComm();
+				$call = $comm->refund(
+					null, $transaction->getPaymentID(), $transaction->getTrxID(), null, null
+				);
+
+				if ( isset( $call['status_code'] ) && $call['status_code'] === 200 ) {
+					return isset( $call['response'] ) && is_string( $call['response'] ) ? json_decode( $call['response'], true ) : [];
+				}
+
+				$trx = "Cannot check refund status using bKash server right now, try again";
+			} else {
+				$trx = "This transaction is not refunded yet, try again";
+			}
+		} else {
+			$trx = "Cannot find the transaction in your database, try again";
+		}
+
+		return $trx;
 	}
 
 	/**
