@@ -36,9 +36,28 @@
         </tr>
     </table>
 
-    <button class="button button-primary" type="submit">Refund</button>
+    <button class="button button-primary" name="refund" type="submit">Refund</button>
 </form>
 <br>
+
+<h1>Get Refund Status</h1>
+<form action="#" method="post">
+
+    <table>
+        <tr>
+            <td>
+                <label for="trxid" class="form-label">Transaction ID *</label>
+            </td>
+            <td>
+                <input name="trxid" type="text" id="trxid" placeholder="Transaction ID" class="form-text-input"
+                       value="<?php echo !empty($fill_trx_id) ? $fill_trx_id : (!empty($trx_id) ? $trx_id : '') ?> "/>
+            </td>
+        </tr>
+    </table>
+
+    <button class="button button-primary" name="check" type="submit">Check</button>
+</form>
+<br/>
 
 <?php
 if (isset($trx) && is_string($trx) && !empty($trx)) {
