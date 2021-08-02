@@ -2,7 +2,7 @@
 <h3><?php _e('bKash Payment Gateway', 'woocommerce-payment-gateway-bkash'); ?></h3>
 
 <div class="gateway-banner bKash-hero-div bKash-success">
-    <img src="<?php echo \bKash\PGW\WC_Gateway_bKash()->plugin_url() . '/assets/images/logo.png'; ?>"/>
+    <img alt="bKash logo" src="<?php echo \bKash\PGW\WC_Gateway_bKash()->plugin_url() . '/assets/images/logo.png'; ?>"/>
     <p class="main"><strong><?php _e('Getting started', 'woocommerce-payment-gateway-bkash'); ?></strong></p>
     <p><?php _e('A payment gateway description can be placed here.', 'woocommerce-payment-gateway-bkash'); ?></p>
 
@@ -13,14 +13,18 @@
     </ul>
 
     <?php if (empty($this->public_key)) { ?>
-        <p><a href="https://www.bkash.com" target="_blank"
+        <p><a href="https://www.bkash.com" target="_blank" rel="noopener"
               class="button button-primary"><?php _e('Sign up for bKash Payment Gateway', 'woocommerce-payment-gateway-bkash'); ?></a>
-            <a href="https://developer.bka.sh" target="_blank"
+            <a href="https://developer.bka.sh" target="_blank" rel="noopener"
                class="button"><?php _e('Developer page', 'woocommerce-payment-gateway-bkash'); ?></a></p>
     <?php } ?>
 </div>
 
-<table class="form-table">
+<table class="form-table" id="admin-option-table" aria-describedby="admin option Table">
+    <tr>
+        <th scope="col">Field</th>
+        <th scope="col">Value</th>
+    </tr>
     <?php $this->generate_settings_html(); ?>
     <script type="text/javascript">
         jQuery('#woocommerce_bkash_pgw_sandbox').change(function () {

@@ -7,7 +7,11 @@
 <br>
 <form action="#" method="post">
 
-    <table>
+    <table id="transfer-balance-table" aria-describedby="transfer balance">
+        <tr>
+            <th scope="col">Field</th>
+            <th scope="col">Value</th>
+        </tr>
         <tr>
             <td>
                 <label for="amount" class="form-label">Amount</label>
@@ -48,6 +52,7 @@ if (isset($trx) && is_string($trx) && !empty($trx)) {
     ?>
     <div class="gateway-banner bKash-hero-div bKash-success">
         <img style="max-width: 90px; margin: 10px 5px"
+             alt="bkash logo"
              src="<?php echo \bKash\PGW\WC_Gateway_bKash()->plugin_url() . '/assets/images/logo.png'; ?>"/>
         <p class="main">
             <strong>Transaction ID: <?php _e($trx['trxID'] ?? '', 'woocommerce-payment-gateway-bkash'); ?></strong></p>

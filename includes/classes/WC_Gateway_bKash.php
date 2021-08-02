@@ -17,7 +17,6 @@ final class WC_Gateway_bKash {
     /**
      * Slug
      *
-     * @TODO   Rename the $gateway_slug to match the name of the payment gateway your building.
      * @access public
      * @var    string
      */
@@ -26,7 +25,6 @@ final class WC_Gateway_bKash {
     /**
      * Text Domain
      *
-     * @TODO   Rename the $text_domain to match the name of the payment gateway your building.
      * @access public
      * @var    string
      */
@@ -35,7 +33,6 @@ final class WC_Gateway_bKash {
     /**
      * The Gateway Name.
      *
-     * @TODO   Rename the payment gateway name to the gateway your building.
      * @NOTE   Do not put WooCommerce in front of the name. It is already applied.
      * @access public
      * @var    string
@@ -53,7 +50,6 @@ final class WC_Gateway_bKash {
     /**
      * The Gateway URL.
      *
-     * @TODO   Replace the url
      * @access public
      * @var    string
      */
@@ -62,7 +58,6 @@ final class WC_Gateway_bKash {
     /**
      * The Gateway documentation URL.
      *
-     * @TODO   Replace the url
      * @access public
      * @var    string
      */
@@ -254,7 +249,6 @@ final class WC_Gateway_bKash {
     /**
      * This filters the gateway to only supported countries.
      *
-     * @TODO   List the country codes the payment gateway your building supports.
      * @access public
      */
     public function gateway_country_base() {
@@ -269,15 +263,13 @@ final class WC_Gateway_bKash {
      * @return array WooCommerce {%Gateway Name%} gateway.
      */
     public function add_gateway( $methods ) {
-        $methods[] = WC_bKash::class;
+        $methods[] = PaymentGatewaybKash::class;
         return $methods;
     }
 
     /**
      * Add the currency.
      *
-     * @TODO   Use this function only if you are adding a new currency.
-     *         e.g. STR for Stellar
      * @access public
      * @return array
      */
@@ -289,8 +281,6 @@ final class WC_Gateway_bKash {
     /**
      * Add the currency symbol.
      *
-     * @TODO   Use this function only when using the function 'add_currency'.
-     *         If currency has no symbol, leave $currency_symbol blank.
      * @access public
      * @return string
      */

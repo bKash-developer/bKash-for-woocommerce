@@ -14,6 +14,7 @@ if (isset($balances) && is_string($balances)) {
         ?>
         <div class="gateway-banner bKash-hero-div bKash-success">
             <img style="max-width: 90px; margin: 10px 5px"
+                 alt="bkash logo check balance"
                  src="<?php echo \bKash\PGW\WC_Gateway_bKash()->plugin_url() . '/assets/images/logo.png'; ?>"/>
             <p class="main">
                 <strong><?php _e($balance['accountTypeName'] ?? '', 'woocommerce-payment-gateway-bkash'); ?></strong>

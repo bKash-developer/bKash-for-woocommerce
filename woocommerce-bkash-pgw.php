@@ -72,12 +72,10 @@ if (!class_exists('WC_Gateway_bKash')) {
     /**
      * WooCommerce {%Gateway Name%} main class.
      *
-     * @TODO    Replace 'PGW_BKASH' with the name of your payment gateway class.
      * @class   PGW_BKASH
      * @version 1.0.0
      */
 
-    // TODO: Rename 'WC_PGW_BKASH' to the name of the gateway your building. e.g. 'WC_Gateway_PayPal'
     add_action('plugins_loaded', array(WC_Gateway_bKash::class, 'get_instance'), 0);
 
 } // end if class exists.

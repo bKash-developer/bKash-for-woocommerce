@@ -1,9 +1,13 @@
-(function ($) {
+jQuery.noConflict();
+;(function ($) {
     $(function () {
-        window.$ = $.noConflict(true);
+        // window.$ = $.noConflict(true);
         var paymentObj = {paymentID: "", orderID: ""};
         var paymentReq = {amount: '0', intent: 'sale'};
-        InitiatebKashPayment();
+
+        $(document).ready(function(){
+            InitiatebKashPayment();
+        });
 
         $('form.woocommerce-checkout').on('click', "#place_order", function (event) {
             var payment_method = $('form.checkout').find('input[name^="payment_method"]:checked').val();
@@ -23,6 +27,7 @@
         });
 
         function InitiatebKashPayment() {
+            window.$ = $.noConflict(true);
             $.getScript(bKash_objects.bKashScriptURL, function () {
                 var button = document.getElementById("bKash_button");
                 if (!button) {

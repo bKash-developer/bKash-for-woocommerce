@@ -24,23 +24,23 @@ $rowcount = $wpdb->num_rows;
         $path_array = wp_upload_dir()['baseurl']; // wp_upload_dir has diffrent types of array I am used 'baseurl' for path
 
         ?>
-        <table class='wp-list-table widefat fixed striped posts'>
+        <table id="transaction-list-table" class='wp-list-table widefat fixed striped posts' aria-describedby="transaction list">
             <tr>
-                <th class="manage-column ss-list-width">ID</th>
-                <th class="manage-column ss-list-width">ORDER ID</th>
-                <th class="manage-column ss-list-width">INVOICE ID</th>
-                <th class="manage-column ss-list-width">PAYMENT ID</th>
-                <th class="manage-column ss-list-width">TRANSACTION ID</th>
-                <th class="manage-column ss-list-width">AMOUNT</th>
-                <th class="manage-column ss-list-width">INTEGRATION TYPE</th>
-                <th class="manage-column ss-list-width">INTENT</th>
-                <th class="manage-column ss-list-width">MODE</th>
-                <th class="manage-column ss-list-width">REFUNDED?</th>
-                <th class="manage-column ss-list-width">REFUND AMOUNT</th>
-                <th class="manage-column ss-list-width">STATUS</th>
-                <th class="manage-column ss-list-width">DATETIME</th>
-                <th>&nbsp;</th>
-                <th>&nbsp;</th>
+                <th class="manage-column ss-list-width" scope="col">ID</th>
+                <th class="manage-column ss-list-width" scope="col">ORDER ID</th>
+                <th class="manage-column ss-list-width" scope="col">INVOICE ID</th>
+                <th class="manage-column ss-list-width" scope="col">PAYMENT ID</th>
+                <th class="manage-column ss-list-width" scope="col">TRANSACTION ID</th>
+                <th class="manage-column ss-list-width" scope="col">AMOUNT</th>
+                <th class="manage-column ss-list-width" scope="col">INTEGRATION TYPE</th>
+                <th class="manage-column ss-list-width" scope="col">INTENT</th>
+                <th class="manage-column ss-list-width" scope="col">MODE</th>
+                <th class="manage-column ss-list-width" scope="col">REFUNDED?</th>
+                <th class="manage-column ss-list-width" scope="col">REFUND AMOUNT</th>
+                <th class="manage-column ss-list-width" scope="col">STATUS</th>
+                <th class="manage-column ss-list-width" scope="col">DATETIME</th>
+                <th scope="col">&nbsp;</th>
+                <th scope="col">&nbsp;</th>
             </tr>
 
             <?php

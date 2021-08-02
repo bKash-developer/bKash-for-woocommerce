@@ -18,7 +18,6 @@ if ($action === 'cancel') {
                     // Cancelled
 
                     $deleteAgreement = $agreementObj->delete('', $id);
-                    // echo $agreementObj->errorMessage;
                     if($deleteAgreement) {
                         echo "Agreement Deleted!";
                     } else {
@@ -68,15 +67,15 @@ $rowcount = $wpdb->num_rows;
         $path_array = wp_upload_dir()['baseurl']; // wp_upload_dir has diffrent types of array I am used 'baseurl' for path
 
         ?>
-        <table class='wp-list-table widefat fixed striped posts'>
+        <table id="agreement-list-table" class='wp-list-table widefat fixed striped posts' aria-describedby="agreement list">
             <tr>
-                <th class="manage-column ss-list-width">ID</th>
-                <th class="manage-column ss-list-width">PHONE</th>
-                <th class="manage-column ss-list-width">USERID</th>
-                <th class="manage-column ss-list-width">AGREEMENT TOKEN</th>
-                <th class="manage-column ss-list-width">DATETIME</th>
-                <th>&nbsp;</th>
-                <th>&nbsp;</th>
+                <th class="manage-column ss-list-width" scope="col">ID</th>
+                <th class="manage-column ss-list-width" scope="col">PHONE</th>
+                <th class="manage-column ss-list-width" scope="col">USERID</th>
+                <th class="manage-column ss-list-width" scope="col">AGREEMENT TOKEN</th>
+                <th class="manage-column ss-list-width" scope="col">DATETIME</th>
+                <th scope="col">&nbsp;</th>
+                <th scope="col">&nbsp;</th>
             </tr>
             <?php
             if ($rowcount > 0) {

@@ -25,18 +25,18 @@ $rowcount = $wpdb->num_rows;
         $path_array = wp_upload_dir()['baseurl']; // wp_upload_dir has diffrent types of array I am used 'baseurl' for path
 
         ?>
-        <table class='wp-list-table widefat fixed striped posts'>
+        <table id="webhook-list-table" class='wp-list-table widefat fixed striped posts' aria-describedby="webhook list">
             <tr>
-                <th class="manage-column ss-list-width">ID</th>
-                <th class="manage-column ss-list-width">TRX_ID</th>
-                <th class="manage-column ss-list-width">SENDER</th>
-                <th class="manage-column ss-list-width">RECEIVER</th>
-                <th class="manage-column ss-list-width">RECEIVER NAME</th>
-                <th class="manage-column ss-list-width">AMOUNT</th>
-                <th class="manage-column ss-list-width">REFERENCE</th>
-                <th class="manage-column ss-list-width">TYPE</th>
-                <th class="manage-column ss-list-width">STATUS</th>
-                <th class="manage-column ss-list-width">DATETIME</th>
+                <th class="manage-column ss-list-width" scope="col">ID</th>
+                <th class="manage-column ss-list-width" scope="col">TRX_ID</th>
+                <th class="manage-column ss-list-width" scope="col">SENDER</th>
+                <th class="manage-column ss-list-width" scope="col">RECEIVER</th>
+                <th class="manage-column ss-list-width" scope="col">RECEIVER NAME</th>
+                <th class="manage-column ss-list-width" scope="col">AMOUNT</th>
+                <th class="manage-column ss-list-width" scope="col">REFERENCE</th>
+                <th class="manage-column ss-list-width" scope="col">TYPE</th>
+                <th class="manage-column ss-list-width" scope="col">STATUS</th>
+                <th class="manage-column ss-list-width" scope="col">DATETIME</th>
             </tr>
             <?php
             if($rowcount>0){

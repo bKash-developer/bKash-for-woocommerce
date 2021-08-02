@@ -7,7 +7,11 @@
 <br>
 <form action="#" method="post">
 
-    <table>
+    <table id="refund-table" aria-describedby="refund table">
+        <tr>
+            <th scope="col">Field</th>
+            <th scope="col">Value</th>
+        </tr>
         <tr>
             <td>
                 <label for="trxid" class="form-label">Transaction ID *</label>
@@ -43,7 +47,11 @@
 <h1>Get Refund Status</h1>
 <form action="#" method="post">
 
-    <table>
+    <table id="refund-status-table" aria-describedby="Refund Status Table">
+        <tr>
+            <th scope="col">Field</th>
+            <th scope="col">Value</th>
+        </tr>
         <tr>
             <td>
                 <label for="trxid" class="form-label">Transaction ID *</label>
@@ -73,6 +81,7 @@ if (isset($trx) && is_string($trx) && !empty($trx)) {
     ?>
     <div class="gateway-banner bKash-hero-div bKash-success">
         <img style="max-width: 90px; margin: 10px 5px"
+             alt="bKash logo"
              src="<?php echo \bKash\PGW\WC_Gateway_bKash()->plugin_url() . '/assets/images/logo.png'; ?>"/>
         <p class="main">
             <strong>Transaction ID: <?php _e($trx['originalTrxID'] ?? '', 'woocommerce-payment-gateway-bkash'); ?></strong></p>

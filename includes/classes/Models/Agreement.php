@@ -173,7 +173,7 @@ class Agreement {
 				$this->agreementID = $agreement->agreement_token ?? null;
 				$this->mobileNo    = $agreement->phone ?? null;
 				$this->userID      = $agreement->user_id ?? null;
-				$this->dateTime    = $transaction->datetime ?? null;
+				$this->dateTime    = $agreement->datetime ?? null;
 
 				return $this;
 			}

@@ -5,7 +5,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 
 if ( isset( $agreements ) && ( $this->integration_type === "tokenized" || $this->integration_type === "tokenized-both" ) ) {
-	echo "<table>";
+	echo "<table id='payment-fields-table'>";
+	?>
+    <tr>
+        <th scope="col">Field</th>
+        <th scope="col">Value</th>
+    </tr>
+	<?php
 	foreach ( $agreements as $i => $agreement ) {
 		?>
         <tr>
@@ -55,16 +61,17 @@ if ( isset( $agreements ) && ( $this->integration_type === "tokenized" || $this-
 		<?php
 	}
 	echo "</table>";
-} else if ( isset( $agreements ) && count( (array) $agreements ) === 0 ) {
-	if ( $this->integration_type === "tokenized" ) {
-		?>
-        <table>
-            <tr>
-                <td>Please login to complete the payment</td>
-            </tr>
-        </table>
-		<?php
-	}
+} else if ( isset( $agreements ) && count( (array) $agreements ) === 0 && $this->integration_type === "tokenized" ) {
+	?>
+    <table id="tokenized-login-table" aria-describedby="tokenized login table">
+        <tr>
+            <th scope="col">Login Required</th>
+        </tr>
+        <tr>
+            <td>Please login to complete the payment</td>
+        </tr>
+    </table>
+	<?php
 }
 
 if ( get_current_user_id() === 0 ) {

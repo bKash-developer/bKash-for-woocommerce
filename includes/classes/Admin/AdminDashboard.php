@@ -4,7 +4,10 @@ namespace bKash\PGW\Admin;
 
 use bKash\PGW\ApiComm;
 use bKash\PGW\Models\Transactions;
-use bKash\PGW\WC_bKash;
+use bKash\PGW\PaymentGatewaybKash;
+
+define("PGW_VERSION", "1.2.0");
+define("UPGRADE_FILE", "wp-admin/includes/upgrade.php");
 
 class AdminDashboard {
 	private static $instance;
@@ -68,24 +71,19 @@ class AdminDashboard {
 				}
 			}
 
-			$sub_page = "";
-			if ( $subMenu[4] === 0 ) {
-				$sub_page = add_submenu_page( $this->slug, $subMenu[0], $subMenu[1], 'manage_options', $this->slug . $subMenu[2], array(
-					$this,
-					$subMenu[3]
-				) );
-			} else if ( $subMenu[4] === 1 && $int_type === 'checkout' ) {
-				$sub_page = add_submenu_page( $this->slug, $subMenu[0], $subMenu[1], 'manage_options', $this->slug . $subMenu[2], array(
-					$this,
-					$subMenu[3]
-				) );
-			} else if ( $subMenu[4] === 2 && ( strpos( $int_type, 'tokenized' ) === 0 ) ) {
-				$sub_page = add_submenu_page( $this->slug, $subMenu[0], $subMenu[1], 'manage_options', $this->slug . $subMenu[2], array(
-					$this,
-					$subMenu[3]
-				) );
+			if (
+				( $subMenu[4] === 0 ) || ( $subMenu[4] === 1 && $int_type === 'checkout' ) ||
+				( $subMenu[4] === 2 && ( strpos( $int_type, 'tokenized' ) === 0 ) )
+			) {
+				$sub_page = add_submenu_page(
+					$this->slug,
+					$subMenu[0],
+					$subMenu[1],
+					'manage_options',
+					$this->slug . $subMenu[2], array( $this, $subMenu[3] )
+				);
+				add_action( 'admin_print_styles-' . $sub_page, array( $this, "admin_styles" ) );
 			}
-			add_action( 'admin_print_styles-' . $sub_page, array( $this, "admin_styles" ) );
 		}
 	}
 
@@ -97,16 +95,6 @@ class AdminDashboard {
 	public function admin_styles() {
 		wp_enqueue_style( 'bfw-admin-css', plugins_url( '../../../assets/css/admin.css', __FILE__ ) );
 	}
-
-	/**
-	 * Outputs scripts used for the bKash gateway admin in wp.
-	 *
-	 * @access public
-	 */
-	public function admin_scripts() {
-		wp_enqueue_script( 'bfw-admin-js', plugins_url( '../../../assets/js/admin.js', __FILE__ ) );
-	}
-
 
 	public function CheckBalances() {
 		try {
@@ -156,11 +144,11 @@ class AdminDashboard {
 								$trx = "Transfer is not possible right now. try again";
 							}
 						} else {
-							$trx = "Cannot find the transaction in your database, try again";
+							$trx = "Cannot find the transaction to transfer in your database, try again";
 						}
 					}
 				} else {
-					$trx = "Cannot read balances from bKash server right now, try again";
+					$trx = "Cannot transfer balances from bKash server right now, try again";
 				}
 			}
 		} catch ( \Throwable $e ) {
@@ -223,11 +211,11 @@ class AdminDashboard {
 								$trx = "Transfer is not possible right now. try again";
 							}
 						} else {
-							$trx = "Cannot find the transaction in your database, try again";
+							$trx = "Cannot find the transaction to disburse in your database, try again";
 						}
 					}
 				} else {
-					$trx = "Cannot read balances from bKash server right now, try again";
+					$trx = "Cannot disburse money from bKash server right now, try again";
 				}
 			}
 		} catch ( \Throwable $e ) {
@@ -239,23 +227,27 @@ class AdminDashboard {
 
 	public function TransactionSearch() {
 		try {
-			$trx_id = isset( $_REQUEST['trxid'] ) ? sanitize_text_field( $_REQUEST['trxid'] ) : null;
-			if ( ! empty( $trx_id ) ) {
-				$this->api = new ApiComm();
-				$call      = $this->api->searchTransaction( $trx_id );
-				if ( isset( $call['status_code'] ) && $call['status_code'] === 200 ) {
-					$trx = isset( $call['response'] ) && is_string( $call['response'] ) ? json_decode( $call['response'], true ) : [];
+			$trx_id = sanitize_text_field( $_REQUEST['trxid'] );
 
-					// If any error
-					if ( isset( $trx['statusMessage'] ) && $trx['statusMessage'] !== 'Successful' ) {
-						$trx = $trx['statusMessage'];
-					}
-					if ( isset( $trx['errorMessage'] ) && ! empty( $trx['errorMessage'] ) ) {
-						$trx = $trx['errorMessage'];
-					}
-				} else {
-					$trx = "Cannot find the transaction from bKash server right now, try again";
+			$this->api = new ApiComm();
+			$call      = $this->api->searchTransaction( $trx_id );
+
+			if ( isset( $call['status_code'] ) && $call['status_code'] === 200 ) {
+
+				$trx = [];
+				if(isset($call['response']) && is_string($call['response'])) {
+					$trx = json_decode($call['response'], true);
 				}
+
+				// If any error
+				if ( isset( $trx['statusMessage'] ) && $trx['statusMessage'] !== 'Successful' ) {
+					$trx = $trx['statusMessage'];
+				}
+				if ( isset( $trx['errorMessage'] ) && ! empty( $trx['errorMessage'] ) ) {
+					$trx = $trx['errorMessage'];
+				}
+			} else {
+				$trx = "Cannot find the transaction from bKash server right now, try again";
 			}
 		} catch ( \Exception $ex ) {
 			$trx = $ex->getMessage();
@@ -286,7 +278,7 @@ class AdminDashboard {
 				if ( $isRefund ) {
 					if ( $amount > 0 ) {
 						if ( $amount <= $transaction->getAmount() ) {
-							$wcB    = new WC_bKash();
+							$wcB    = new PaymentGatewaybKash();
 							$refund = $wcB->process_refund( $transaction->getOrderID(), $amount, $reason );
 							if ( $refund ) {
 								$trx = $wcB->refundObj;
@@ -300,7 +292,7 @@ class AdminDashboard {
 						$trx = "Refund amount should be greater than zero";
 					}
 				} else if ( $isRefundCheck ) {
-					$wcB    = new WC_bKash();
+					$wcB    = new PaymentGatewaybKash();
 					$refund = $wcB->query_refund( $transaction->getOrderID() );
 					if ( $refund ) {
 						$trx = $refund;
@@ -311,7 +303,7 @@ class AdminDashboard {
 					$trx = "Unknown refund operation";
 				}
 			} else {
-				$trx = "Cannot find the transaction in your database, try again";
+				$trx = "Cannot find the transaction to refund in your database, try again";
 			}
 		}
 
@@ -334,10 +326,6 @@ class AdminDashboard {
 		add_action( 'admin_menu', array( $this, 'PluginMenu' ) );
 	}
 
-	public function GenerateDoc() {
-		include_once "pages/generate_doc.php";
-	}
-
 	public function BeginInstall() {
 		$this->CreateTransactionTable();
 		$this->CreateWebhookTable();
@@ -349,7 +337,7 @@ class AdminDashboard {
 	public function CreateTransactionTable() {
 		global $wpdb;
 		$table_name             = $wpdb->prefix . "bkash_transactions";
-		$my_products_db_version = '1.2.0';
+		$my_products_db_version = PGW_VERSION;
 		$charset_collate        = $wpdb->get_charset_collate();
 
 		if ( $wpdb->get_var( "SHOW TABLES LIKE '{$table_name}'" ) != $table_name ) {
@@ -372,7 +360,7 @@ class AdminDashboard {
                     PRIMARY KEY  (ID)
             ) $charset_collate;";
 
-			require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
+			require_once( ABSPATH . UPGRADE_FILE );
 			dbDelta( $sql );
 			add_option( 'bkash_transaction_table_version', $my_products_db_version );
 		}
@@ -381,7 +369,7 @@ class AdminDashboard {
 	public function CreateWebhookTable() {
 		global $wpdb;
 		$table_name             = $wpdb->prefix . "bkash_webhooks";
-		$my_products_db_version = '1.2.0';
+		$my_products_db_version = PGW_VERSION;
 		$charset_collate        = $wpdb->get_charset_collate();
 
 		if ( $wpdb->get_var( "SHOW TABLES LIKE '{$table_name}'" ) != $table_name ) {
@@ -401,7 +389,7 @@ class AdminDashboard {
                     PRIMARY KEY  (ID)
             ) $charset_collate;";
 
-			require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
+			require_once( ABSPATH . UPGRADE_FILE );
 			dbDelta( $sql );
 			add_option( 'bkash_webhook_table_version', $my_products_db_version );
 		}
@@ -410,7 +398,7 @@ class AdminDashboard {
 	public function CreateAgreementMappingTable() {
 		global $wpdb;
 		$table_name             = $wpdb->prefix . "bkash_agreement_mapping";
-		$my_products_db_version = '1.2.0';
+		$my_products_db_version = PGW_VERSION;
 		$charset_collate        = $wpdb->get_charset_collate();
 
 		if ( $wpdb->get_var( "SHOW TABLES LIKE '{$table_name}'" ) != $table_name ) {
@@ -424,7 +412,7 @@ class AdminDashboard {
                     PRIMARY KEY  (ID)
             ) $charset_collate;";
 
-			require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
+			require_once( ABSPATH . UPGRADE_FILE );
 			dbDelta( $sql );
 			add_option( 'bkash_agreement_mapping_table_version', $my_products_db_version );
 		}
@@ -433,7 +421,7 @@ class AdminDashboard {
 	public function CreateTransferHistoryTable() {
 		global $wpdb;
 		$table_name             = $wpdb->prefix . "bkash_transfers";
-		$my_products_db_version = '1.2.0';
+		$my_products_db_version = PGW_VERSION;
 		$charset_collate        = $wpdb->get_charset_collate();
 
 		if ( $wpdb->get_var( "SHOW TABLES LIKE '{$table_name}'" ) != $table_name ) {
@@ -452,7 +440,7 @@ class AdminDashboard {
                     PRIMARY KEY (ID)
             ) $charset_collate;";
 
-			require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
+			require_once( ABSPATH . UPGRADE_FILE );
 			dbDelta( $sql );
 			add_option( 'bkash_agreement_mapping_table_version', $my_products_db_version );
 		}

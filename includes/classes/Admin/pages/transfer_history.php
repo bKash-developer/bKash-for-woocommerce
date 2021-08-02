@@ -25,17 +25,17 @@ $rowcount = $wpdb->num_rows;
         $path_array = wp_upload_dir()['baseurl']; // wp_upload_dir has diffrent types of array I am used 'baseurl' for path
 
         ?>
-        <table class='wp-list-table widefat fixed striped posts'>
+        <table id="transfer-history-table" class='wp-list-table widefat fixed striped posts' aria-describedby="transfer history">
             <tr>
-                <th class="manage-column ss-list-width">ID</th>
-                <th class="manage-column ss-list-width">SENT TO (bKash Personal)</th>
-                <th class="manage-column ss-list-width">Amount</th>
-                <th class="manage-column ss-list-width">TRANSACTION ID</th>
-                <th class="manage-column ss-list-width">INVOICE NO</th>
-                <th class="manage-column ss-list-width">STATUS</th>
-                <th class="manage-column ss-list-width">B2C FEES</th>
-                <th class="manage-column ss-list-width">INITIATION TIME</th>
-                <th class="manage-column ss-list-width">COMPLETION TIME</th>
+                <th class="manage-column ss-list-width" scope="col">ID</th>
+                <th class="manage-column ss-list-width" scope="col">SENT TO (bKash Personal)</th>
+                <th class="manage-column ss-list-width" scope="col">Amount</th>
+                <th class="manage-column ss-list-width" scope="col">TRANSACTION ID</th>
+                <th class="manage-column ss-list-width" scope="col">INVOICE NO</th>
+                <th class="manage-column ss-list-width" scope="col">STATUS</th>
+                <th class="manage-column ss-list-width" scope="col">B2C FEES</th>
+                <th class="manage-column ss-list-width" scope="col">INITIATION TIME</th>
+                <th class="manage-column ss-list-width" scope="col">COMPLETION TIME</th>
             </tr>
             <?php
             if($rowcount>0){
