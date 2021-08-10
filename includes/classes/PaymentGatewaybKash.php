@@ -93,7 +93,6 @@ class PaymentGatewaybKash extends WC_Payment_Gateway {
 		$this->enabled          = $this->get_option( 'enabled' );
 		$this->title            = $this->get_option( 'title' );
 		$this->description      = $this->get_option( 'description' );
-		$this->instructions     = $this->get_option( 'instructions' );
 		$this->integration_type = $this->get_option( 'integration_type' );
 		$this->intent           = $this->get_option( 'intent' );
 		$this->api_version      = $this->get_option( 'bkash_api_version' );
@@ -103,6 +102,7 @@ class PaymentGatewaybKash extends WC_Payment_Gateway {
 		$this->username         = $this->sandbox == 'no' ? $this->get_option( 'username' ) : $this->get_option( 'sandbox_username' );
 		$this->password         = $this->sandbox == 'no' ? $this->get_option( 'password' ) : $this->get_option( 'sandbox_password' );
 		$this->debug            = $this->get_option( 'debug' );
+		$this->enable_b2c            = $this->get_option( 'enable_b2c' );
 		// Logs.
 		if ( $this->debug == 'yes' ) {
 			if ( class_exists( '\\WC_Logger' ) ) {
@@ -147,13 +147,6 @@ class PaymentGatewaybKash extends WC_Payment_Gateway {
 				'default'     => 'Pay with bKash PGW.',
 				'desc_tip'    => true
 			),
-			'instructions'       => array(
-				'title'       => __( 'Instructions', 'woocommerce-payment-gateway-bkash' ),
-				'type'        => 'textarea',
-				'description' => __( 'Instructions that will be added to the thank you page and emails.', 'woocommerce-payment-gateway-bkash' ),
-				'default'     => '',
-				'desc_tip'    => true,
-			),
 			'integration_type'   => array(
 				'title'       => __( 'Integration Type', 'woocommerce-payment-gateway-bkash' ),
 				'type'        => 'select',
@@ -191,6 +184,13 @@ class PaymentGatewaybKash extends WC_Payment_Gateway {
 				'label'       => __( 'Enable logging', 'woocommerce-payment-gateway-bkash' ),
 				'default'     => 'no',
 				'description' => sprintf( __( 'Log bKash PGW events inside <code>%s</code>', 'woocommerce-payment-gateway-bkash' ), wc_get_log_file_path( $this->id ) )
+			),
+			'enable_b2c'              => array(
+				'title'       => __( 'Enable B2C API', 'woocommerce-payment-gateway-bkash' ),
+				'type'        => 'checkbox',
+				'label'       => __( 'Enable B2C API', 'woocommerce-payment-gateway-bkash' ),
+				'default'     => 'no',
+				'description' => sprintf( __( 'Enable B2C Disbursement API', 'woocommerce-payment-gateway-bkash' ) )
 			),
 			'webhook'            => array(
 				'title'       => __( 'Webhook', 'woocommerce-payment-gateway-bkash' ),
@@ -601,7 +601,7 @@ class PaymentGatewaybKash extends WC_Payment_Gateway {
 
 		} else {
 			// and this is our custom JS in your plugin directory that works with token.js
-			wp_register_script( 'woocommerce-payment-gateway-bkash', plugins_url( '../../assets/js/tokenized.js?' . time(), __FILE__ ), array( 'bKash_jquery' ) );
+			wp_register_script( 'woocommerce-payment-gateway-bkash', plugins_url( '../../assets/js/tokenized.js?' . time(), __FILE__ ), array() );
 
 			// in most payment processors you have to use PUBLIC KEY to obtain a token
 			wp_localize_script( 'woocommerce-payment-gateway-bkash', 'bKash_objects', array(
@@ -807,7 +807,7 @@ class PaymentGatewaybKash extends WC_Payment_Gateway {
 				$trx = "This transaction already has been refunded, try again";
 			}
 		} else {
-			$trx = "Cannot find the transaction in your database, try again";
+			$trx = "Cannot find the transaction to refund in your database, try again";
 		}
 
 		if ( is_string( $trx ) ) {
@@ -862,7 +862,7 @@ class PaymentGatewaybKash extends WC_Payment_Gateway {
 				$trx = "This transaction is not refunded yet, try again";
 			}
 		} else {
-			$trx = "Cannot find the transaction in your database, try again";
+			$trx = "Cannot find the transaction to query in your database, try again";
 		}
 
 		return $trx;
@@ -939,12 +939,10 @@ class PaymentGatewaybKash extends WC_Payment_Gateway {
 	 * Output for the order received page.
 	 *
 	 * @access public
+	 *
+	 * @param $order_id
 	 */
 	public function thankyou_page( $order_id ) {
-		if ( ! empty( $this->instructions ) ) {
-			echo wpautop( wptexturize( wp_kses_post( $this->instructions ) ) );
-		}
-
 		$this->extra_details( $order_id );
 	}
 
@@ -979,10 +977,6 @@ class PaymentGatewaybKash extends WC_Payment_Gateway {
 	 */
 	public function email_instructions( $order, $sent_to_admin, $plain_text = false ) {
 		if ( ! $sent_to_admin && $this->id === $order->get_payment_method() && $order->has_status( 'on-hold' ) ) {
-			if ( ! empty( $this->instructions ) ) {
-				echo wpautop( wptexturize( $this->instructions ) ) . PHP_EOL;
-			}
-
 			$this->extra_details( $order->get_id() );
 		}
 	}

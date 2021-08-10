@@ -1,5 +1,5 @@
 jQuery(function ($) {
-    window.$ = $.noConflict(true);
+    window.$ = $.noConflict();
 
     $('form.woocommerce-checkout').on('click', ".cancelAgreementButton", function (event) {
         var agreement = $(this).data('agreement');
@@ -26,7 +26,7 @@ jQuery(function ($) {
                     }
 
                     if (result.result && result.result === 'success') {
-                        submit_error(result.message ? result.message : "Deleted", null, 'info');
+                        submit_error(result.message ? result.message : "Deleted", null, 'info', "Done");
                         that.closest('tr').remove();
                     } else {
                         submit_error(result.message ? result.message : "Cannot remove the agreement right now");
@@ -42,8 +42,8 @@ jQuery(function ($) {
     }
 
 
-    function submit_error(error_message, error_messages, group = "error") {
-        var header = "<h3 style='color: #fff;font-weight: bold;margin: 0;font-size: 20px;line-height: 14px;'>Error</h3>";
+    function submit_error(error_message, error_messages, group = "error", title = "Error") {
+        var header = "<h3 style='color: #fff;font-weight: bold;margin: 0;font-size: 20px;line-height: 14px;'>"+title+"</h3>";
 
         var checkout_form = $('form.checkout');
         $('.woocommerce-NoticeGroup-checkout, .woocommerce-error, .woocommerce-message').remove();

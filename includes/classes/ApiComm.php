@@ -16,6 +16,10 @@ class ApiComm {
 	private $username;
 	private $password;
 	private $constructed_url;
+	/**
+	 * @var false|mixed|void
+	 */
+	private $token;
 
 	public function __construct() {
 		global $wpdb;
@@ -81,7 +85,6 @@ class ApiComm {
 	 *
 	 * @access protected
 	 * @return void
-	 * @throws \Exception
 	 */
 	protected function processToken() {
 		try {
@@ -127,8 +130,7 @@ class ApiComm {
 	 * Get Grant Token
 	 *
 	 * This token has to be used as an authentication medium between bKash and this plugin server
-	 * @method $token get id_token as API token, store it in filesystem and use until expire for all api calls
-	 * @return array
+	 * @method $token get id_token as API token, store it in filesystem and use until expire for all api call
 	 * @see https://developer.bka.sh/reference#gettokenusingpost
 	 */
 	public function getToken(): array {
@@ -182,6 +184,7 @@ class ApiComm {
 
 		$log .= "HEADERS: " . json_encode( $headers ) . "\n";
 		$log .= "BODY: " . json_encode( $post_data ) . "\n";
+
 
 
 		curl_setopt( $ch, CURLOPT_HEADER, true );
@@ -309,30 +312,37 @@ class ApiComm {
 
 	}
 
-	/**
-	 * Execute Payment
-	 *
-	 * Confirming a payment via API calls
-	 *
-	 * @param string $payment_id
-	 *
-	 * @return array
-	 */
-	public function executePayment( string $payment_id ): array {
-		$api_path = $this->integration_product === 'checkout' ? 'payment/execute' : 'execute';
+	public function executeCompleteCaptureVoid($payment_id, $type) {
+
+		switch ($type) {
+			case "execute" :
+				$api_path = $this->integration_product === 'checkout' ? 'payment/execute' : 'execute';
+				$extra_in_url = '';
+				break;
+			case "capture":
+				$api_path = $this->integration_product === 'checkout' ? 'payment/capture' : 'payment/confirm';
+				$extra_in_url = '/capture';
+				break;
+			case "void":
+				$api_path = $this->integration_product === 'checkout' ? 'payment/void' : 'payment/confirm';
+				$extra_in_url = '/void';
+				break;
+			default:
+				$api_path = '';
+				$extra_in_url = '';
+		}
 
 		if ( $this->integration_product === 'checkout' ) {
 			$url = $this->constructed_url . $api_path . '/' . $payment_id;
-
-			$response = $this->httpRequest( "Checkout Execute Payment", $url, $http_status, "POST", null, $header );
+			$response = $this->httpRequest( "Checkout ".ucwords($type)." Payment", $url, $http_status, "POST", null, $header );
 		} else {
-			$url = $this->constructed_url . $api_path;
+			$url = $this->constructed_url . $api_path . $extra_in_url;
 
 			$body = array(
 				'paymentID' => $payment_id
 			);
 
-			$response = $this->httpRequest( "Tokenized Execute Payment", $url, $http_status, "POST", $body, $header );
+			$response = $this->httpRequest( "Tokenized ".ucwords($type)." Payment", $url, $http_status, "POST", $body, $header );
 		}
 
 		// QUERY PAYMENT IN CASE OF ANY NETWORK OR NO RESPONSE OR TIMED OUT ISSUE
@@ -348,6 +358,19 @@ class ApiComm {
 			'header'      => $header,
 			'response'    => $response
 		];
+	}
+
+	/**
+	 * Execute Payment
+	 *
+	 * Confirming a payment via API calls
+	 *
+	 * @param string $payment_id
+	 *
+	 * @return array
+	 */
+	public function executePayment( string $payment_id ): array {
+		return $this->executeCompleteCaptureVoid($payment_id, "execute");
 	}
 
 	/**
@@ -393,34 +416,7 @@ class ApiComm {
 	 * @return array
 	 */
 	public function capturePayment( string $payment_id ): array {
-		$api_path = $this->integration_product === 'checkout' ? 'payment/capture' : 'payment/confirm';
-
-		if ( $this->integration_product === 'checkout' ) {
-			$url = $this->constructed_url . $api_path . '/' . $payment_id;
-
-			$response = $this->httpRequest( "Checkout Capture Payment", $url, $http_status, "POST", null, $header );
-		} else {
-			$url = $this->constructed_url . $api_path . '/capture';
-
-			$body = array(
-				'paymentID' => $payment_id
-			);
-
-			$response = $this->httpRequest( "Tokenized Capture Payment", $url, $http_status, "POST", $body, $header );
-		}
-
-		// QUERY PAYMENT IN CASE OF ANY NETWORK OR NO RESPONSE OR TIMED OUT ISSUE
-		$decoded_response = isset( $response['response'] ) && is_string( $response['response'] ) ?
-			json_decode( $response['response'], true ) : [];
-		if ( $http_status !== 200 || isset( $decoded_response['message'] ) ) {
-			return $this->queryPayment( $payment_id );
-		}
-
-		return [
-			'status_code' => $http_status,
-			'header'      => $header,
-			'response'    => $response
-		];
+		return $this->executeCompleteCaptureVoid($payment_id, "capture");
 	}
 
 	/**
@@ -434,34 +430,7 @@ class ApiComm {
 	 * @return array
 	 */
 	public function voidPayment( string $payment_id ): array {
-		$api_path = $this->integration_product === 'checkout' ? 'payment/void' : 'payment/confirm';
-
-		if ( $this->integration_product === 'checkout' ) {
-			$url = $this->constructed_url . $api_path . '/' . $payment_id;
-
-			$response = $this->httpRequest( "Checkout Void Payment", $url, $http_status, "POST", null, $header );
-		} else {
-			$url = $this->constructed_url . $api_path . '/void';
-
-			$body = array(
-				'paymentID' => $payment_id
-			);
-
-			$response = $this->httpRequest( "Tokenized Void Payment", $url, $http_status, "POST", $body, $header );
-		}
-
-		// QUERY PAYMENT IN CASE OF ANY NETWORK OR NO RESPONSE OR TIMED OUT ISSUE
-		$decoded_response = isset( $response['response'] ) && is_string( $response['response'] ) ?
-			json_decode( $response['response'], true ) : [];
-		if ( $http_status !== 200 || isset( $decoded_response['message'] ) ) {
-			return $this->queryPayment( $payment_id );
-		}
-
-		return [
-			'status_code' => $http_status,
-			'header'      => $header,
-			'response'    => $response
-		];
+		return $this->executeCompleteCaptureVoid($payment_id, "void");
 	}
 
 	/**
@@ -753,8 +722,7 @@ class Log {
 	}
 
 	public static function write_log( $str ) {
-		$apiCom = new ApiComm();
-		if ( $apiCom->debug === 'yes' ) {
+		if ( self::is_debug() === 'yes' ) {
 
 			global $woocommerce;
 
@@ -775,6 +743,16 @@ class Log {
 				}
 			}
 		}
+	}
+
+	public static function is_debug() {
+		$is_debug = 'no';
+		$plugin_id = 'bkash_pgw';
+		$settings  = get_option( 'woocommerce_' . $plugin_id . '_settings' );
+		if ( ! is_null( $settings ) ) {
+			$is_debug =  $settings[ 'debug' ] ?? 'no';
+		}
+		return $is_debug;
 	}
 
 	public static function info( $str ) {

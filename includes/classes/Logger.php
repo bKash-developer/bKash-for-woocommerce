@@ -5,11 +5,7 @@ namespace bKash\PGW;
 use WC_Logger;
 
 class Logger {
-	private $woo_log;
-	private $wp_log;
-	private $wc_log;
-
-	public function __construct( $debug = true ) {
+	public function __construct() {
 
 		if (class_exists('\\WC_Logger')) {
 			$this->log = new WC_Logger();

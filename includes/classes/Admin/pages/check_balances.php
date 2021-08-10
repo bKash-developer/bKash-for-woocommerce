@@ -40,7 +40,5 @@ if (isset($balances) && is_string($balances)) {
         </div>
         <?php
     }
-} else {
-
 }
 ?>

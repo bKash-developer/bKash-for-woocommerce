@@ -5,9 +5,10 @@ namespace bKash\PGW\Admin;
 use bKash\PGW\ApiComm;
 use bKash\PGW\Models\Transactions;
 use bKash\PGW\PaymentGatewaybKash;
+use bKash\PGW\TableGeneration;
 
-define("PGW_VERSION", "1.2.0");
-define("UPGRADE_FILE", "wp-admin/includes/upgrade.php");
+define( "PGW_VERSION", "1.2.0" );
+define( "TABLE_LIMIT", 10 );
 
 class AdminDashboard {
 	private static $instance;
@@ -39,7 +40,7 @@ class AdminDashboard {
 			'bKash',
 			'manage_options',
 			$this->slug,
-			array( $this, 'RenderPage' ),
+			array( $this, 'TransactionList' ),
 			plugins_url( '../../assets/images/bkash_favicon_0.ico', __DIR__ )
 		);
 	}
@@ -50,7 +51,7 @@ class AdminDashboard {
 	protected function AddSubMenus() {
 		$subMenus = array(
 			// [Page Title, Menu Title, Route, Function to render, (0=All)(1=Checkout)(2=Tokenized)]
-			[ "All Transaction", "Transactions", "", "RenderPage", 0 ],
+			[ "All Transaction", "Transactions", "", "TransactionList", 0 ],
 			[ "Search a bKash Transaction", "Search", "/search", "TransactionSearch", 0 ],
 			[ "Refund a bKash Transaction", "Refund", "/refund", "RefundTransaction", 0 ],
 			[ "Webhook notifications", "Webhooks", "/webhooks", "Webhooks", 0 ],
@@ -60,6 +61,13 @@ class AdminDashboard {
 			[ "Transfer History - All List", "Transfer History", "/transfers", "TransferHistory", 1 ],
 			[ "Agreements", "Agreements", "/agreements", "Agreements", 2 ]
 		);
+
+		$is_b2c_enabled = 'no';
+		$pid            = 'bkash_pgw';
+		$options        = get_option( 'woocommerce_' . $pid . '_settings' );
+		if ( ! is_null( $options ) ) {
+			$is_b2c_enabled = $options['enable_b2c'] ?? 'no';
+		}
 
 		foreach ( $subMenus as $subMenu ) {
 			$int_type = 'checkout';
@@ -72,7 +80,7 @@ class AdminDashboard {
 			}
 
 			if (
-				( $subMenu[4] === 0 ) || ( $subMenu[4] === 1 && $int_type === 'checkout' ) ||
+				( $subMenu[4] === 0 ) || ( ( $is_b2c_enabled === 'yes' && $subMenu[4] === 1 ) && $int_type === 'checkout' ) ||
 				( $subMenu[4] === 2 && ( strpos( $int_type, 'tokenized' ) === 0 ) )
 			) {
 				$sub_page = add_submenu_page(
@@ -98,8 +106,8 @@ class AdminDashboard {
 
 	public function CheckBalances() {
 		try {
-			$this->api = new ApiComm();
-			$call      = $this->api->checkBalances();
+			$api  = new ApiComm();
+			$call = $api->checkBalances();
 			if ( isset( $call['status_code'] ) && $call['status_code'] === 200 ) {
 				$balances = isset( $call['response'] ) && is_string( $call['response'] ) ? json_decode( $call['response'], true ) : [];
 
@@ -119,36 +127,19 @@ class AdminDashboard {
 		try {
 			$type   = sanitize_text_field( $_REQUEST['transfer_type'] ?? '' );
 			$amount = sanitize_text_field( $_REQUEST['amount'] ?? '' );
-			if ( ! empty( $type ) && ! empty( $amount ) ) {
-				$comm         = new ApiComm();
-				$transferCall = $comm->intraAccountTransfer( $amount, $type );
+			if ( $_SERVER['REQUEST_METHOD'] === 'POST' ) {
+				if ( $type && $amount ) {
+					$comm         = new ApiComm();
+					$transferCall = $comm->intraAccountTransfer( $amount, $type );
 
-				if ( isset( $transferCall['status_code'] ) && $transferCall['status_code'] === 200 ) {
-					$transfer = isset( $transferCall['response'] ) && is_string( $transferCall['response'] ) ? json_decode( $transferCall['response'], true ) : [];
-
-					if ( isset( $transfer['errorCode'] ) ) {
-						$trx = $transfer['errorMessage'] ?? '';
+					$validate = $this->validateResponse( $transferCall, array( 'transactionStatus' => 'Completed' ) );
+					if ( $validate['valid'] ) {
+						$trx = $validate['response'];
 					} else {
-						if ( $transfer ) {
-							// Sample payload - array(3) { ["status_code"]=> int(200) ["header"]=> NULL ["response"]=> string(177) "{"completedTime":"2021-02-21T18:46:18:085 GMT+0000","trxID":"8BM304KJ37","transactionStatus":"Completed","amount":"10","currency":"BDT","transferType":"Collection2Disbursement"}" }
-
-							// If any error for tokenized
-							if ( isset( $transfer['statusMessage'] ) && $transfer['statusMessage'] !== 'Successful' ) {
-								$trx = $transfer['statusMessage'];
-							} // If any error for checkout
-							else if ( isset( $transfer['errorCode'] ) ) {
-								$trx = $transfer['errorMessage'] ?? '';
-							} else if ( isset( $transfer['transactionStatus'] ) && $transfer['transactionStatus'] === 'Completed' ) {
-								$trx = $transfer;
-							} else {
-								$trx = "Transfer is not possible right now. try again";
-							}
-						} else {
-							$trx = "Cannot find the transaction to transfer in your database, try again";
-						}
+						$trx = $validate['message'];
 					}
 				} else {
-					$trx = "Cannot transfer balances from bKash server right now, try again";
+					$trx = "Amount or transfer type is missing, try again";
 				}
 			}
 		} catch ( \Throwable $e ) {
@@ -156,6 +147,44 @@ class AdminDashboard {
 		}
 
 		include_once "pages/transfer_balance.php";
+	}
+
+	public function validateResponse( $apiResp = array(), $specificField = array() ) {
+		$feedback = array(
+			'valid'    => false,
+			'message'  => '',
+			'response' => []
+		);
+
+
+		if ( isset( $apiResp['status_code'], $apiResp['response'] ) && $apiResp['status_code'] === 200 ) {
+			$response = $apiResp['response'];
+			if ( is_string( $response ) ) {
+				$response = json_decode( $response, true );
+			}
+
+			if ( isset( $response['errorMessage'] ) ) {
+				$feedback['message'] = $response['errorMessage'];
+			} else if ( isset( $response['statusMessage'] ) && $response['statusMessage'] !== 'Successful' ) {
+				$feedback['message'] = $response['statusMessage'];
+			} else {
+				if ( count( $specificField ) > 0 ) {
+					if ( $response[ key( $specificField ) ] === $specificField[ key( $specificField ) ] ) {
+						$feedback['valid'] = true;
+					} else {
+						$feedback['message'] = key( $specificField ) . " is not present or not matching with the value " . $specificField[ key( $specificField ) ];
+					}
+				} else {
+					$feedback['valid'] = true;
+				}
+
+				$feedback['response'] = $response;
+			}
+		} else {
+			$feedback['message'] = "Action cannot be performed at bKash server right now, try again";
+		}
+
+		return $feedback;
 	}
 
 	public function DisburseMoney() {
@@ -169,53 +198,31 @@ class AdminDashboard {
 				$comm         = new ApiComm();
 				$transferCall = $comm->b2cPayout( $amount, $invoice_no, $receiver );
 
-				if ( isset( $transferCall['status_code'] ) && $transferCall['status_code'] === 200 ) {
-					$transfer = isset( $transferCall['response'] ) && is_string( $transferCall['response'] ) ? json_decode( $transferCall['response'], true ) : [];
+				$validate = $this->validateResponse( $transferCall, array( 'transactionStatus' => 'Completed' ) );
+				if ( $validate['valid'] ) {
+					$transfer = $validate['response'];
+					global $wpdb;
+					$tableName = $wpdb->prefix . "bkash_transfers";
 
-					if ( isset( $transfer['errorCode'] ) ) {
-						$trx = $transfer['errorMessage'] ?? '';
+					$insert = $wpdb->insert( $tableName, [
+						'receiver'            => $transfer['receiverMSISDN'] ?? '', // required
+						'amount'              => $transfer['amount'] ?? '',
+						'currency'            => $transfer['currency'] ?? '',
+						'trx_id'              => $transfer['trxID'] ?? '',
+						'merchant_invoice_no' => $transfer['merchantInvoiceNumber'] ?? '',
+						'transactionStatus'   => $transfer['transactionStatus'] ?? '', // required
+						'b2cFee'              => 0,
+						'initiationTime'      => $initTime,
+						'completedTime'       => $transfer['completedTime'] ?? date( 'now' )
+					] );
+
+					if ( $insert > 0 ) {
+						$trx = $transfer;
 					} else {
-						if ( $transfer ) {
-							// Sample payload - array(7) { ["completedTime"]=> string(32) "2021-02-21T19:44:14:289 GMT+0000" ["trxID"]=> string(10) "8BM604KJ58" ["transactionStatus"]=> string(9) "Completed" ["amount"]=> string(3) "100" ["currency"]=> string(3) "BDT" ["receiverMSISDN"]=> string(11) "01770618575" ["merchantInvoiceNumber"]=> string(7) "1234567" }
-
-							// If any error for tokenized
-							if ( isset( $transfer['statusMessage'] ) && $transfer['statusMessage'] !== 'Successful' ) {
-								$trx = $transfer['statusMessage'];
-							} // If any error for checkout
-							else if ( isset( $transfer['errorCode'] ) ) {
-								$trx = $transfer['errorMessage'] ?? '';
-							} else if ( isset( $transfer['transactionStatus'] ) && $transfer['transactionStatus'] === 'Completed' ) {
-
-								global $wpdb;
-								$tableName = $wpdb->prefix . "bkash_transfers";
-
-								$insert = $wpdb->insert( $tableName, [
-									'receiver'            => $transfer['receiverMSISDN'] ?? '', // required
-									'amount'              => $transfer['amount'] ?? '',
-									'currency'            => $transfer['currency'] ?? '',
-									'trx_id'              => $transfer['trxID'] ?? '',
-									'merchant_invoice_no' => $transfer['merchantInvoiceNumber'] ?? '',
-									'transactionStatus'   => $transfer['transactionStatus'] ?? '', // required
-									'b2cFee'              => 0,
-									'initiationTime'      => $initTime,
-									'completedTime'       => $transfer['completedTime'] ?? date( 'now' )
-								] );
-
-								if ( $insert > 0 ) {
-									$trx = $transfer;
-								} else {
-									$trx = "Disbursement is successful but could not make it into db";
-								}
-
-							} else {
-								$trx = "Transfer is not possible right now. try again";
-							}
-						} else {
-							$trx = "Cannot find the transaction to disburse in your database, try again";
-						}
+						$trx = "Disbursement is successful but could not make it into db";
 					}
 				} else {
-					$trx = "Cannot disburse money from bKash server right now, try again";
+					$trx = $validate['message'];
 				}
 			}
 		} catch ( \Throwable $e ) {
@@ -227,27 +234,32 @@ class AdminDashboard {
 
 	public function TransactionSearch() {
 		try {
-			$trx_id = sanitize_text_field( $_REQUEST['trxid'] );
+			$trx_id = "";
+			if ( isset( $_REQUEST['trxid'] ) ) {
+				$trx_id = sanitize_text_field( $_REQUEST['trxid'] );
+			}
 
-			$this->api = new ApiComm();
-			$call      = $this->api->searchTransaction( $trx_id );
+			if ( $trx_id !== '' ) {
+				$this->api = new ApiComm();
+				$call      = $this->api->searchTransaction( $trx_id );
 
-			if ( isset( $call['status_code'] ) && $call['status_code'] === 200 ) {
+				if ( isset( $call['status_code'] ) && $call['status_code'] === 200 ) {
 
-				$trx = [];
-				if(isset($call['response']) && is_string($call['response'])) {
-					$trx = json_decode($call['response'], true);
+					$trx = [];
+					if ( isset( $call['response'] ) && is_string( $call['response'] ) ) {
+						$trx = json_decode( $call['response'], true );
+					}
+
+					// If any error
+					if ( isset( $trx['statusMessage'] ) && $trx['statusMessage'] !== 'Successful' ) {
+						$trx = $trx['statusMessage'];
+					}
+					if ( isset( $trx['errorMessage'] ) && ! empty( $trx['errorMessage'] ) ) {
+						$trx = $trx['errorMessage'];
+					}
+				} else {
+					$trx = "Cannot find the transaction from bKash server right now, try again";
 				}
-
-				// If any error
-				if ( isset( $trx['statusMessage'] ) && $trx['statusMessage'] !== 'Successful' ) {
-					$trx = $trx['statusMessage'];
-				}
-				if ( isset( $trx['errorMessage'] ) && ! empty( $trx['errorMessage'] ) ) {
-					$trx = $trx['errorMessage'];
-				}
-			} else {
-				$trx = "Cannot find the transaction from bKash server right now, try again";
 			}
 		} catch ( \Exception $ex ) {
 			$trx = $ex->getMessage();
@@ -257,9 +269,88 @@ class AdminDashboard {
 	}
 
 	public function TransferHistory() {
-		include_once "pages/transfer_history.php";
+		$this->loadTable( "Transfer History", "bkash_transfers",
+			array(
+				"ID"                       => "ID",
+				"SENT TO (bKash Personal)" => "receiver",
+				"Amount"                   => "amount",
+				"TRANSACTION ID"           => "trx_id",
+				"INVOICE NO"               => "merchant_invoice_no",
+				"STATUS"                   => "transactionStatus",
+				"B2C FEES"                 => "b2cFee",
+				"INITIATION TIME"          => "initiationTime",
+				"COMPLETION TIME"          => "completedTime"
+			) );
 	}
 
+	public function loadTable( $title, $tbl_name, $columns = array() ) {
+		global $wpdb;
+		$table_name = $wpdb->prefix . $tbl_name;
+
+		$pagenum = isset( $_GET['pagenum'] ) ? absint( $_GET['pagenum'] ) : 1;
+
+		$limit        = TABLE_LIMIT;
+		$offset       = ( $pagenum - 1 ) * $limit;
+		$total        = $wpdb->get_var( "select count(*) as total from $table_name" );
+		$num_of_pages = ceil( $total / $limit );
+
+		$rows     = $wpdb->get_results( "SELECT * from $table_name ORDER BY id DESC limit  $offset, $limit" );
+		$rowcount = $wpdb->num_rows;
+
+		?>
+        <div class="wrap abs">
+            <h2><?php echo $title; ?></h2>
+            <div class="tablenav top">
+                <div class="alignleft actions">
+                </div>
+                <br class="clear">
+            </div>
+
+            <table id="transaction-list-table" class='wp-list-table widefat fixed striped posts'
+                   aria-describedby="<?php echo $title; ?>">
+                <tr>
+					<?php
+					foreach ( array_keys( $columns ) as $table_head ) {
+						?>
+                        <th class='manage-column ss-list-width' scope='col'>
+							<?php echo $table_head; ?>
+                        </th>
+						<?php
+					}
+					?>
+                </tr>
+
+				<?php
+				if ( $rowcount > 0 ) {
+					foreach ( $rows as $row ) { ?>
+                        <tr>
+							<?php
+							foreach ( $columns as $column ) {
+								echo "<td class='manage-column ss-list-width'>" . $row->{$column} . "</td>";
+							}
+							?>
+                        </tr>
+					<?php }
+				} else {
+					echo "<tr><td colspan='5'>No records found</td></tr>";
+				} ?>
+            </table>
+        </div>
+		<?php
+
+		$page_links = paginate_links( array(
+			'base'      => add_query_arg( 'pagenum', '%#%' ),
+			'format'    => '',
+			'prev_text' => __( '&laquo;', 'text-domain' ),
+			'next_text' => __( '&raquo;', 'text-domain' ),
+			'total'     => $num_of_pages,
+			'current'   => $pagenum
+		) );
+
+		if ( $page_links ) {
+			echo '<div class="tablenav pagination-links" style="width: 99%;"><div class="tablenav-pages" style="margin: 1em 0">' . $page_links . '</div></div>';
+		}
+	}
 
 	public function RefundTransaction() {
 		$trx           = "";
@@ -311,15 +402,43 @@ class AdminDashboard {
 	}
 
 	public function Webhooks() {
-		include_once "pages/webhooks_list.php";
+		$this->loadTable( "All Webhooks", "bkash_webhooks",
+			array(
+				"ID"            => "ID",
+				"TRX_ID"        => "trx_id",
+				"SENDER"        => "sender",
+				"RECEIVER"      => "receiver",
+				"RECEIVER NAME" => "receiver_name",
+				"AMOUNT"        => "amount",
+				"REFERENCE"     => "reference",
+				"TYPE"          => "type",
+				"STATUS"        => "status",
+				"DATETIME"      => "datetime"
+			) );
 	}
 
 	public function Agreements() {
 		include_once "pages/agreements_list.php";
 	}
 
-	public function RenderPage() {
-		include_once "pages/transaction_list.php";
+	public function TransactionList() {
+		$this->loadTable( "All bKash Transactions", "bkash_transactions",
+			array(
+				"ID"               => "ID",
+				"ORDER ID"         => "order_id",
+				"INVOICE ID"       => "invoice_id",
+				"PAYMENT ID"       => "payment_id",
+				"TRANSACTION ID"   => "trx_id",
+				"AMOUNT"           => "amount",
+				"INTEGRATION TYPE" => "integration_type",
+				"INTENT"           => "intent",
+				"MODE"             => "mode",
+				"REFUNDED?"        => "refund_id",
+				"REFUND AMOUNT"    => "refund_amount",
+				"STATUS"           => "status",
+				"DATETIME"         => "datetime",
+			)
+		);
 	}
 
 	public function Initiate() {
@@ -327,122 +446,11 @@ class AdminDashboard {
 	}
 
 	public function BeginInstall() {
-		$this->CreateTransactionTable();
-		$this->CreateWebhookTable();
-		$this->CreateAgreementMappingTable();
-		$this->CreateTransferHistoryTable();
+		$tableGenerator = new TableGeneration();
+		$tableGenerator->CreateTransactionTable();
+		$tableGenerator->CreateWebhookTable();
+		$tableGenerator->CreateAgreementMappingTable();
+		$tableGenerator->CreateTransferHistoryTable();
 
-	}
-
-	public function CreateTransactionTable() {
-		global $wpdb;
-		$table_name             = $wpdb->prefix . "bkash_transactions";
-		$my_products_db_version = PGW_VERSION;
-		$charset_collate        = $wpdb->get_charset_collate();
-
-		if ( $wpdb->get_var( "SHOW TABLES LIKE '{$table_name}'" ) != $table_name ) {
-
-			$sql = "CREATE TABLE $table_name (
-                    ID bigint NOT NULL AUTO_INCREMENT,
-                    `order_id` VARCHAR(100) NOT NULL,
-                    `trx_id` VARCHAR(50) NULL ,
-                    `invoice_id` VARCHAR(100) NOT NULL UNIQUE,
-                    `payment_id` VARCHAR(50) NULL ,
-                    `integration_type` VARCHAR(50) NOT NULL,
-                    `mode` VARCHAR(10) NULL,
-                    `intent` VARCHAR(20) NULL,
-                    `amount` decimal(15,2) NOT NULL,
-                    `currency` VARCHAR(10) NOT NULL,
-                    `refund_id` VARCHAR(50) NULL,
-                    `refund_amount` decimal(15,2) NULL,
-                    `status` VARCHAR(50) NULL,
-                    `datetime` timestamp NULL,
-                    PRIMARY KEY  (ID)
-            ) $charset_collate;";
-
-			require_once( ABSPATH . UPGRADE_FILE );
-			dbDelta( $sql );
-			add_option( 'bkash_transaction_table_version', $my_products_db_version );
-		}
-	}
-
-	public function CreateWebhookTable() {
-		global $wpdb;
-		$table_name             = $wpdb->prefix . "bkash_webhooks";
-		$my_products_db_version = PGW_VERSION;
-		$charset_collate        = $wpdb->get_charset_collate();
-
-		if ( $wpdb->get_var( "SHOW TABLES LIKE '{$table_name}'" ) != $table_name ) {
-
-			$sql = "CREATE TABLE $table_name (
-                    ID bigint NOT NULL AUTO_INCREMENT,
-                    `sender` VARCHAR(20) NOT NULL,
-                    `receiver` VARCHAR(20) NOT NULL,
-                    `receiver_name` VARCHAR(100) NULL,
-                    `trx_id` VARCHAR(50) NOT NULL UNIQUE,
-                    `status` VARCHAR(30) NOT NULL,
-                    `type` VARCHAR(50) NOT NULL,
-                    `amount` decimal(15,2) NOT NULL,
-                    `currency` VARCHAR(10) NULL,
-                    `reference` VARCHAR(100) NULL,
-                    `datetime` timestamp NULL,
-                    PRIMARY KEY  (ID)
-            ) $charset_collate;";
-
-			require_once( ABSPATH . UPGRADE_FILE );
-			dbDelta( $sql );
-			add_option( 'bkash_webhook_table_version', $my_products_db_version );
-		}
-	}
-
-	public function CreateAgreementMappingTable() {
-		global $wpdb;
-		$table_name             = $wpdb->prefix . "bkash_agreement_mapping";
-		$my_products_db_version = PGW_VERSION;
-		$charset_collate        = $wpdb->get_charset_collate();
-
-		if ( $wpdb->get_var( "SHOW TABLES LIKE '{$table_name}'" ) != $table_name ) {
-
-			$sql = "CREATE TABLE $table_name (
-                    ID bigint NOT NULL AUTO_INCREMENT,
-                    `phone` VARCHAR(20) NOT NULL,
-                    `user_id` bigint NOT NULL,
-                    `agreement_token` VARCHAR(300) NOT NULL,
-                    `datetime` timestamp NOT NULL,
-                    PRIMARY KEY  (ID)
-            ) $charset_collate;";
-
-			require_once( ABSPATH . UPGRADE_FILE );
-			dbDelta( $sql );
-			add_option( 'bkash_agreement_mapping_table_version', $my_products_db_version );
-		}
-	}
-
-	public function CreateTransferHistoryTable() {
-		global $wpdb;
-		$table_name             = $wpdb->prefix . "bkash_transfers";
-		$my_products_db_version = PGW_VERSION;
-		$charset_collate        = $wpdb->get_charset_collate();
-
-		if ( $wpdb->get_var( "SHOW TABLES LIKE '{$table_name}'" ) != $table_name ) {
-
-			$sql = "CREATE TABLE $table_name (
-                    ID bigint NOT NULL AUTO_INCREMENT,
-                    `receiver` VARCHAR(20) NOT NULL,
-                    `amount` decimal(15,2) NOT NULL,
-                    `currency` VARCHAR(3) NOT NULL,
-                    `trx_id` VARCHAR(50) NOT NULL,
-                    `merchant_invoice_no` VARCHAR(80) NOT NULL,
-                    `transactionStatus` VARCHAR(30) NOT NULL,
-                    `b2cFee` VARCHAR(40) NULL,
-                    `initiationTime` timestamp NULL,
-                    `completedTime` timestamp NULL,
-                    PRIMARY KEY (ID)
-            ) $charset_collate;";
-
-			require_once( ABSPATH . UPGRADE_FILE );
-			dbDelta( $sql );
-			add_option( 'bkash_agreement_mapping_table_version', $my_products_db_version );
-		}
 	}
 }

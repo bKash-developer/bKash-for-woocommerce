@@ -17,8 +17,16 @@
                 <label for="trxid" class="form-label">Transaction ID *</label>
             </td>
             <td>
+                <?php
+                    $current_trx_id = '';
+                    if(!empty($fill_trx_id)) {
+                        $current_trx_id = $fill_trx_id;
+                    } else if(!empty($trx_id)) {
+                        $current_trx_id = $trx_id;
+                    }
+                ?>
                 <input name="trxid" type="text" id="trxid" placeholder="Transaction ID" class="form-text-input"
-                       value="<?php echo !empty($fill_trx_id) ? $fill_trx_id : (!empty($trx_id) ? $trx_id : '') ?> "/>
+                       value="<?php echo $current_trx_id; ?> "/>
             </td>
         </tr>
         <tr>
@@ -58,7 +66,7 @@
             </td>
             <td>
                 <input name="trxid" type="text" id="trxid" placeholder="Transaction ID" class="form-text-input"
-                       value="<?php echo !empty($fill_trx_id) ? $fill_trx_id : (!empty($trx_id) ? $trx_id : '') ?> "/>
+                       value="<?php echo $current_trx_id; ?> "/>
             </td>
         </tr>
     </table>

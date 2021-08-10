@@ -124,7 +124,6 @@ final class WC_Gateway_bKash {
 		// Check we have the minimum version of WooCommerce required before loading the gateway.
 	    if( defined( 'WC_VERSION' ) && version_compare( WC_VERSION, '2.2', '>=' ) ) {
 	        if( class_exists( 'WC_Payment_Gateway' ) ) {
-	            // $this->installer();
 	             $this->includes();
 
 	            add_filter( 'woocommerce_payment_gateways', array( $this, 'add_gateway' ) );
@@ -278,17 +277,19 @@ final class WC_Gateway_bKash {
         return $currencies;
     }
 
-    /**
-     * Add the currency symbol.
-     *
-     * @access public
-     * @return string
-     */
+	/**
+	 * Add the currency symbol.
+	 *
+	 * @access public
+	 *
+	 * @param $currency_symbol
+	 * @param $currency
+	 *
+	 * @return string
+	 */
     public function add_currency_symbol( $currency_symbol, $currency ) {
-        switch( $currency ) {
-            case 'BDT':
-                $currency_symbol = '৳';
-                break;
+        if($currency === 'BDT') {
+        	$currency_symbol = '৳';
         }
         return $currency_symbol;
     }

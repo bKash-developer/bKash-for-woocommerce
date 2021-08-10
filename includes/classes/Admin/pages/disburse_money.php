@@ -79,7 +79,5 @@ if ( isset( $trx ) && is_string( $trx ) && ! empty( $trx ) ) {
         </p>
     </div>
 	<?php
-} else {
-
 }
 ?>

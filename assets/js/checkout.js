@@ -1,7 +1,5 @@
-jQuery.noConflict();
-;(function ($) {
+(function ($) {
     $(function () {
-        // window.$ = $.noConflict(true);
         var paymentObj = {paymentID: "", orderID: ""};
         var paymentReq = {amount: '0', intent: 'sale'};
 
@@ -27,7 +25,7 @@ jQuery.noConflict();
         });
 
         function InitiatebKashPayment() {
-            window.$ = $.noConflict(true);
+            window.$ = $.noConflict();
             $.getScript(bKash_objects.bKashScriptURL, function () {
                 var button = document.getElementById("bKash_button");
                 if (!button) {
