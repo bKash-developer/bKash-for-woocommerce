@@ -14,7 +14,6 @@ Using this plugin, merchant can setup bKash payment gateway with selected produc
 * PHP (7.0 or above)
 * MySQL (5.6 or above)
 * Change in Permalink so that .htaccess can be rewritable. (https://wpengine.com/resources/wordpress-permalinks/)
-* Debug enabled in wp-config.php.
 * File write permission for wp-content directory.
 
 ### Non-Technical Requirements:
@@ -81,7 +80,7 @@ Using this plugin, merchant can setup bKash payment gateway with selected produc
 * Install WooCommerce bKash plugin from zip file by uploading it on Wordpress plugin menu.
 * Activate the plugin, and go to WooCommerce Setting → Payments, find bKash PGW there and set it up with relevant information.
 * Now bKash PGW should be available for use.
-* Important! Change Permalink from Wordpress Settings → Reading to Post Name.
+* Important! Change Permalink from Wordpress Settings → Reading to Post Name (etc).
 * Align .htaccess file accordingly with the guidance of Wordpress on permalink setting page.
 
 ### Webhook configuration process:
@@ -95,7 +94,7 @@ Using this plugin, merchant can setup bKash payment gateway with selected produc
 
 ### Additional Features
 
-* Logging of request and response traces, so that file can be prepared for SO validation.
+* Logging of request and response traces, so that file can be prepared for SO validation. (In WooCommerce Status Page you can find logs tab and Search for bKash_PGW_API_LOG_<current date> file.
 * Refund can also be initiated from WooCommerce Orders actions.
 * Authorised and Capture action can be performed by changing order status On Hold → Completed.
 * All transactions and history list are made using pagination, so on each page 10 entries can be viewed.
