@@ -323,7 +323,7 @@ final class WC_Gateway_bKash {
      * @return string
      */
     public function plugin_url() {
-        return untrailingslashit( BASE_URL );
+        return untrailingslashit( BK_BASE_URL );
     }
 
     /**
@@ -333,7 +333,7 @@ final class WC_Gateway_bKash {
      * @return string
      */
     public function plugin_path() {
-        return untrailingslashit(BASE_PATH);
+        return untrailingslashit(BK_BASE_PATH);
     }
 
 } // end if class

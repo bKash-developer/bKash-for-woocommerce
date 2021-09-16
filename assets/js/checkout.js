@@ -1,16 +1,36 @@
 (function ($) {
     $(function () {
+        let isReviewPage = false;
         var paymentObj = {paymentID: "", orderID: ""};
-        var paymentReq = {amount: '0', intent: 'sale'};
+        var paymentReq = {amount: '0', intent: 'sale', paymentURL: "", body: {}};
 
-        $(document).ready(function(){
+        $(document).ready(function () {
             InitiatebKashPayment();
         });
 
-        $('form.woocommerce-checkout').on('click', "#place_order", function (event) {
-            var payment_method = $('form.checkout').find('input[name^="payment_method"]:checked').val();
+        $('form.woocommerce-checkout, form#order_review').on('click', "#place_order", function (event) {
+            var payment_method = $('form.checkout, form#order_review').find('input[name^="payment_method"]:checked').val();
             if (payment_method === 'bkash_pgw') {
                 event.preventDefault();
+
+                // setting defaults
+                paymentReq.paymentURL = bKash_objects.submit_order;
+                paymentReq.body = $('form.checkout').serialize();
+
+                let referrer = $('form#order_review').find('input[name="_wp_http_referer"]');
+                if (referrer.length > 0) {
+                    let url = referrer.val().match(/^.*\/(\d+)\/.*$/);
+
+                    let order_review_url = url[0];
+                    let order_number = url[1];
+
+                    if (order_number !== undefined) {
+                        // Overriding if order review page
+                        isReviewPage = true;
+                        paymentReq.body = {order_id: order_number};
+                        paymentReq.paymentURL = bKash_objects.review_order_payment;
+                    }
+                }
 
                 if (bKash !== undefined) {
                     var button = document.getElementById("bKash_button");
@@ -47,14 +67,13 @@
 
                         createRequest: function (request) {
                             blockUI();
-                            var post_data = $('form.checkout').serialize()
-                            post_data['action'] = 'ajax_order';
+                            paymentReq.body['action'] = 'ajax_order';
                             $.ajax({
                                 type: 'POST',
-                                url: bKash_objects.submit_order,
+                                url: paymentReq.paymentURL,
                                 contentType: "application/x-www-form-urlencoded; charset=UTF-8",
                                 enctype: 'multipart/form-data',
-                                data: post_data,
+                                data: paymentReq.body,
                                 success: function (result) {
                                     if (result.result && result.result === 'success') {
                                         paymentObj = result.order;
@@ -126,7 +145,7 @@
             }
             var header = "<h3 style='color: #fff;font-weight: bold;margin: 0;font-size: 20px;line-height: 14px;'>" + msg + "</h3>";
 
-            var checkout_form = $('form.checkout');
+            var checkout_form = $('form.checkout, form#order_review');
             $('.woocommerce-NoticeGroup-checkout, .woocommerce-error, .woocommerce-message').remove();
             if (error_message) {
                 checkout_form.prepend('<div class="woocommerce-' + group + ' woocommerce-NoticeGroup-checkout">' + header + error_message + '</div>'); // eslint-disable-line max-len

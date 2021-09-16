@@ -8,21 +8,21 @@
 <form action="#" method="post">
     <label for="trxid" class="form-label">Transaction ID</label>
     <input name="trxid" type="text" id="trxid" placeholder="Transaction ID" class="form-text-input"
-           value="<?php echo $trx_id ?? ''; ?>">
+           value="<?php echo esc_attr($trx_id) ?? ''; ?>">
 
     <button class="button button-primary" type="submit">Search</button>
 </form>
 <br>
 
 <?php
-define("STRONG_START", "<strong>");
-define("STRONG_END", "</strong>");
+define("BK_STRONG_START", " <strong>");
+define("BK_STRONG_END", "</strong> ");
 
 if (isset($trx) && is_string($trx)) {
     // FAILED TO GET BALANCES
     ?>
     <div id="message" class="bKash-hero-div woocommerce-message bKash-error">
-        <p><?php echo $trx ?? '' ?></p>
+        <p><?php echo esc_html($trx) ?? '' ?></p>
     </div>
     <?php
 
@@ -40,10 +40,10 @@ if (isset($trx) && is_string($trx)) {
         <p><?php _e('Amount: <b>' . ($trx['amount'] ?? '') . ' ' . ($trx['currency'] ?? '') . '</b>', 'woocommerce-payment-gateway-bkash'); ?></p>
         <hr>
         <ul>
-            <li><?php echo __('Transaction Type', 'woocommerce-payment-gateway-bkash') . STRONG_START . ($trx['transactionType'] ?? '') . STRONG_END; ?></li>
-            <li><?php echo __('Merchant Account', 'woocommerce-payment-gateway-bkash') . STRONG_START . ($trx['organizationShortCode'] ?? '') . STRONG_END; ?></li>
-            <li><?php echo __('Initiated At', 'woocommerce-payment-gateway-bkash') . STRONG_START . ($trx['initiationTime'] ?? '') . STRONG_END; ?></li>
-            <li><?php echo __('Completed At', 'woocommerce-payment-gateway-bkash') . STRONG_START . ($trx['completedTime'] ?? '') . STRONG_END; ?></li>
+            <li><?php echo __('Transaction Type: ', 'woocommerce-payment-gateway-bkash') . BK_STRONG_START . ($trx['transactionType'] ?? '') . BK_STRONG_END; ?></li>
+            <li><?php echo __('Merchant Account: ', 'woocommerce-payment-gateway-bkash') . BK_STRONG_START . ($trx['organizationShortCode'] ?? '') . BK_STRONG_END; ?></li>
+            <li><?php echo __('Initiated At: ', 'woocommerce-payment-gateway-bkash') . BK_STRONG_START . ($trx['initiationTime'] ?? '') . BK_STRONG_END; ?></li>
+            <li><?php echo __('Completed At: ', 'woocommerce-payment-gateway-bkash') . BK_STRONG_START . ($trx['completedTime'] ?? '') . BK_STRONG_END; ?></li>
         </ul>
         <p>
             <button

@@ -150,7 +150,82 @@ class ApiComm {
 		];
 	}
 
+	/**
+	 * Reset Stored Token
+	 * */
+	public function resetToken() {
+		delete_option( "bkash_grant_token");
+		delete_option( "bkash_grant_token_expiry");
+		delete_option( "bkash_integration_product");
+	}
+
 	public function httpRequest( $api_title, $url, &$http_status, $method = "POST", $post_data = null, &$header = null, $grantHeader = false ) {
+
+		$log = "\n======== bKash PGW REQUEST LOG ========== \n\nAPI TITLE: $api_title \n";
+		$log .= "REQUEST METHOD: $method \n";
+		$log .= "REQUEST URL: $url \n";
+
+		$headers                 = [];
+		$headers['Accept']       = 'application/json';
+		$headers['Content-Type'] = 'application/json';
+		if ( $grantHeader ) {
+			$headers['username'] = $this->username;
+			$headers['password'] = $this->password;
+		} else {
+			$headers['authorization'] = $this->token;
+			$headers['x-app-key']     = $this->app_key;
+		}
+		if ( ! is_null( $header ) ) {
+			$headers = array_merge( $headers, $header );
+		}
+
+		$log .= "HEADERS: " . json_encode( $headers ) . "\n";
+		$log .= "BODY: " . json_encode( $post_data ) . "\n";
+
+		$response = wp_remote_post( $url, array(
+				'method'      => $method,
+				'timeout'     => 29,
+				'redirection' => 5,
+				'httpversion' => '1.0',
+				'blocking'    => true,
+				'headers'     => $headers,
+				'body'        => strtolower($method) === 'get' ? $post_data : json_encode( $post_data )
+			)
+		);
+
+		$log .= "RESPONSE: " . json_encode( $response ) . "\n\n";
+
+		if ( is_wp_error( $response ) ) {
+			$http_status = - 1;
+			$body        = $response->get_error_message();
+
+			Log::error( "CURL Error: = " . $body );
+		} else {
+			//parsing http status code
+			$http_status = wp_remote_retrieve_response_code( $response );
+
+			if ( ! is_null( $http_status ) && $http_status === 401 ) {
+				$this->readTokenFromAPI();
+			}
+
+			$header = wp_remote_retrieve_headers( $response );
+			$body   = wp_remote_retrieve_body( $response );
+		}
+
+		Log::debug( $log );
+
+		return $body;
+	}
+
+	protected function addOrUpdateOption( $key, $value ) {
+		if ( ! get_option( $key ) ) {
+			add_option( $key, $value );
+		} else {
+			update_option( $key, $value );
+		}
+	}
+
+	public function httpRequest2( $api_title, $url, &$http_status, $method = "POST", $post_data = null, &$header = null, $grantHeader = false ) {
 
 		$log = "\n======== bKash PGW REQUEST LOG ========== \n\nAPI TITLE: $api_title \n";
 		$log .= "REQUEST METHOD: $method \n";
@@ -184,7 +259,6 @@ class ApiComm {
 
 		$log .= "HEADERS: " . json_encode( $headers ) . "\n";
 		$log .= "BODY: " . json_encode( $post_data ) . "\n";
-
 
 
 		curl_setopt( $ch, CURLOPT_HEADER, true );
@@ -231,14 +305,6 @@ class ApiComm {
 		Log::debug( $log );
 
 		return $body;
-	}
-
-	protected function addOrUpdateOption( $key, $value ) {
-		if ( ! get_option( $key ) ) {
-			add_option( $key, $value );
-		} else {
-			update_option( $key, $value );
-		}
 	}
 
 	/**
@@ -312,29 +378,42 @@ class ApiComm {
 
 	}
 
-	public function executeCompleteCaptureVoid($payment_id, $type) {
+	/**
+	 * Execute Payment
+	 *
+	 * Confirming a payment via API calls
+	 *
+	 * @param string $payment_id
+	 *
+	 * @return array
+	 */
+	public function executePayment( string $payment_id ): array {
+		return $this->executeCompleteCaptureVoid( $payment_id, "execute" );
+	}
 
-		switch ($type) {
+	public function executeCompleteCaptureVoid( $payment_id, $type ) {
+
+		switch ( $type ) {
 			case "execute" :
-				$api_path = $this->integration_product === 'checkout' ? 'payment/execute' : 'execute';
+				$api_path     = $this->integration_product === 'checkout' ? 'payment/execute' : 'execute';
 				$extra_in_url = '';
 				break;
 			case "capture":
-				$api_path = $this->integration_product === 'checkout' ? 'payment/capture' : 'payment/confirm';
+				$api_path     = $this->integration_product === 'checkout' ? 'payment/capture' : 'payment/confirm';
 				$extra_in_url = '/capture';
 				break;
 			case "void":
-				$api_path = $this->integration_product === 'checkout' ? 'payment/void' : 'payment/confirm';
+				$api_path     = $this->integration_product === 'checkout' ? 'payment/void' : 'payment/confirm';
 				$extra_in_url = '/void';
 				break;
 			default:
-				$api_path = '';
+				$api_path     = '';
 				$extra_in_url = '';
 		}
 
 		if ( $this->integration_product === 'checkout' ) {
-			$url = $this->constructed_url . $api_path . '/' . $payment_id;
-			$response = $this->httpRequest( "Checkout ".ucwords($type)." Payment", $url, $http_status, "POST", null, $header );
+			$url      = $this->constructed_url . $api_path . '/' . $payment_id;
+			$response = $this->httpRequest( "Checkout " . ucwords( $type ) . " Payment", $url, $http_status, "POST", null, $header );
 		} else {
 			$url = $this->constructed_url . $api_path . $extra_in_url;
 
@@ -342,7 +421,7 @@ class ApiComm {
 				'paymentID' => $payment_id
 			);
 
-			$response = $this->httpRequest( "Tokenized ".ucwords($type)." Payment", $url, $http_status, "POST", $body, $header );
+			$response = $this->httpRequest( "Tokenized " . ucwords( $type ) . " Payment", $url, $http_status, "POST", $body, $header );
 		}
 
 		// QUERY PAYMENT IN CASE OF ANY NETWORK OR NO RESPONSE OR TIMED OUT ISSUE
@@ -358,19 +437,6 @@ class ApiComm {
 			'header'      => $header,
 			'response'    => $response
 		];
-	}
-
-	/**
-	 * Execute Payment
-	 *
-	 * Confirming a payment via API calls
-	 *
-	 * @param string $payment_id
-	 *
-	 * @return array
-	 */
-	public function executePayment( string $payment_id ): array {
-		return $this->executeCompleteCaptureVoid($payment_id, "execute");
 	}
 
 	/**
@@ -416,7 +482,7 @@ class ApiComm {
 	 * @return array
 	 */
 	public function capturePayment( string $payment_id ): array {
-		return $this->executeCompleteCaptureVoid($payment_id, "capture");
+		return $this->executeCompleteCaptureVoid( $payment_id, "capture" );
 	}
 
 	/**
@@ -430,7 +496,7 @@ class ApiComm {
 	 * @return array
 	 */
 	public function voidPayment( string $payment_id ): array {
-		return $this->executeCompleteCaptureVoid($payment_id, "void");
+		return $this->executeCompleteCaptureVoid( $payment_id, "void" );
 	}
 
 	/**
@@ -746,12 +812,13 @@ class Log {
 	}
 
 	public static function is_debug() {
-		$is_debug = 'no';
+		$is_debug  = 'no';
 		$plugin_id = 'bkash_pgw';
 		$settings  = get_option( 'woocommerce_' . $plugin_id . '_settings' );
 		if ( ! is_null( $settings ) ) {
-			$is_debug =  $settings[ 'debug' ] ?? 'no';
+			$is_debug = $settings['debug'] ?? 'no';
 		}
+
 		return $is_debug;
 	}
 

@@ -5,7 +5,7 @@ namespace bKash\PGW;
  * Plugin Name:       bKash for WooCommerce
  * Plugin URI:        https://developer.bka.sh
  * Description:       A bKash payment gateway plugin for WooCommerce.
- * Version:           0.0.2-dev
+ * Version:           1.0.1
  * Author:            bKash Limited
  * Author URI:        http://developer.bka.sh
  * Requires at least: 4.0
@@ -13,7 +13,7 @@ namespace bKash\PGW;
  * Text Domain:       woocommerce-payment-gateway-bkash
  * Domain Path:       languages
  * Network:           false
- * GitHub Plugin URI: https://github.com/bKash-developer
+ * GitHub Plugin URI: https://github.com/bKash-developer/bKash-for-woocommerce
  *
  * WooCommerce Payment Gateway (bKash PGW) is distributed under the terms of the
  * GNU General Public License as published by the Free Software Foundation,
@@ -28,7 +28,7 @@ namespace bKash\PGW;
  * along with WooCommerce Payment Gateway (bKash PGW). If not, see <http://www.gnu.org/licenses/>.
  *
  * @package  woocommerce-bkash-pgw
- * @author   Md. Shahnawaz Ahmed / bKash Limited
+ * @author   bKash Limited
  * @category Core
  */
 
@@ -36,9 +36,9 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('BASE_PATH', plugin_dir_path(__FILE__));
-define('BASE_URL', plugin_dir_url(__FILE__));
-require BASE_PATH . 'vendor/autoload.php';
+define('BK_BASE_PATH', plugin_dir_path(__FILE__));
+define('BK_BASE_URL', plugin_dir_url(__FILE__));
+require BK_BASE_PATH . 'vendor/autoload.php';
 
 use bKash\PGW\Admin\AdminDashboard;
 
@@ -59,10 +59,10 @@ $dashboard->Initiate();
 /**
  * WC Detection
  */
-if (!function_exists('is_woocommerce_active')) {
-    function is_woocommerce_active()
+if (!function_exists('bKash_is_woocommerce_active')) {
+    function bKash_is_woocommerce_active()
     {
-        return WC_Dependencies::woocommerce_active_check();
+        return WC_Dependencies::bKash_woocommerce_active_check();
     }
 }
 

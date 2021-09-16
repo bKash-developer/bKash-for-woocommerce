@@ -146,7 +146,23 @@ class ProcessPayments {
 								wp_redirect( $orderPageURL );
 								die();
 							}
-							$message = $this->processResponse( "Could not update transaction status" );
+
+							if ( $updated && isset( $paymentResp['paymentID'] ) && ! empty( $paymentResp['paymentID'] ) ) {
+								$msg = "Transaction was not successful, last transaction status: "
+								       . $paymentResp['transactionStatus'] ?? 'NO_STATUS_EXECUTE';
+								if ( $this->integration_type === 'checkout' ) {
+									echo json_encode( array(
+										'result'  => 'failure',
+										'message' => $msg
+									) );
+									die();
+								} else {
+									wc_add_notice( $msg, 'error' );
+									wp_redirect( wc_get_checkout_url() );
+									die();
+								}
+							}
+							$message = $this->processResponse( "Could not get transaction status" );
 						} else {
 							$message = is_string( $paymentResp ) ? $paymentResp : '';
 							$message = $this->processResponse( $message );
@@ -203,7 +219,7 @@ class ProcessPayments {
 		global $woocommerce;
 		$message      = '';
 		$isAgreement  = isset( $_REQUEST['agreement'] );
-		$agreement_id = $_REQUEST['agreement_id'] ?? null;
+		$agreement_id = sanitize_text_field( $_REQUEST['agreement_id'] ?? null );
 
 		//To receive order id and total
 		$order    = wc_get_order( $order_id );
@@ -253,7 +269,7 @@ class ProcessPayments {
 
 			$payment_payload = array(
 				'mode'                  => $mode,
-				'payerReference'        => uniqid('bKash_', false) . '_' . $merchantCustomerId,
+				'payerReference'        => uniqid( 'bKash_', false ) . '_' . $merchantCustomerId,
 				'callbackURL'           => $callbackURL,
 				'agreementID'           => $storedAgreementID ?? '',
 				'amount'                => $amount,
@@ -271,7 +287,7 @@ class ProcessPayments {
 		$trx->setIntent( $intent );
 		$trx->setCurrency( $currency );
 		$trx->setMode( $mode ?? '' );
-		$trx->setStatus("Created");
+		$trx->setStatus( "Created" );
 
 		if ( isset( $payment_payload['merchantInvoiceNumber'] ) ) {
 			$trx->setInvoiceID( $payment_payload['merchantInvoiceNumber'] );
@@ -338,7 +354,10 @@ class ProcessPayments {
 
 		wc_add_notice( $message, 'error' );
 
-		return [];
+		return [
+			'result'  => 'failure',
+			'message' => $message
+		];
 	}
 
 	public function processResponse( $message, $type = 'error' ) {

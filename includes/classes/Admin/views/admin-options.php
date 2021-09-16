@@ -21,10 +21,6 @@
 </div>
 
 <table class="form-table" id="admin-option-table" aria-describedby="admin option Table">
-    <tr>
-        <th scope="col">Field</th>
-        <th scope="col">Value</th>
-    </tr>
     <?php $this->generate_settings_html(); ?>
     <script type="text/javascript">
         jQuery('#woocommerce_bkash_pgw_sandbox').change(function () {

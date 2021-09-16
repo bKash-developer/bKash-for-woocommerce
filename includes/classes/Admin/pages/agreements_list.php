@@ -1,9 +1,9 @@
 <?php
 
-$action = $_REQUEST['action'] ?? '';
+$action = sanitize_text_field($_REQUEST['action'] ?? '');
 
 if ($action === 'cancel') {
-    $id = $_REQUEST['id'] ?? null;
+    $id = sanitize_text_field($_REQUEST['id'] ?? null);
     if ($id) {
         $agreementObj = new \bKash\PGW\Models\Agreement();
         $agreement = $agreementObj->getAgreement('','',$id);
@@ -81,13 +81,13 @@ $rowcount = $wpdb->num_rows;
             if ($rowcount > 0) {
                 foreach ($rows as $row) { ?>
                     <tr>
-                        <td class="manage-column ss-list-width"><?php echo $row->ID; ?></td>
-                        <td class="manage-column ss-list-width"><?php echo $row->phone; ?></td>
-                        <td class="manage-column ss-list-width"><?php echo $row->user_id; ?></td>
-                        <td class="manage-column ss-list-width"><?php echo $row->agreement_token; ?></td>
-                        <td class="manage-column ss-list-width"><?php echo $row->datetime; ?></td>
+                        <td class="manage-column ss-list-width"><?php echo esc_html($row->ID); ?></td>
+                        <td class="manage-column ss-list-width"><?php echo esc_html($row->phone); ?></td>
+                        <td class="manage-column ss-list-width"><?php echo esc_html($row->user_id); ?></td>
+                        <td class="manage-column ss-list-width"><?php echo esc_html($row->agreement_token); ?></td>
+                        <td class="manage-column ss-list-width"><?php echo esc_html($row->datetime); ?></td>
                         <td>
-                            <a onclick="return confirm('Are you sure to cancel this?');" href="<?php echo admin_url('admin.php?page=' . $this->slug . '/agreements&action=cancel&id=' . $row->ID); ?>">Cancel
+                            <a onclick="return confirm('Are you sure to cancel this?');" href="<?php echo esc_url(admin_url('admin.php?page=' . $this->slug . '/agreements&action=cancel&id=' . $row->ID)); ?>">Cancel
                                 Agreement</a></td>
 
 

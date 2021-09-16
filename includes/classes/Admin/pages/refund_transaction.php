@@ -3,15 +3,11 @@
         border-left-color: #e23e3e !important;
     }
 </style>
-<h1><?php echo get_admin_page_title(); ?></h1>
+<h1><?php echo esc_html(get_admin_page_title()); ?></h1>
 <br>
 <form action="#" method="post">
 
     <table id="refund-table" aria-describedby="refund table">
-        <tr>
-            <th scope="col">Field</th>
-            <th scope="col">Value</th>
-        </tr>
         <tr>
             <td>
                 <label for="trxid" class="form-label">Transaction ID *</label>
@@ -26,7 +22,7 @@
                     }
                 ?>
                 <input name="trxid" type="text" id="trxid" placeholder="Transaction ID" class="form-text-input"
-                       value="<?php echo $current_trx_id; ?> "/>
+                       value="<?php echo esc_attr($current_trx_id); ?> "/>
             </td>
         </tr>
         <tr>
@@ -35,7 +31,7 @@
             </td>
             <td>
                 <input name="amount" type="text" id="amount" placeholder="Amount" class="form-text-input"
-                       value="<?php echo $amount ?? ''; ?>"/>
+                       value="<?php echo esc_attr($amount) ?? ''; ?>"/>
             </td>
         </tr>
         <tr>
@@ -57,16 +53,12 @@
 
     <table id="refund-status-table" aria-describedby="Refund Status Table">
         <tr>
-            <th scope="col">Field</th>
-            <th scope="col">Value</th>
-        </tr>
-        <tr>
             <td>
                 <label for="trxid" class="form-label">Transaction ID *</label>
             </td>
             <td>
                 <input name="trxid" type="text" id="trxid" placeholder="Transaction ID" class="form-text-input"
-                       value="<?php echo $current_trx_id; ?> "/>
+                       value="<?php echo esc_html($current_trx_id); ?> "/>
             </td>
         </tr>
     </table>
@@ -80,7 +72,7 @@ if (isset($trx) && is_string($trx) && !empty($trx)) {
     // FAILED TO GET BALANCES
     ?>
     <div id="message" class="bKash-hero-div woocommerce-message bKash-error">
-        <p><?php echo $trx ?? '' ?></p>
+        <p><?php echo esc_html($trx) ?? '' ?></p>
     </div>
     <?php
 

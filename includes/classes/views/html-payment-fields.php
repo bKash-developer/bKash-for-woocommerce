@@ -7,27 +7,23 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( isset( $agreements ) && ( $this->integration_type === "tokenized" || $this->integration_type === "tokenized-both" ) ) {
 	echo "<table id='payment-fields-table'>";
 	?>
-    <tr>
-        <th scope="col">Field</th>
-        <th scope="col">Value</th>
-    </tr>
 	<?php
 	foreach ( $agreements as $i => $agreement ) {
 		?>
         <tr>
             <td>
-                <label for="<?php echo $agreement->agreement_token ?? ""; ?>">
-                    <input id="<?php echo $agreement->agreement_token ?? ""; ?>" type="radio" name="agreement_id"
-                           value="<?php echo $agreement->agreement_token ?? ""; ?>"
+                <label for="<?php echo esc_html($agreement->agreement_token) ?? ""; ?>">
+                    <input id="<?php echo esc_html($agreement->agreement_token) ?? ""; ?>" type="radio" name="agreement_id"
+                           value="<?php echo esc_html($agreement->agreement_token) ?? ""; ?>"
 						<?php if ( $i === 0 ) {
 							echo 'checked';
 						} ?>
                     />
-					<?php echo $agreement->phone ?? '' ?>
+					<?php echo esc_html($agreement->phone) ?? '' ?>
                 </label>
             </td>
             <td><a class="cancelAgreementButton" href="javascript:void(0)"
-                   data-agreement="<?php echo $agreement->agreement_token ?? ""; ?>">Remove</a></td>
+                   data-agreement="<?php echo esc_html($agreement->agreement_token) ?? ""; ?>">Remove</a></td>
         </tr>
 		<?php
 	}

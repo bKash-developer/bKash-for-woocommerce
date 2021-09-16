@@ -3,22 +3,18 @@
         border-left-color: #e23e3e !important;
     }
 </style>
-<h1><?php echo get_admin_page_title(); ?></h1>
+<h1><?php echo esc_html(get_admin_page_title()); ?></h1>
 <br>
 <form action="#" method="post">
 
     <table id="transfer-balance-table" aria-describedby="transfer balance">
-        <tr>
-            <th scope="col">Field</th>
-            <th scope="col">Value</th>
-        </tr>
         <tr>
             <td>
                 <label for="amount" class="form-label">Amount</label>
             </td>
             <td>
                 <input name="amount" type="text" id="amount" placeholder="Amount" class="form-text-input"
-                       value="<?php echo $amount ?? ''; ?>"/>
+                       value="<?php echo esc_html($amount) ?? ''; ?>"/>
             </td>
         </tr>
         <tr>
@@ -43,7 +39,7 @@ if (isset($trx) && is_string($trx) && !empty($trx)) {
     // FAILED TO GET BALANCES
     ?>
     <div id="message" class="bKash-hero-div woocommerce-message bKash-error">
-        <p><?php echo $trx ?? '' ?></p>
+        <p><?php echo esc_html($trx) ?? '' ?></p>
     </div>
     <?php
 

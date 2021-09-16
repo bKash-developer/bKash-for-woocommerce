@@ -18,7 +18,7 @@ class WC_Dependencies {
         }
     }
 
-    public static function woocommerce_active_check() {
+    public static function bKash_woocommerce_active_check() {
 
         if ( ! self::$active_plugins ) {
 	        self::init();

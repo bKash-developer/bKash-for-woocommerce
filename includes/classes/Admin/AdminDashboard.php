@@ -7,8 +7,8 @@ use bKash\PGW\Models\Transactions;
 use bKash\PGW\PaymentGatewaybKash;
 use bKash\PGW\TableGeneration;
 
-define( "PGW_VERSION", "1.2.0" );
-define( "TABLE_LIMIT", 10 );
+define( "BK_PGW_VERSION", "1.2.0" );
+define( "BK_TABLE_LIMIT", 10 );
 
 class AdminDashboard {
 	private static $instance;
@@ -289,7 +289,7 @@ class AdminDashboard {
 
 		$pagenum = isset( $_GET['pagenum'] ) ? absint( $_GET['pagenum'] ) : 1;
 
-		$limit        = TABLE_LIMIT;
+		$limit        = BK_TABLE_LIMIT;
 		$offset       = ( $pagenum - 1 ) * $limit;
 		$total        = $wpdb->get_var( "select count(*) as total from $table_name" );
 		$num_of_pages = ceil( $total / $limit );
@@ -299,7 +299,7 @@ class AdminDashboard {
 
 		?>
         <div class="wrap abs">
-            <h2><?php echo $title; ?></h2>
+            <h2><?php echo esc_html( $title ); ?></h2>
             <div class="tablenav top">
                 <div class="alignleft actions">
                 </div>
@@ -307,13 +307,13 @@ class AdminDashboard {
             </div>
 
             <table id="transaction-list-table" class='wp-list-table widefat fixed striped posts'
-                   aria-describedby="<?php echo $title; ?>">
+                   aria-describedby="<?php echo esc_attr( $title ); ?>">
                 <tr>
 					<?php
 					foreach ( array_keys( $columns ) as $table_head ) {
 						?>
                         <th class='manage-column ss-list-width' scope='col'>
-							<?php echo $table_head; ?>
+							<?php echo esc_html( $table_head ); ?>
                         </th>
 						<?php
 					}
@@ -326,7 +326,7 @@ class AdminDashboard {
                         <tr>
 							<?php
 							foreach ( $columns as $column ) {
-								echo "<td class='manage-column ss-list-width'>" . $row->{$column} . "</td>";
+								echo "<td class='manage-column ss-list-width'>" . esc_html( $row->{$column} ) . "</td>";
 							}
 							?>
                         </tr>

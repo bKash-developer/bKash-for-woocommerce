@@ -6,20 +6,16 @@ if (isset($trx) && $trx) {
 
     <table id="extra-detail-table" class="woocommerce-table order_details" aria-describedby="extra details">
         <tr>
-            <th scope="col">Field</th>
-            <th scope="col">Value</th>
-        </tr>
-        <tr>
             <td>Payment Method</td>
             <td>bKash Online payment Gateway</td>
         </tr>
         <tr>
             <td>Transaction ID</td>
-            <td><?php echo $trx->getTrxID() ?? ''; ?></td>
+            <td><?php echo esc_html($trx->getTrxID()) ?? ''; ?></td>
         </tr>
         <tr>
             <td>Payment Status</td>
-            <td><?php echo $trx->getStatus() ?? ''; ?></td>
+            <td><?php echo esc_html($trx->getStatus()) ?? ''; ?></td>
         </tr>
     </table>
 

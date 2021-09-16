@@ -3,15 +3,11 @@
         border-left-color: #e23e3e !important;
     }
 </style>
-<h1><?php echo get_admin_page_title(); ?></h1>
+<h1><?php echo esc_html(get_admin_page_title()); ?></h1>
 <br>
 <form action="#" method="post">
 
     <table id="disburse-money-table" aria-describedby="disburse money">
-        <tr>
-            <th scope="col">Field</th>
-            <th scope="col">Value</th>
-        </tr>
         <tr>
             <td>
                 <label for="amount" class="form-label">Amount *</label>
@@ -26,7 +22,7 @@
             </td>
             <td>
                 <input name="receiver" type="tel" id="receiver" placeholder="Mobile number" class="form-text-input"
-                       value="<?php echo $receiver ?? ''; ?>" pattern="^(?:\+88|01)?\d{11}$"/>
+                       value="<?php echo esc_attr($receiver) ?? ''; ?>" pattern="^(?:\+88|01)?\d{11}$"/>
             </td>
         </tr>
         <tr>
@@ -49,7 +45,7 @@ if ( isset( $trx ) && is_string( $trx ) && ! empty( $trx ) ) {
 	// FAILED TO GET BALANCES
 	?>
     <div id="message" class="bKash-hero-div woocommerce-message bKash-error">
-        <p><?php echo $trx ?? '' ?></p>
+        <p><?php echo esc_html($trx) ?? '' ?></p>
     </div>
 	<?php
 

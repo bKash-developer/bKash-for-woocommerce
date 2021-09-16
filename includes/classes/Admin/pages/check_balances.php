@@ -4,7 +4,7 @@ if (isset($balances) && is_string($balances)) {
     // FAILED TO GET BALANCES
     ?>
     <div id="message" class="woocommerce-message bKash-hero-div bKash-error-div">
-        <p><?php echo $balances ?? '' ?></p>
+        <p><?php echo esc_html($balances) ?? '' ?></p>
     </div>
     <?php
 
