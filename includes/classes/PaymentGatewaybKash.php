@@ -15,8 +15,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 } // Exit if accessed directly.
 
-define( "BK_WC_API", "/wc-api/" );
-define( "BK_CLOSE_PDIV", "</p></div>" );
+define( "BKASH_WC_API", "/wc-api/" );
+define( "BKASH_CLOSE_PDIV", "</p></div>" );
 
 /**
  * WooCommerce bKash Payment Gateway.
@@ -198,7 +198,7 @@ class PaymentGatewaybKash extends WC_Payment_Gateway {
 				'type'        => 'checkbox',
 				'label'       => __( 'Enable Webhook listener', 'woocommerce-payment-gateway-bkash' ),
 				'default'     => 'no',
-				'description' => sprintf( __( 'Share this webhook URL to bKash team - <code>%s</code>', 'woocommerce-payment-gateway-bkash' ), $this->siteUrl . BK_WC_API . $this->WEBHOOK_URL )
+				'description' => sprintf( __( 'Share this webhook URL to bKash team - <code>%s</code>', 'woocommerce-payment-gateway-bkash' ), $this->siteUrl . BKASH_WC_API . $this->WEBHOOK_URL )
 			),
 			'sandbox'            => array(
 				'title'       => __( 'Sandbox', 'woocommerce-payment-gateway-bkash' ),
@@ -512,15 +512,15 @@ class PaymentGatewaybKash extends WC_Payment_Gateway {
 
 		// PHP Version.
 		if ( PHP_VERSION_ID < 50300 ) {
-			echo '<div class="error version-error"><p>' . sprintf( __( 'bKash PGW Error: bKash PGW requires PHP 5.3 and above. You are using version %s.', 'woocommerce-payment-gateway-bkash' ), phpversion() ) . BK_CLOSE_PDIV;
+			echo '<div class="error version-error"><p>' . sprintf( __( 'bKash PGW Error: bKash PGW requires PHP 5.3 and above. You are using version %s.', 'woocommerce-payment-gateway-bkash' ), phpversion() ) . BKASH_CLOSE_PDIV;
 		} // Check required fields.
 		else if ( ! $this->app_key || ! $this->app_secret ) {
-			echo '<div class="error app-key-error"><p>' . __( 'bKash PGW Error: Please enter your app keys and secrets', 'woocommerce-payment-gateway-bkash' ) . BK_CLOSE_PDIV;
+			echo '<div class="error app-key-error"><p>' . __( 'bKash PGW Error: Please enter your app keys and secrets', 'woocommerce-payment-gateway-bkash' ) . BKASH_CLOSE_PDIV;
 		} else if ( 'BDT' !== get_woocommerce_currency() ) {
-			echo '<div class="error currency-error"><p>' . __( 'bKash PGW Error: Only supports BDT as currency', 'woocommerce-payment-gateway-bkash' ) . BK_CLOSE_PDIV;
+			echo '<div class="error currency-error"><p>' . __( 'bKash PGW Error: Only supports BDT as currency', 'woocommerce-payment-gateway-bkash' ) . BKASH_CLOSE_PDIV;
 		} // Show message if enabled and FORCE SSL is disabled and WordPress HTTPS plugin is not detected.
 		else if ( 'no' == get_option( 'woocommerce_force_ssl_checkout' ) && ! class_exists( 'WordPressHTTPS' ) && ! is_ssl() ) {
-			echo '<div class="error ssl-error"><p>' . sprintf( __( 'bKash PGW is enabled, but the <a href="%s">force SSL option</a> is disabled; your checkout may not be secure! Please enable SSL and ensure your server has a valid SSL certificate - bKash PGW will only work in sandbox mode.', 'woocommerce-payment-gateway-bkash' ), admin_url( 'admin.php?page=wc-settings&tab=checkout' ) ) . BK_CLOSE_PDIV;
+			echo '<div class="error ssl-error"><p>' . sprintf( __( 'bKash PGW is enabled, but the <a href="%s">force SSL option</a> is disabled; your checkout may not be secure! Please enable SSL and ensure your server has a valid SSL certificate - bKash PGW will only work in sandbox mode.', 'woocommerce-payment-gateway-bkash' ), admin_url( 'admin.php?page=wc-settings&tab=checkout' ) ) . BKASH_CLOSE_PDIV;
 		}
 
 		// APP KEY APP SECRET CHECK
@@ -535,7 +535,7 @@ class PaymentGatewaybKash extends WC_Payment_Gateway {
 	 * @access public
 	 */
 	public function app_key_missing_notice() {
-		$notice = '<div class="error woocommerce-message wc-connect"><p>' . sprintf( __( 'Please set bKash PGW credentials for accepting payments!', 'payment-gateway-bkash' ), "Payment Gateway bKash" ) . BK_CLOSE_PDIV;
+		$notice = '<div class="error woocommerce-message wc-connect"><p>' . sprintf( __( 'Please set bKash PGW credentials for accepting payments!', 'payment-gateway-bkash' ), "Payment Gateway bKash" ) . BKASH_CLOSE_PDIV;
 		add_action( 'admin_notices', $notice );
 	}
 
@@ -606,9 +606,9 @@ class PaymentGatewaybKash extends WC_Payment_Gateway {
 				'sandbox'              => $this->sandbox,
 				'submit_order'         => WC_AJAX::get_endpoint( 'checkout' ),
 				'ajaxURL'              => admin_url( 'admin-ajax.php' ),
-				'wcAjaxURL'            => $this->siteUrl . BK_WC_API . $this->EXECUTE_URL,
-				'cancelAgreement'      => $this->siteUrl . BK_WC_API . $this->CANCEL_AGREEMENT_URL,
-				'review_order_payment' => $this->siteUrl . BK_WC_API . $this->REVIEW_ORDER_URL,
+				'wcAjaxURL'            => $this->siteUrl . BKASH_WC_API . $this->EXECUTE_URL,
+				'cancelAgreement'      => $this->siteUrl . BKASH_WC_API . $this->CANCEL_AGREEMENT_URL,
+				'review_order_payment' => $this->siteUrl . BKASH_WC_API . $this->REVIEW_ORDER_URL,
 				'bKashScriptURL'       => $bk_script_url
 			) );
 
@@ -622,7 +622,7 @@ class PaymentGatewaybKash extends WC_Payment_Gateway {
 			wp_localize_script( 'woocommerce-payment-gateway-bkash', 'bKash_objects', array(
 				'apiVersion'      => $this->api_version,
 				'sandbox'         => $this->sandbox,
-				'cancelAgreement' => $this->siteUrl . BK_WC_API . $this->CANCEL_AGREEMENT_URL
+				'cancelAgreement' => $this->siteUrl . BKASH_WC_API . $this->CANCEL_AGREEMENT_URL
 			) );
 
 			wp_enqueue_script( 'woocommerce-payment-gateway-bkash' );
@@ -663,7 +663,7 @@ class PaymentGatewaybKash extends WC_Payment_Gateway {
 	}
 
 	public function process_payment( $order_id ) {
-		$cbURL          = get_site_url() . BK_WC_API . $this->CALLBACK_URL . '?orderId=' . $order_id;
+		$cbURL          = get_site_url() . BKASH_WC_API . $this->CALLBACK_URL . '?orderId=' . $order_id;
 		$processPayment = new ProcessPayments( $this->integration_type );
 
 		return $processPayment->createPayment( $order_id, $this->intent, $cbURL );
@@ -677,7 +677,7 @@ class PaymentGatewaybKash extends WC_Payment_Gateway {
 		$order = wc_get_order( $order_id );
 		if ( $order ) {
 
-			$cbURL = get_site_url() . BK_WC_API . $this->CALLBACK_URL . '?orderId=' . $order_id;
+			$cbURL = get_site_url() . BKASH_WC_API . $this->CALLBACK_URL . '?orderId=' . $order_id;
 
 			$process = new ProcessPayments( $this->integration_type );
 			$process->executePayment( $this->get_return_url( $order ), $cbURL );

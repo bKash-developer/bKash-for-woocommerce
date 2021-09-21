@@ -36,9 +36,9 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('BK_BASE_PATH', plugin_dir_path(__FILE__));
-define('BK_BASE_URL', plugin_dir_url(__FILE__));
-require BK_BASE_PATH . 'vendor/autoload.php';
+define('BKASH_BASE_PATH', plugin_dir_path(__FILE__));
+define('BKASH_BASE_URL', plugin_dir_url(__FILE__));
+require BKASH_BASE_PATH . 'vendor/autoload.php';
 
 use bKash\PGW\Admin\AdminDashboard;
 

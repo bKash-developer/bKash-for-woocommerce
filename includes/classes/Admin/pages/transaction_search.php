@@ -15,8 +15,8 @@
 <br>
 
 <?php
-define("BK_STRONG_START", " <strong>");
-define("BK_STRONG_END", "</strong> ");
+define("BKASH_STRONG_START", " <strong>");
+define("BKASH_STRONG_END", "</strong> ");
 
 if (isset($trx) && is_string($trx)) {
     // FAILED TO GET BALANCES
@@ -40,10 +40,10 @@ if (isset($trx) && is_string($trx)) {
         <p><?php _e('Amount: <b>' . ($trx['amount'] ?? '') . ' ' . ($trx['currency'] ?? '') . '</b>', 'woocommerce-payment-gateway-bkash'); ?></p>
         <hr>
         <ul>
-            <li><?php echo __('Transaction Type: ', 'woocommerce-payment-gateway-bkash') . BK_STRONG_START . ($trx['transactionType'] ?? '') . BK_STRONG_END; ?></li>
-            <li><?php echo __('Merchant Account: ', 'woocommerce-payment-gateway-bkash') . BK_STRONG_START . ($trx['organizationShortCode'] ?? '') . BK_STRONG_END; ?></li>
-            <li><?php echo __('Initiated At: ', 'woocommerce-payment-gateway-bkash') . BK_STRONG_START . ($trx['initiationTime'] ?? '') . BK_STRONG_END; ?></li>
-            <li><?php echo __('Completed At: ', 'woocommerce-payment-gateway-bkash') . BK_STRONG_START . ($trx['completedTime'] ?? '') . BK_STRONG_END; ?></li>
+            <li><?php echo __('Transaction Type: ', 'woocommerce-payment-gateway-bkash') . BKASH_STRONG_START . ($trx['transactionType'] ?? '') . BKASH_STRONG_END; ?></li>
+            <li><?php echo __('Merchant Account: ', 'woocommerce-payment-gateway-bkash') . BKASH_STRONG_START . ($trx['organizationShortCode'] ?? '') . BKASH_STRONG_END; ?></li>
+            <li><?php echo __('Initiated At: ', 'woocommerce-payment-gateway-bkash') . BKASH_STRONG_START . ($trx['initiationTime'] ?? '') . BKASH_STRONG_END; ?></li>
+            <li><?php echo __('Completed At: ', 'woocommerce-payment-gateway-bkash') . BKASH_STRONG_START . ($trx['completedTime'] ?? '') . BKASH_STRONG_END; ?></li>
         </ul>
         <p>
             <button

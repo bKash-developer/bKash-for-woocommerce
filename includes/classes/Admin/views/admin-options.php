@@ -1,4 +1,3 @@
-<link rel="stylesheet" href="<?php echo plugins_url('../../../../assets/css/admin.css', __FILE__); ?>">
 <h3><?php _e('bKash Payment Gateway', 'woocommerce-payment-gateway-bkash'); ?></h3>
 
 <div class="gateway-banner bKash-hero-div bKash-success">

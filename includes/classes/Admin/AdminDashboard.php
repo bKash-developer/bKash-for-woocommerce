@@ -7,8 +7,8 @@ use bKash\PGW\Models\Transactions;
 use bKash\PGW\PaymentGatewaybKash;
 use bKash\PGW\TableGeneration;
 
-define( "BK_PGW_VERSION", "1.2.0" );
-define( "BK_TABLE_LIMIT", 10 );
+define( "BKASH_PGW_VERSION", "1.2.0" );
+define( "BKASH_TABLE_LIMIT", 10 );
 
 class AdminDashboard {
 	private static $instance;
@@ -289,7 +289,7 @@ class AdminDashboard {
 
 		$pagenum = isset( $_GET['pagenum'] ) ? absint( $_GET['pagenum'] ) : 1;
 
-		$limit        = BK_TABLE_LIMIT;
+		$limit        = BKASH_TABLE_LIMIT;
 		$offset       = ( $pagenum - 1 ) * $limit;
 		$total        = $wpdb->get_var( "select count(*) as total from $table_name" );
 		$num_of_pages = ceil( $total / $limit );
