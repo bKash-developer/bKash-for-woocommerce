@@ -128,12 +128,6 @@ class ProcessPayments {
 									$this->log->add( $this->id, 'Stocked reduced.' );
 								}
 
-								// Remove items from cart.
-								WC()->cart->empty_cart();
-
-								if ( isset( $this->log ) && $this->log ) {
-									$this->log->add( $this->id, 'Cart emptied.' );
-								}
 
 								// Return thank you page redirect.
 								if ( $this->integration_type === 'checkout' ) {
@@ -314,6 +308,13 @@ class ProcessPayments {
 					else if ( isset( $response['errorCode'] ) ) {
 						$message = $response['errorMessage'] ?? '';
 					} else if ( isset( $response['paymentID'] ) && ! empty( $response['paymentID'] ) ) {
+
+
+						// Remove items from cart.
+						WC()->cart->empty_cart();
+						if ( isset( $this->log ) && $this->log ) {
+							$this->log->add( $this->id, 'Cart emptied.' );
+						}
 
 						$updated = $trxSaved->update( [ 'payment_id' => $response['paymentID'] ] );
 						if ( $updated ) {

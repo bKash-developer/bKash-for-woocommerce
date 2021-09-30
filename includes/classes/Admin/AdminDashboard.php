@@ -43,6 +43,7 @@ class AdminDashboard {
 			array( $this, 'TransactionList' ),
 			plugins_url( '../../assets/images/bkash_favicon_0.ico', __DIR__ )
 		);
+
 	}
 
 	/**
@@ -280,28 +281,68 @@ class AdminDashboard {
 				"B2C FEES"                 => "b2cFee",
 				"INITIATION TIME"          => "initiationTime",
 				"COMPLETION TIME"          => "completedTime"
-			) );
+			),
+
+			array(
+				"receiver" => "Sent To",
+				"trx_id"   => "Transaction ID"
+			)
+		);
 	}
 
-	public function loadTable( $title, $tbl_name, $columns = array() ) {
+	public function loadTable( $title, $tbl_name, $columns = array(), $filters = array(), $actions = array() ) {
 		global $wpdb;
 		$table_name = $wpdb->prefix . $tbl_name;
+		$pagenum    = isset( $_GET['pagenum'] ) ? absint( sanitize_text_field( $_GET['pagenum'] ) ) : 1;
 
-		$pagenum = isset( $_GET['pagenum'] ) ? absint( $_GET['pagenum'] ) : 1;
+		$searchFilters = [];
+		if ( count( $filters ) > 0 ) {
+			foreach ( $filters as $key => $filter ) {
+				$input = isset( $_GET[ $key ] ) ? sanitize_text_field( $_GET[ $key ] ) : null;
+				if ( $input ) {
+					$partialQuery    = $wpdb->prepare( 'AND ' . $key . ' LIKE %s', esc_sql( $input ) );
+					$searchFilters[] = $partialQuery;
+				}
+			}
+		}
 
-		$limit        = BKASH_TABLE_LIMIT;
-		$offset       = ( $pagenum - 1 ) * $limit;
-		$total        = $wpdb->get_var( "select count(*) as total from $table_name" );
+		$limit           = BKASH_TABLE_LIMIT;
+		$offset          = ( $pagenum - 1 ) * $limit;
+		$selectFrom      = "SELECT * from $table_name where ID > %d ";
+		$selectCountFrom = "SELECT count(*) as total from $table_name where ID > %d ";
+
+		$prepareQuery = $wpdb->prepare(
+			$selectFrom . implode( "", $searchFilters ), 0
+		);
+		$rows         = $wpdb->get_results( $prepareQuery . " ORDER BY id DESC limit  $offset, $limit" );
+		$rowcount     = $wpdb->num_rows ?? 0;
+
+		$total        = $wpdb->get_var(
+			$wpdb->prepare( $selectCountFrom . implode( "", $searchFilters ), 0 )
+		);
 		$num_of_pages = ceil( $total / $limit );
-
-		$rows     = $wpdb->get_results( "SELECT * from $table_name ORDER BY id DESC limit  $offset, $limit" );
-		$rowcount = $wpdb->num_rows;
-
 		?>
         <div class="wrap abs">
             <h2><?php echo esc_html( $title ); ?></h2>
             <div class="tablenav top">
                 <div class="alignleft actions">
+
+                    <form action="#" method="GET">
+						<?php
+						if ( count( $filters ) > 0 ) {
+							foreach ( $filters as $key => $filter ) {
+								$old_input = isset( $_GET[ $key ] ) ? sanitize_text_field( $_GET[ $key ] ) : "";
+								echo "<input type='text' name='$key' value='" . $old_input . "' placeholder='$filter'/>";
+							}
+						}
+
+						$page_name = isset( $_GET['page'] ) ? sanitize_text_field( $_GET['page'] ) : '';
+						echo "<input type='hidden' name='page' value='$page_name'/>";
+						?>
+                        <button type="submit">Search</button>
+                    </form>
+
+
                 </div>
                 <br class="clear">
             </div>
@@ -317,6 +358,14 @@ class AdminDashboard {
                         </th>
 						<?php
 					}
+
+					if ( count( $actions ) > 0 ) {
+						?>
+                        <th class='manage-column ss-list-width' scope='col'>
+                            Actions
+                        </th>
+						<?php
+					}
 					?>
                 </tr>
 
@@ -328,11 +377,14 @@ class AdminDashboard {
 							foreach ( $columns as $column ) {
 								echo "<td class='manage-column ss-list-width'>" . esc_html( $row->{$column} ) . "</td>";
 							}
+							if ( count( $actions ) > 0 ) {
+								$this->compileAction( $actions, $row );
+							}
 							?>
                         </tr>
 					<?php }
 				} else {
-					echo "<tr><td colspan='5'>No records found</td></tr>";
+					echo "<tr><td colspan='" . count( $columns ) . "'>No records found</td></tr>";
 				} ?>
             </table>
         </div>
@@ -350,6 +402,27 @@ class AdminDashboard {
 		if ( $page_links ) {
 			echo '<div class="tablenav pagination-links" style="width: 99%;"><div class="tablenav-pages" style="margin: 1em 0">' . $page_links . '</div></div>';
 		}
+	}
+
+	private function compileAction( $actions, $row ) {
+		echo "<td class='manage-column ss-list-width'>";
+		foreach ( $actions as $action ) {
+			?>
+            <a
+				<?php
+				if ( isset( $action['confirm'] ) && $action['confirm'] ) {
+					echo 'onclick="return confirm(\'Are you sure to do this?\');"';
+				}
+				?>
+                    href="<?php echo esc_url(
+						admin_url( 'admin.php?page=' . $this->slug . '/' . ( $action['page'] ?? '' )
+						           . '&action=' . ( $action['action'] ?? '' ) . '&id=' . $row->ID )
+					); ?>">
+				<?php echo esc_html( $action['title'] ?? '' ) ?>
+            </a>
+			<?php
+		}
+		echo "</td>";
 	}
 
 	public function RefundTransaction() {
@@ -414,11 +487,94 @@ class AdminDashboard {
 				"TYPE"          => "type",
 				"STATUS"        => "status",
 				"DATETIME"      => "datetime"
-			) );
+			),
+			array(
+				"trx_id"   => "Transaction ID",
+				"receiver" => "Receiver"
+			)
+		);
 	}
 
 	public function Agreements() {
-		include_once "pages/agreements_list.php";
+		$this->cancelAgreement();
+
+		$this->loadTable( "All bKash Transactions", "bkash_agreement_mapping",
+			array(
+				"ID"              => "ID",
+				"PHONE"           => "phone",
+				"USERID"          => "user_id",
+				"AGREEMENT TOKEN" => "agreement_token",
+				"DATETIME"        => "datetime",
+			),
+			array(
+				"phone"   => "Phone",
+				"user_id" => "User ID"
+			),
+			array(
+				array(
+					"title"   => "Cancel Agreement",
+					"page"    => "agreements",
+					"action"  => "cancel",
+					"confirm" => true
+				)
+			)
+		);
+	}
+
+	private function cancelAgreement() {
+		$notice = "";
+		$type   = "warning";
+		$action = sanitize_text_field( $_REQUEST['action'] ?? '' );
+
+		if ( $action === 'cancel' ) {
+			$id = sanitize_text_field( $_REQUEST['id'] ?? null );
+			if ( $id ) {
+				$agreementObj = new \bKash\PGW\Models\Agreement();
+				$agreement    = $agreementObj->getAgreement( '', '', $id );
+				if ( $agreement ) {
+					$comm            = new \bKash\PGW\ApiComm();
+					$cancelAgreement = $comm->agreementCancel( $agreement->getAgreementID() );
+
+					if ( isset( $cancelAgreement['status_code'] ) && $cancelAgreement['status_code'] === 200 ) {
+						$response = isset( $cancelAgreement['response'] ) && is_string( $cancelAgreement['response'] ) ? json_decode( $cancelAgreement['response'], true ) : [];
+
+						if ( isset( $response['agreementStatus'] ) && $response['agreementStatus'] === 'Cancelled' ) {
+							// Cancelled
+
+							$deleteAgreement = $agreementObj->delete( '', $id );
+							if ( $deleteAgreement ) {
+								$notice = "Agreement Deleted!";
+								$type   = "success";
+							} else {
+								$notice = "Agreement cancelled but could not delete from db";
+							}
+
+						} else {
+							$notice = "Agreement status was not present. " . json_encode( $response );
+						}
+					} else {
+						$notice = " Server response was not ok. " . json_encode( $cancelAgreement );
+					}
+				} else {
+					$notice = "No agreement found related with this ID";
+				}
+			} else {
+				$notice = "ID was not present to cancel";
+			}
+
+			PaymentGatewaybKash::add_flash_notice( $notice, $type );
+			self::redirectToPage();
+		}
+
+
+	}
+
+	private static function redirectToPage() {
+
+		$page        = sanitize_text_field( $_GET["page"] ?? '' );
+		$actual_link = strtok( "http://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]", '?' );
+
+		wp_redirect( esc_url( $actual_link . "?page=" . $page ) );
 	}
 
 	public function TransactionList() {
@@ -437,6 +593,11 @@ class AdminDashboard {
 				"REFUND AMOUNT"    => "refund_amount",
 				"STATUS"           => "status",
 				"DATETIME"         => "datetime",
+			),
+			array(
+				"trx_id"     => "Transaction ID",
+				"invoice_id" => "Invoice ID",
+				"status"     => "Status"
 			)
 		);
 	}

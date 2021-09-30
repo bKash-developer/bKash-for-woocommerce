@@ -65,8 +65,6 @@ class PaymentGatewaybKash extends WC_Payment_Gateway {
 	public function __construct() {
 		$this->Initiate();
 		$this->Hooks();
-
-		add_action( 'admin_notices', array( $this, 'display_flash_notices' ), 12 );
 	}
 
 	public function Initiate() {
@@ -279,6 +277,7 @@ class PaymentGatewaybKash extends WC_Payment_Gateway {
 		// Hooks.
 		if ( is_admin() ) {
 			add_action( 'admin_notices', array( $this, 'checks' ) );
+			add_action( 'admin_notices', array( $this, 'display_flash_notices' ), 12 );
 
 			add_action( 'woocommerce_receipt_' . $this->id, array( $this, 'receipt_page' ) );
 			add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array(
@@ -402,7 +401,7 @@ class PaymentGatewaybKash extends WC_Payment_Gateway {
 
 	public static function add_flash_notice( $notice = "", $type = "warning", $dismissible = true ) {
 		// Here we return the notices saved on our option, if there are not notices, then an empty array is returned
-		$notices = get_option( "my_flash_notices", array() );
+		$notices = get_option( "bKash_flash_notices", array() );
 
 		$dismissible_text = ( $dismissible ) ? "is-dismissible" : "";
 
@@ -414,7 +413,7 @@ class PaymentGatewaybKash extends WC_Payment_Gateway {
 		);
 
 		// Then we update the option with our notices array
-		update_option( "my_flash_notices", $notices );
+		update_option( "bKash_flash_notices", $notices );
 	}
 
 	/**
@@ -1007,20 +1006,20 @@ class PaymentGatewaybKash extends WC_Payment_Gateway {
 	 */
 
 	public function display_flash_notices() {
-		$notices = get_option( "my_flash_notices", array() );
+		$notices = get_option( "bKash_flash_notices", array() );
 
 		// Iterate through our notices to be displayed and print them.
 		foreach ( $notices as $notice ) {
 			printf( '<div class="notice notice-%1$s %2$s"><p>%3$s</p></div>',
-				$notice['type'],
+				esc_attr($notice['type']),
 				$notice['dismissible'],
-				$notice['notice']
+				esc_html($notice['notice'])
 			);
 		}
 
 		// Now we reset our options to prevent notices being displayed forever.
 		if ( ! empty( $notices ) ) {
-			delete_option( "my_flash_notices" );
+			delete_option( "bKash_flash_notices" );
 		}
 	}
 
