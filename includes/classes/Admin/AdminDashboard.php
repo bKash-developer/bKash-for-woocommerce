@@ -50,50 +50,106 @@ class AdminDashboard {
 	 * Add submenu for bKash PGW in WP Admin
 	 */
 	protected function AddSubMenus() {
-		$subMenus = array(
-			// [Page Title, Menu Title, Route, Function to render, (0=All)(1=Checkout)(2=Tokenized)]
-			[ "All Transaction", "Transactions", "", "TransactionList", 0 ],
-			[ "Search a bKash Transaction", "Search", "/search", "TransactionSearch", 0 ],
-			[ "Refund a bKash Transaction", "Refund", "/refund", "RefundTransaction", 0 ],
-			[ "Webhook notifications", "Webhooks", "/webhooks", "Webhooks", 0 ],
-			[ "Check Balances", "Check Balances", "/balances", "CheckBalances", 1 ],
-			[ "Intra account transfer", "Intra Account Transfer", "/intra_account", "TransferBalance", 1 ],
-			[ "B2C Payout - Disbursement", "Disburse Money (B2C)", "/b2c_payout", "DisburseMoney", 1 ],
-			[ "Transfer History - All List", "Transfer History", "/transfers", "TransferHistory", 1 ],
-			[ "Agreements", "Agreements", "/agreements", "Agreements", 2 ]
+		$pid                = 'bkash_pgw';
+		$is_b2c_enabled     = self::get_bKash_options( $pid, 'enable_b2c' );
+		$is_webhook_enabled = self::get_bKash_options( $pid, 'webhook' );
+		$integration_type   = self::get_bKash_options( $pid, 'integration_type' );
+
+		$sub_menus = array(
+			array(
+				'title'      => 'All Transactions',
+				'menu_title' => 'Transactions',
+				'route'      => '',
+				'function'   => 'TransactionList',
+				'show'       => true
+			),
+			array(
+				'title'      => 'Search a bKash Transaction',
+				'menu_title' => 'Search',
+				'route'      => '/search',
+				'function'   => 'TransactionSearch',
+				'show'       => true
+			),
+			array(
+				'title'      => 'Refund a bKash Transaction',
+				'menu_title' => 'Refund',
+				'route'      => '/refund',
+				'function'   => 'RefundTransaction',
+				'show'       => true
+			),
+			array(
+				'title'      => 'Webhook notifications',
+				'menu_title' => 'Webhooks',
+				'route'      => '/webhooks',
+				'function'   => 'Webhooks',
+				'show'       => $is_webhook_enabled
+			),
+			array(
+				'title'      => 'Check Balances',
+				'menu_title' => 'Check Balances',
+				'route'      => '/balances',
+				'function'   => 'CheckBalances',
+				'show'       => $integration_type === 'checkout'
+			),
+			array(
+				'title'      => 'Intra account transfer',
+				'menu_title' => 'Intra Account Transfer',
+				'route'      => '/intra_account',
+				'function'   => 'TransferBalance',
+				'show'       => $integration_type === 'checkout'
+			),
+			array(
+				'title'      => 'B2C Payout - Disbursement',
+				'menu_title' => 'Disburse Money (B2C)',
+				'route'      => '/b2c_payout',
+				'function'   => 'DisburseMoney',
+				'show'       => $integration_type === 'checkout' && $is_b2c_enabled
+			),
+			array(
+				'title'      => 'Transfer History - All List',
+				'menu_title' => 'Transfer History',
+				'route'      => '/transfers',
+				'function'   => 'TransferHistory',
+				'show'       => $integration_type === 'checkout'
+			),
+			array(
+				'title'      => 'Agreements',
+				'menu_title' => 'Agreements',
+				'route'      => '/agreements',
+				'function'   => 'Agreements',
+				'show'       => strpos( $integration_type, 'tokenized' ) === 0
+			)
 		);
 
-		$is_b2c_enabled = 'no';
-		$pid            = 'bkash_pgw';
-		$options        = get_option( 'woocommerce_' . $pid . '_settings' );
-		if ( ! is_null( $options ) ) {
-			$is_b2c_enabled = $options['enable_b2c'] ?? 'no';
-		}
+		foreach ( $sub_menus as $sub_menu ) {
 
-		foreach ( $subMenus as $subMenu ) {
-			$int_type = 'checkout';
 
-			if ( function_exists( 'WC' ) ) {
-				$payment_gateways = WC()->payment_gateways->payment_gateways();
-				if ( isset( $payment_gateways['bkash_pgw'] ) ) {
-					$int_type = WC()->payment_gateways->payment_gateways()['bkash_pgw']->integration_type;
-				}
-			}
-
-			if (
-				( $subMenu[4] === 0 ) || ( ( $is_b2c_enabled === 'yes' && $subMenu[4] === 1 ) && $int_type === 'checkout' ) ||
-				( $subMenu[4] === 2 && ( strpos( $int_type, 'tokenized' ) === 0 ) )
-			) {
+			if ( isset( $sub_menu['show'] ) && $sub_menu["show"] === true ) {
 				$sub_page = add_submenu_page(
 					$this->slug,
-					$subMenu[0],
-					$subMenu[1],
+					$sub_menu['title'],
+					$sub_menu['menu_title'],
 					'manage_options',
-					$this->slug . $subMenu[2], array( $this, $subMenu[3] )
+					$this->slug . $sub_menu['route'], array( $this, $sub_menu['function'] )
 				);
 				add_action( 'admin_print_styles-' . $sub_page, array( $this, "admin_styles" ) );
 			}
 		}
+	}
+
+	private static function get_bKash_options( $plugin_id, $key ) {
+		$option_value = false;
+		$options      = get_option( 'woocommerce_' . $plugin_id . '_settings' );
+
+		if ( ! is_null( $options ) ) {
+			if ( $options[ $key ] === 'yes' || $options[ $key ] === 'no' ) {
+				$option_value = $options[ $key ] === 'yes';
+			} else {
+				$option_value = $options[ $key ];
+			}
+		}
+
+		return $option_value;
 	}
 
 	/**

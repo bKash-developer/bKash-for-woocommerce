@@ -239,6 +239,7 @@ class ProcessPayments {
 			$storedAgreementID = "";
 			$mode              = null;
 
+			// Check if user is logged in
 			if ( ! empty( $order->get_user_id() ) ) {
 
 				if ( $agreement_id === 'new' || $agreement_id === 'no' ) {
@@ -255,7 +256,18 @@ class ProcessPayments {
 						$storedAgreementID = $agreement->getAgreementID();
 					}
 				}
+			} else {
+				// Non-logged in user
+				if ( $this->integration_type === 'tokenized' ) {
+					wc_add_notice("Please login to proceed with tokenized payment", "error");
+					return ['result' => 'failure'];
+				}
+
+				if( $this->integration_type === 'tokenized-both') {
+					$mode = '0011';
+				}
 			}
+
 
 			if ( ! $mode ) {
 				$mode = Operations::getTokenizedPaymentMode( $this->integration_type, $order_id, $isAgreement, $storedAgreementID );

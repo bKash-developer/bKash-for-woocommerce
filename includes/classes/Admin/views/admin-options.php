@@ -34,5 +34,16 @@
                 production.show();
             }
         }).change();
+
+        jQuery('#woocommerce_bkash_pgw_integration_type').change(function() {
+            var integration_type = jQuery(this).find(":selected").val();
+            var b2cSetting = jQuery("#woocommerce_bkash_pgw_enable_b2c");
+
+            if(integration_type && integration_type.toLowerCase() === 'checkout') {
+                b2cSetting.closest("tr").show();
+            } else {
+                b2cSetting.closest("tr").hide();
+            }
+        }).change();
     </script>
 </table>
