@@ -40,10 +40,10 @@ This plugin supports below environments of bKash payment gateway.
 ### Available Payment Methods for bKash Payment Gateway in this plugin
 * Checkout - Sale (Regular Checkout)
 * Checkout - Authorised and Capture Payment
-* Tokenised - Without Agreement
-* Tokenised - With Agreement Only
-* Tokenised - Agreement and Without Agreement
-* Tokenised -  Authorised and Capture Payment
+* Tokenized - Without Agreement
+* Tokenized - With Agreement Only
+* Tokenized - Agreement and Without Agreement
+* Tokenized -  Authorised and Capture Payment
 
 ### Additional Features of different bKash payment gateway products.
 * Merchant Wallet Balance Check (In Checkout Only)
@@ -53,7 +53,7 @@ This plugin supports below environments of bKash payment gateway.
 * Refund
 * Search Transaction
 
-### Available Menus for Merchant (Based on selected product, Checkout or Tokenised)
+### Available Menus for Merchant (Based on selected product, Checkout or Tokenized)
 * Transaction List
 * Search a transaction
 * Check Balances
@@ -66,6 +66,7 @@ This plugin supports below environments of bKash payment gateway.
 
 ### Actions for Merchant:
    *  For Checkout:
+         - Can make a payment.
          - Can setup bKash payment gateway.
          - Can manage credentials for bKash payment gateway.
          - Can set intent of payment modes. (Sale or Authorise)
@@ -74,7 +75,8 @@ This plugin supports below environments of bKash payment gateway.
          - Can refund a transaction.
          - Can disburse money to bKash customer wallet.
          - Can search a transaction from it's merchant wallet.
-   * For Tokenisation:
+   * For Tokenization:
+         - Can make a payment
          - Can setup bKash payment gateway.
          - Can manage credentials for bKash payment gateway.
          - Can set intent of payment modes. (Sale or Authorise)
@@ -168,12 +170,10 @@ Ans: Yes, we have sandbox environment for testing.
 Ans: Yes, we have a detailed manual for this plugin, you can download it from here
 
 == Screenshots ==
-
-1. This screen shot description corresponds to screenshot-1.(png|jpg|jpeg|gif). Note that the screenshot is taken from
-the /assets directory or the directory that contains the stable readme.txt (tags or trunk). Screenshots in the /assets
-directory take precedence. For example, `/assets/screenshot-1.png` would win over `/tags/4.3/screenshot-1.png`
-(or jpg, jpeg, gif).
-2. This is the second screen shot
+1. bKash payment method in Woocommerce payment method list
+2. Settings page of bKash payment method
+3. User paying with bKash Payment method
+4. Transaction list for admin to check
 
 == Changelog ==
 
