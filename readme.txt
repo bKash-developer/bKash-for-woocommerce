@@ -2,7 +2,7 @@
 Contributors: bkashpayment
 Tags: bKash, bKashPayment,bKashForWooCommerce, online payment, ecommerce, woocommerce
 Requires at least: 4.0
-Tested up to: 5.8.1
+Tested up to: 5.9
 Stable tag: 1.0.3
 Requires PHP: 7.0
 License: GPLv2 or later
@@ -177,6 +177,8 @@ Ans: Yes, we have a detailed manual for this plugin, you can download it from he
 
 == Changelog ==
 
+= 1.0.4 =
+* Minor bug fix of unwanted message during capturing a non-bKash payment.
 = 1.0.3 =
 * Added Search and Filter functionalities in list tables.
 = 1.0.2 =
