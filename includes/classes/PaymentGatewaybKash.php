@@ -374,7 +374,8 @@ class PaymentGatewaybKash extends WC_Payment_Gateway {
 				$trx = "no transaction found with this order, try again";
 			}
 		} else {
-			$trx = "payment gateway is not bKash, try again";
+			// payment gateway is not bKash, try again
+			$trx = "";
 		}
 
 		if ( isset( $trx ) && ! empty( $trx ) && is_string( $trx ) ) {
