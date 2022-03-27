@@ -74,8 +74,8 @@ class AdminDashboard {
 				'show'       => true
 			),
 			array(
-				'title'      => 'WebhookModule notifications',
-				'menu_title' => 'WebhookProcessor',
+				'title'      => 'Webhook notifications',
+				'menu_title' => 'Webhook',
 				'route'      => '/webhooks',
 				'function'   => array( 'bKash\PGW\Admin\Module\TransferModule', 'transfer_history' ),
 				'show'       => $is_webhook_enabled

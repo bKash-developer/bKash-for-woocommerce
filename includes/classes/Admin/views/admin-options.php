@@ -5,7 +5,7 @@
     <p class="main">
         <strong>Getting started</strong>
     </p>
-    <p>A payment gateway description can be placed here</p>
+    <p>bKash payment gateway for WooCommerce. Collect PGW credentials from bKash team and set here.</p>
 
     <p class="main">
         <strong>Gateway Status</strong>

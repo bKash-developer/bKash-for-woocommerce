@@ -192,9 +192,9 @@ class PaymentGatewaybKash extends WC_Payment_Gateway {
 				'description' => 'Enable B2C Disbursement API'
 			),
 			'webhook'            => array(
-				'title'       => 'WebhookModule',
+				'title'       => 'Webhook',
 				'type'        => 'checkbox',
-				'label'       => 'Enable WebhookModule listener',
+				'label'       => 'Enable Webhook listener',
 				'default'     => 'no',
 				'description' => sprintf( 'Share this webhook URL to bKash team - <code>%s</code>', esc_url( $this->siteUrl . BKASH_FW_WC_API . $this->WEBHOOK_URL ) )
 			),
