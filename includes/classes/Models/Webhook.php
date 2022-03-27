@@ -2,7 +2,7 @@
 
 namespace bKash\PGW\Models;
 
-class Webhooks {
+class Webhook {
 	public $errorMessage = "";
 	private $sender = '';
 	private $receiver = '';
@@ -178,9 +178,10 @@ class Webhooks {
 		}
 
 		// Check if transaction already exists
-		$transaction = $this->wpdb->get_row($this->wpdb->prepare("SELECT * FROM $this->tableName WHERE `trx_id` = %s", $this->trx_id));
-		if($transaction) {
+		$transaction = $this->wpdb->get_row( $this->wpdb->prepare( "SELECT * FROM $this->tableName WHERE `trx_id` = %s", $this->trx_id ) );
+		if ( $transaction ) {
 			$this->errorMessage = "Transaction is already saved";
+
 			return false;
 		}
 

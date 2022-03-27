@@ -3,7 +3,7 @@
 namespace bKash\PGW;
 
 use bKash\PGW\Models\Agreement;
-use bKash\PGW\Models\Transactions;
+use bKash\PGW\Models\Transaction;
 
 class ProcessPayments {
 	public $integration_type;
@@ -29,7 +29,7 @@ class ProcessPayments {
 		$order = wc_get_order( $order_id );
 
 		if ( $status === 'success' ) {
-			$trx         = new Transactions();
+			$trx         = new Transaction();
 			$transaction = $trx->getTransaction( $invoice_id );
 			if ( $transaction && $transaction->getPaymentID() === $payment_id ) {
 
@@ -115,7 +115,7 @@ class ProcessPayments {
 								add_post_meta( $order->get_id(), '_transaction_id', $paymentResp['trxID'], true );
 
 								// Add order note.
-								$order->add_order_note( sprintf( __( 'bKash PGW payment approved (ID: %s)', 'woocommerce-payment-gateway-bkash' ), $paymentResp['trxID'] ) );
+								$order->add_order_note( sprintf( 'bKash PGW payment approved (ID: %s)', $paymentResp['trxID'] ) );
 
 								if ( isset( $this->log ) && $this->log ) {
 									$this->log->add( $this->id, 'bKash PGW payment approved (ID: ' . $response['trxID'] . ')' );
@@ -186,7 +186,7 @@ class ProcessPayments {
 			$message = $this->processResponse( "Transaction is " . $status );
 		}
 
-		$order->add_order_note( __( 'bKash PGW payment declined (' . $message . ')', 'woocommerce-payment-gateway-bkash' ) );
+		$order->add_order_note( 'bKash PGW payment declined (' . $message . ')' );
 
 		if ( $this->integration_type === 'checkout' ) {
 			echo json_encode( array(
@@ -194,7 +194,7 @@ class ProcessPayments {
 				'message' => $message
 			) );
 		} else {
-			wc_add_notice( __( $message, 'woocommerce-payment-gateway-bkash' ), 'error' );
+			wc_add_notice( $message, 'error' );
 			wp_redirect( $woocommerce->cart->get_cart_url() );
 		}
 
@@ -259,11 +259,12 @@ class ProcessPayments {
 			} else {
 				// Non-logged in user
 				if ( $this->integration_type === 'tokenized' ) {
-					wc_add_notice("Please login to proceed with tokenized payment", "error");
-					return ['result' => 'failure'];
+					wc_add_notice( "Please login to proceed with tokenized payment", "error" );
+
+					return [ 'result' => 'failure' ];
 				}
 
-				if( $this->integration_type === 'tokenized-both') {
+				if ( $this->integration_type === 'tokenized-both' ) {
 					$mode = '0011';
 				}
 			}
@@ -286,7 +287,7 @@ class ProcessPayments {
 		}
 
 		/* Store Transaction in Database */
-		$trx = new Transactions();
+		$trx = new Transaction();
 		$trx->setOrderID( $order_id );
 		$trx->setAmount( $amount );
 		$trx->setIntegrationType( $this->integration_type );

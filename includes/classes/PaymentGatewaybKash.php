@@ -3,7 +3,7 @@
 namespace bKash\PGW;
 
 use bKash\PGW\Models\Agreement;
-use bKash\PGW\Models\Transactions;
+use bKash\PGW\Models\Transaction;
 use Exception;
 use WC_AJAX;
 use WC_Logger;
@@ -15,8 +15,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 } // Exit if accessed directly.
 
-define( "BKASH_WC_API", "/wc-api/" );
-define( "BKASH_CLOSE_PDIV", "</p></div>" );
+define( "BKASH_FW_WC_API", "/wc-api/" );
+define( "BKASH_FW_CLOSE_PDIV", "</p></div>" );
 
 /**
  * WooCommerce bKash Payment Gateway.
@@ -68,13 +68,13 @@ class PaymentGatewaybKash extends WC_Payment_Gateway {
 	}
 
 	public function Initiate() {
-		$this->id                   = 'bkash_pgw';
+		$this->id                   = BKASH_FW_PLUGIN_SLUG;
 		$this->icon                 = apply_filters( 'woocommerce_payment_gateway_bkash_icon', plugins_url( '../assets/images/logo.png', __DIR__ ) );
 		$this->has_fields           = true;
 		$this->credit_fields        = false;
-		$this->order_button_text    = __( 'Pay with bKash', 'woocommerce-payment-gateway-bkash' );
-		$this->method_title         = __( 'bKash Payment Gateway', 'woocommerce-payment-gateway-bkash' );
-		$this->method_description   = __( 'Take payments via bKash PGW.', 'woocommerce-payment-gateway-bkash' );
+		$this->order_button_text    = 'Pay with bKash';
+		$this->method_title         = 'bKash Payment Gateway';
+		$this->method_description   = 'Take payments via bKash PGW.';
 		$this->notify_url           = WC()->api_request_url( 'WC_Gateway_bKash' );
 		$this->siteUrl              = get_site_url();
 		$this->supports             = array(
@@ -126,30 +126,30 @@ class PaymentGatewaybKash extends WC_Payment_Gateway {
 	public function init_form_fields() {
 		$this->form_fields = array(
 			'enabled'            => array(
-				'title'       => __( 'Enable/Disable', 'woocommerce-payment-gateway-bkash' ),
-				'label'       => __( 'Enable bKash PGW', 'woocommerce-payment-gateway-bkash' ),
+				'title'       => 'Enable/Disable',
+				'label'       => 'Enable bKash PGW',
 				'type'        => 'checkbox',
 				'description' => '',
 				'default'     => 'no'
 			),
 			'title'              => array(
-				'title'       => __( 'Title', 'woocommerce-payment-gateway-bkash' ),
+				'title'       => 'Title',
 				'type'        => 'text',
-				'description' => __( 'This controls the title which the user sees during checkout.', 'woocommerce-payment-gateway-bkash' ),
-				'default'     => __( 'bKash Payment Gateway', 'woocommerce-payment-gateway-bkash' ),
+				'description' => 'This controls the title which the user sees during checkout.',
+				'default'     => 'bKash Payment Gateway',
 				'desc_tip'    => true
 			),
 			'description'        => array(
-				'title'       => __( 'Description', 'woocommerce-payment-gateway-bkash' ),
+				'title'       => 'Description',
 				'type'        => 'text',
-				'description' => __( 'This controls the description which the user sees during checkout.', 'woocommerce-payment-gateway-bkash' ),
+				'description' => 'This controls the description which the user sees during checkout.',
 				'default'     => 'Pay with bKash PGW.',
 				'desc_tip'    => true
 			),
 			'integration_type'   => array(
-				'title'       => __( 'Integration Type', 'woocommerce-payment-gateway-bkash' ),
+				'title'       => 'Integration Type',
 				'type'        => 'select',
-				'description' => __( 'Payment will be initiated with selected bKash PGW integration type', 'woocommerce-payment-gateway-bkash' ),
+				'description' => 'Payment will be initiated with selected bKash PGW integration type',
 				'options'     => array(
 					'checkout'       => 'Checkout',
 					'checkout-url'   => 'Checkout URL (Tokenized Non-Agreement)',
@@ -160,9 +160,9 @@ class PaymentGatewaybKash extends WC_Payment_Gateway {
 				'desc_tip'    => true,
 			),
 			'intent'             => array(
-				'title'       => __( 'Intent', 'woocommerce-payment-gateway-bkash' ),
+				'title'       => 'Intent',
 				'type'        => 'select',
-				'description' => __( 'Payment will be initiated with selected bKash PGW integration type', 'woocommerce-payment-gateway-bkash' ),
+				'description' => 'Payment will be initiated with selected bKash PGW integration type',
 				'options'     => array(
 					'sale'          => 'Sale',
 					'authorization' => 'Authorized'
@@ -171,93 +171,93 @@ class PaymentGatewaybKash extends WC_Payment_Gateway {
 				'desc_tip'    => true,
 			),
 			'bkash_api_version'  => array(
-				'title'       => __( 'API Version', 'woocommerce-payment-gateway-bkash' ),
+				'title'       => 'API Version',
 				'type'        => 'text',
-				'description' => __( 'This api version will be used for calling API to bKash', 'woocommerce-payment-gateway-bkash' ),
+				'description' => 'This api version will be used for calling API to bKash',
 				'default'     => 'v1.2.0-beta',
 				'desc_tip'    => true,
 			),
 			'debug'              => array(
-				'title'       => __( 'Debug Log', 'woocommerce-payment-gateway-bkash' ),
+				'title'       => 'Debug Log',
 				'type'        => 'checkbox',
-				'label'       => __( 'Enable logging', 'woocommerce-payment-gateway-bkash' ),
+				'label'       => 'Enable logging',
 				'default'     => 'no',
-				'description' => sprintf( __( 'Log bKash PGW events inside <code>%s</code>', 'woocommerce-payment-gateway-bkash' ), wc_get_log_file_path( $this->id ) )
+				'description' => sprintf( 'Log bKash PGW events inside <code>%s</code>', esc_html( wc_get_log_file_path( $this->id ) ) )
 			),
 			'enable_b2c'         => array(
-				'title'       => __( 'Enable B2C API', 'woocommerce-payment-gateway-bkash' ),
+				'title'       => 'Enable B2C API',
 				'type'        => 'checkbox',
-				'label'       => __( 'Enable B2C API', 'woocommerce-payment-gateway-bkash' ),
+				'label'       => 'Enable B2C API',
 				'default'     => 'no',
-				'description' => sprintf( __( 'Enable B2C Disbursement API', 'woocommerce-payment-gateway-bkash' ) )
+				'description' => 'Enable B2C Disbursement API'
 			),
 			'webhook'            => array(
-				'title'       => __( 'Webhook', 'woocommerce-payment-gateway-bkash' ),
+				'title'       => 'WebhookModule',
 				'type'        => 'checkbox',
-				'label'       => __( 'Enable Webhook listener', 'woocommerce-payment-gateway-bkash' ),
+				'label'       => 'Enable WebhookModule listener',
 				'default'     => 'no',
-				'description' => sprintf( __( 'Share this webhook URL to bKash team - <code>%s</code>', 'woocommerce-payment-gateway-bkash' ), $this->siteUrl . BKASH_WC_API . $this->WEBHOOK_URL )
+				'description' => sprintf( 'Share this webhook URL to bKash team - <code>%s</code>', esc_url( $this->siteUrl . BKASH_FW_WC_API . $this->WEBHOOK_URL ) )
 			),
 			'sandbox'            => array(
-				'title'       => __( 'Sandbox', 'woocommerce-payment-gateway-bkash' ),
-				'label'       => __( 'Enable Sandbox Mode', 'woocommerce-payment-gateway-bkash' ),
+				'title'       => 'Sandbox',
+				'label'       => 'Enable Sandbox Mode',
 				'type'        => 'checkbox',
-				'description' => __( 'Place the payment gateway in sandbox mode using sandbox API keys (real payments will not be taken).', 'woocommerce-payment-gateway-bkash' ),
+				'description' => 'Place the payment gateway in sandbox mode using sandbox API keys (real payments will not be taken).',
 				'default'     => 'yes'
 			),
 			'sandbox_app_key'    => array(
-				'title'       => __( 'Sandbox Application Key', 'woocommerce-payment-gateway-bkash' ),
+				'title'       => 'Sandbox Application Key',
 				'type'        => 'text',
-				'description' => __( 'Get your Sandbox App key from your bKash PGW account.', 'woocommerce-payment-gateway-bkash' ),
+				'description' => 'Get your Sandbox App key from your bKash PGW account.',
 				'default'     => '',
 				'desc_tip'    => true
 			),
 			'sandbox_app_secret' => array(
-				'title'       => __( 'Sandbox Application Secret', 'woocommerce-payment-gateway-bkash' ),
+				'title'       => 'Sandbox Application Secret',
 				'type'        => 'password',
-				'description' => __( 'Get your Sandbox app secret from your bKash PGW account.', 'woocommerce-payment-gateway-bkash' ),
+				'description' => 'Get your Sandbox app secret from your bKash PGW account.',
 				'default'     => '',
 				'desc_tip'    => true
 			),
 			'sandbox_username'   => array(
-				'title'       => __( 'Sandbox Username', 'woocommerce-payment-gateway-bkash' ),
+				'title'       => 'Sandbox Username',
 				'type'        => 'text',
-				'description' => __( 'Get your Sandbox username from your bKash PGW account.', 'woocommerce-payment-gateway-bkash' ),
+				'description' => 'Get your Sandbox username from your bKash PGW account.',
 				'default'     => '',
 				'desc_tip'    => true
 			),
 			'sandbox_password'   => array(
-				'title'       => __( 'Sandbox Password', 'woocommerce-payment-gateway-bkash' ),
+				'title'       => 'Sandbox Password',
 				'type'        => 'password',
-				'description' => __( 'Get your Sandbox password from your bKash PGW account.', 'woocommerce-payment-gateway-bkash' ),
+				'description' => 'Get your Sandbox password from your bKash PGW account.',
 				'default'     => '',
 				'desc_tip'    => true
 			),
 			'app_key'            => array(
-				'title'       => __( 'Production Application Key', 'woocommerce-payment-gateway-bkash' ),
+				'title'       => 'Production Application Key',
 				'type'        => 'text',
-				'description' => __( 'Get your App Key from your bKash PGW account.', 'woocommerce-payment-gateway-bkash' ),
+				'description' => 'Get your App Key from your bKash PGW account.',
 				'default'     => '',
 				'desc_tip'    => true
 			),
 			'app_secret'         => array(
-				'title'       => __( 'Production Application Secret Key', 'woocommerce-payment-gateway-bkash' ),
+				'title'       => 'Production Application Secret Key',
 				'type'        => 'password',
-				'description' => __( 'Get your App Secret from your bKash PGW account.', 'woocommerce-payment-gateway-bkash' ),
+				'description' => 'Get your App Secret from your bKash PGW account.',
 				'default'     => '',
 				'desc_tip'    => true
 			),
 			'username'           => array(
-				'title'       => __( 'Production Username', 'woocommerce-payment-gateway-bkash' ),
+				'title'       => 'Production Username',
 				'type'        => 'text',
-				'description' => __( 'Get your Username from your bKash PGW account.', 'woocommerce-payment-gateway-bkash' ),
+				'description' => 'Get your Username from your bKash PGW account.',
 				'default'     => '',
 				'desc_tip'    => true
 			),
 			'password'           => array(
-				'title'       => __( 'Production Password', 'woocommerce-payment-gateway-bkash' ),
+				'title'       => 'Production Password',
 				'type'        => 'password',
-				'description' => __( 'Get your password from your bKash PGW account.', 'woocommerce-payment-gateway-bkash' ),
+				'description' => 'Get your password from your bKash PGW account.',
 				'default'     => '',
 				'desc_tip'    => true
 			),
@@ -304,13 +304,13 @@ class PaymentGatewaybKash extends WC_Payment_Gateway {
 		add_action( 'woocommerce_api_' . $this->EXECUTE_URL, array( $this, 'create_payment_callback_process' ) );
 		add_action( 'woocommerce_api_' . $this->CANCEL_AGREEMENT_URL, array( $this, 'cancel_agreement_api' ) );
 		add_action( 'woocommerce_api_' . $this->REVIEW_ORDER_URL, array( $this, 'process_review_order_payment' ) );
-		// Webhook
+		// WebhookModule
 		add_action( 'woocommerce_api_' . $this->WEBHOOK_URL, array( $this, 'webhook' ) );
 
 		// reset token when setting changes
 		add_action( 'update_option', function ( $option_name, $old_value, $value ) {
 
-			if ( $option_name === 'woocommerce_bkash_pgw_settings' ) {
+			if ( $option_name === 'woocommerce_' . BKASH_FW_PLUGIN_SLUG . '_settings' ) {
 				$apiComm = new ApiComm();
 				$apiComm->resetToken();
 			}
@@ -326,10 +326,10 @@ class PaymentGatewaybKash extends WC_Payment_Gateway {
 		$trx            = '';
 		$orderDetails   = wc_get_order( $order_id );
 		$id             = $orderDetails->get_transaction_id();
-		$payment_method = $orderDetails->get_payment_method(); // bkash_pgw
+		$payment_method = $orderDetails->get_payment_method();
 
-		if ( $payment_method === 'bkash_pgw' ) {
-			$trxObj      = new Transactions();
+		if ( $payment_method === BKASH_FW_PLUGIN_SLUG ) {
+			$trxObj      = new Transaction();
 			$transaction = $trxObj->getTransaction( '', $id );
 			if ( $transaction ) {
 				if ( $transaction->getStatus() === 'Authorized' ) {
@@ -354,10 +354,10 @@ class PaymentGatewaybKash extends WC_Payment_Gateway {
 								$updated = $trxObj->update( [ 'status' => 'Completed' ], [ 'trx_id' => $transaction->getTrxID() ] );
 								if ( $updated == 0 ) {
 									// on update error
-									$orderDetails->add_order_note( sprintf( __( 'bKash PGW: Status update failed in DB, ' . $trxObj->errorMessage, 'woocommerce-payment-gateway-bkash' ) ) );
+									$orderDetails->add_order_note( sprintf( 'bKash PGW: Status update failed in DB, %s', $trxObj->errorMessage ) );
 								}
 
-								$orderDetails->add_order_note( sprintf( __( 'bKash PGW: Payment Capture of amount %s - Payment ID: %s', 'woocommerce-payment-gateway-bkash' ), $transaction->getAmount(), $captured['trxID'] ) );
+								$orderDetails->add_order_note( sprintf( 'bKash PGW: Payment Capture of amount %s - Payment ID: %s', $transaction->getAmount(), $captured['trxID'] ) );
 							} else {
 								$trx = "Transfer is not possible right now. try again";
 							}
@@ -378,15 +378,15 @@ class PaymentGatewaybKash extends WC_Payment_Gateway {
 			$trx = "";
 		}
 
-		if ( isset( $trx ) && ! empty( $trx ) && is_string( $trx ) ) {
-			// error occurred, show message
-			// $orderDetails->update_status('on-hold', $trx, false);
-			self::add_flash_notice( __( "Capture Error, " . $trx ), "warning", true );
-		} else if ( isset( $trx ) && ! empty( $trx ) && is_array( $trx ) ) {
-			// Capture Success
-			self::add_flash_notice( __( "Payment has been captured" ), "success", true );
-		} else {
-			// nothing to do
+		if ( isset( $trx ) && ! empty( $trx ) ) {
+			if ( is_string( $trx ) ) {
+				// error occurred, show message
+				// $orderDetails->update_status('on-hold', $trx, false);
+				self::add_flash_notice( "Capture Error, " . $trx );
+			} else if ( is_array( $trx ) ) {
+				// Capture Success
+				self::add_flash_notice( "Payment has been captured", "success" );
+			}
 		}
 	}
 
@@ -426,10 +426,10 @@ class PaymentGatewaybKash extends WC_Payment_Gateway {
 		$trx            = '';
 		$orderDetails   = wc_get_order( $order_id );
 		$id             = $orderDetails->get_transaction_id();
-		$payment_method = $orderDetails->get_payment_method(); // bkash_pgw
+		$payment_method = $orderDetails->get_payment_method();
 
-		if ( $payment_method === 'bkash_pgw' ) {
-			$trxObj      = new Transactions();
+		if ( $payment_method === BKASH_FW_PLUGIN_SLUG ) {
+			$trxObj      = new Transaction();
 			$transaction = $trxObj->getTransaction( '', $id );
 			if ( $transaction ) {
 				if ( $transaction->getStatus() === 'Authorized' ) {
@@ -454,10 +454,10 @@ class PaymentGatewaybKash extends WC_Payment_Gateway {
 								$updated = $trxObj->update( [ 'status' => 'Void' ], [ 'trx_id' => $transaction->getTrxID() ] );
 								if ( $updated == 0 ) {
 									// on update error
-									$orderDetails->add_order_note( sprintf( __( 'bKash PGW: Status update failed in DB, ' . $trxObj->errorMessage, 'woocommerce-payment-gateway-bkash' ) ) );
+									$orderDetails->add_order_note( sprintf( 'bKash PGW: Status update failed in DB, ' . $trxObj->errorMessage ) );
 								}
 
-								$orderDetails->add_order_note( sprintf( __( 'bKash PGW: Payment was updated as Void of amount %s - Payment ID: %s', 'woocommerce-payment-gateway-bkash' ), $transaction->getAmount(), $captured['trxID'] ) );
+								$orderDetails->add_order_note( sprintf( 'bKash PGW: Payment was updated as Void of amount %s - Payment ID: %s', $transaction->getAmount(), $captured['trxID'] ) );
 							} else {
 								$trx = "Transfer is not possible right now. try again";
 							}
@@ -477,15 +477,15 @@ class PaymentGatewaybKash extends WC_Payment_Gateway {
 			$trx = "payment gateway is not bKash, try again";
 		}
 
-		if ( isset( $trx ) && ! empty( $trx ) && is_string( $trx ) ) {
-			// error occurred, show message
-			// $orderDetails->update_status('on-hold', $trx, false);
-			self::add_flash_notice( __( "Capture Error, " . $trx ), "warning", true );
-		} else if ( isset( $trx ) && ! empty( $trx ) && is_array( $trx ) ) {
-			// Capture Success
-			self::add_flash_notice( __( "Payment has been captured" ), "success", true );
-		} else {
-			// nothing to do
+		if ( isset( $trx ) && ! empty( $trx ) ) {
+			if ( is_string( $trx ) ) {
+				// error occurred, show message
+				// $orderDetails->update_status('on-hold', $trx, false);
+				self::add_flash_notice( "Capture Error, " . $trx );
+			} else if ( is_array( $trx ) ) {
+				// Capture Success
+				self::add_flash_notice( "Payment has been captured", "success" );
+			}
 		}
 	}
 
@@ -512,15 +512,26 @@ class PaymentGatewaybKash extends WC_Payment_Gateway {
 
 		// PHP Version.
 		if ( PHP_VERSION_ID < 50300 ) {
-			echo '<div class="error version-error"><p>' . sprintf( __( 'bKash PGW Error: bKash PGW requires PHP 5.3 and above. You are using version %s.', 'woocommerce-payment-gateway-bkash' ), phpversion() ) . BKASH_CLOSE_PDIV;
+			echo '<div class="error version-error"><p>bKash PGW Error: ' . sprintf( 'bKash PGW Error: bKash PGW requires PHP 5.3 and above. You are using version %s.', esc_html( PHP_VERSION ) ) . '</p>';
 		} // Check required fields.
 		else if ( ! $this->app_key || ! $this->app_secret ) {
-			echo '<div class="error app-key-error"><p>' . __( 'bKash PGW Error: Please enter your app keys and secrets', 'woocommerce-payment-gateway-bkash' ) . BKASH_CLOSE_PDIV;
+			echo '<div class="error app-key-error"><p>bKash PGW Error: Please enter your app keys and secrets</p>';
 		} else if ( 'BDT' !== get_woocommerce_currency() ) {
-			echo '<div class="error currency-error"><p>' . __( 'bKash PGW Error: Only supports BDT as currency', 'woocommerce-payment-gateway-bkash' ) . BKASH_CLOSE_PDIV;
+			echo '<div class="error currency-error"><p>bKash PGW Error: Only supports BDT as currency</p>';
 		} // Show message if enabled and FORCE SSL is disabled and WordPress HTTPS plugin is not detected.
 		else if ( 'no' == get_option( 'woocommerce_force_ssl_checkout' ) && ! class_exists( 'WordPressHTTPS' ) && ! is_ssl() ) {
-			echo '<div class="error ssl-error"><p>' . sprintf( __( 'bKash PGW is enabled, but the <a href="%s">force SSL option</a> is disabled; your checkout may not be secure! Please enable SSL and ensure your server has a valid SSL certificate - bKash PGW will only work in sandbox mode.', 'woocommerce-payment-gateway-bkash' ), admin_url( 'admin.php?page=wc-settings&tab=checkout' ) ) . BKASH_CLOSE_PDIV;
+			$admin_checkout_setting_url = esc_url( admin_url( 'admin.php?page=wc-settings&tab=checkout' ) );
+			?>
+            <div class="error ssl-error">
+                <p>bKash PGW is enabled, but the
+                    <a href="<?php esc_html_e( $admin_checkout_setting_url, BKASH_FW_TEXT_DOMAIN ); ?>">
+                        force SSL option
+                    </a>
+                    is disabled; your checkout may not be secure! Please enable SSL and ensure your server has a valid
+                    SSL certificate - bKash PGW will only work in sandbox mode.
+                </p>
+            </div>
+			<?php
 		}
 
 		// APP KEY APP SECRET CHECK
@@ -535,7 +546,7 @@ class PaymentGatewaybKash extends WC_Payment_Gateway {
 	 * @access public
 	 */
 	public function app_key_missing_notice() {
-		$notice = '<div class="error woocommerce-message wc-connect"><p>' . sprintf( __( 'Please set bKash PGW credentials for accepting payments!', 'payment-gateway-bkash' ), "Payment Gateway bKash" ) . BKASH_CLOSE_PDIV;
+		$notice = '<div class="error woocommerce-message wc-connect"><p>Please set bKash PGW credentials for accepting payments!</p>';
 		add_action( 'admin_notices', $notice );
 	}
 
@@ -548,7 +559,7 @@ class PaymentGatewaybKash extends WC_Payment_Gateway {
 		$description = $this->get_description();
 
 		if ( $this->sandbox == 'yes' ) {
-			$description .= ' ' . __( ' (IN SANDBOX)' );
+			$description .= ' (IN SANDBOX)';
 		}
 
 		if ( ! empty( $description ) ) {
@@ -562,10 +573,8 @@ class PaymentGatewaybKash extends WC_Payment_Gateway {
 
 			// This includes your custom payment fields.
 			include_once( WC_Gateway_bKash()->plugin_path() . '/includes/classes/views/html-payment-fields.php' );
-		} else {
-			if ( $this->integration_type === 'tokenized' ) {
-				echo "<p style='color:red'>Please login to complete the payment</p>";
-			}
+		} else if ( $this->integration_type === 'tokenized' ) {
+			echo "<p style='color:red'>Please login to complete the payment</p>";
 		}
 	}
 
@@ -604,12 +613,13 @@ class PaymentGatewaybKash extends WC_Payment_Gateway {
 			wp_localize_script( 'woocommerce-payment-gateway-bkash', 'bKash_objects', array(
 				'apiVersion'           => $this->api_version,
 				'sandbox'              => $this->sandbox,
-				'submit_order'         => WC_AJAX::get_endpoint( 'checkout' ),
-				'ajaxURL'              => admin_url( 'admin-ajax.php' ),
-				'wcAjaxURL'            => $this->siteUrl . BKASH_WC_API . $this->EXECUTE_URL,
-				'cancelAgreement'      => $this->siteUrl . BKASH_WC_API . $this->CANCEL_AGREEMENT_URL,
-				'review_order_payment' => $this->siteUrl . BKASH_WC_API . $this->REVIEW_ORDER_URL,
-				'bKashScriptURL'       => $bk_script_url
+				'bKash_slug'           => BKASH_FW_PLUGIN_SLUG,
+				'submit_order'         => esc_url( WC_AJAX::get_endpoint( 'checkout' ) ),
+				'ajaxURL'              => esc_url( admin_url( 'admin-ajax.php' ) ),
+				'wcAjaxURL'            => esc_url( $this->siteUrl . BKASH_FW_WC_API . $this->EXECUTE_URL ),
+				'cancelAgreement'      => esc_url( $this->siteUrl . BKASH_FW_WC_API . $this->CANCEL_AGREEMENT_URL ),
+				'review_order_payment' => esc_url( $this->siteUrl . BKASH_FW_WC_API . $this->REVIEW_ORDER_URL ),
+				'bKashScriptURL'       => esc_url( $bk_script_url )
 			) );
 
 			wp_enqueue_script( 'woocommerce-payment-gateway-bkash' );
@@ -622,7 +632,7 @@ class PaymentGatewaybKash extends WC_Payment_Gateway {
 			wp_localize_script( 'woocommerce-payment-gateway-bkash', 'bKash_objects', array(
 				'apiVersion'      => $this->api_version,
 				'sandbox'         => $this->sandbox,
-				'cancelAgreement' => $this->siteUrl . BKASH_WC_API . $this->CANCEL_AGREEMENT_URL
+				'cancelAgreement' => esc_url( $this->siteUrl . BKASH_FW_WC_API . $this->CANCEL_AGREEMENT_URL )
 			) );
 
 			wp_enqueue_script( 'woocommerce-payment-gateway-bkash' );
@@ -654,16 +664,16 @@ class PaymentGatewaybKash extends WC_Payment_Gateway {
 		if ( $order_id ) {
 			echo json_encode( $this->process_payment( $order_id ) );
 		} else {
-			echo json_encode(array(
-				'result' => 'failure',
+			echo json_encode( array(
+				'result'  => 'failure',
 				'message' => "Order ID is missing"
-			));
+			) );
 		}
 		die();
 	}
 
 	public function process_payment( $order_id ) {
-		$cbURL          = get_site_url() . BKASH_WC_API . $this->CALLBACK_URL . '?orderId=' . $order_id;
+		$cbURL          = get_site_url() . BKASH_FW_WC_API . $this->CALLBACK_URL . '?orderId=' . $order_id;
 		$processPayment = new ProcessPayments( $this->integration_type );
 
 		return $processPayment->createPayment( $order_id, $this->intent, $cbURL );
@@ -677,7 +687,7 @@ class PaymentGatewaybKash extends WC_Payment_Gateway {
 		$order = wc_get_order( $order_id );
 		if ( $order ) {
 
-			$cbURL = get_site_url() . BKASH_WC_API . $this->CALLBACK_URL . '?orderId=' . $order_id;
+			$cbURL = get_site_url() . BKASH_FW_WC_API . $this->CALLBACK_URL . '?orderId=' . $order_id;
 
 			$process = new ProcessPayments( $this->integration_type );
 			$process->executePayment( $this->get_return_url( $order ), $cbURL );
@@ -762,7 +772,7 @@ class PaymentGatewaybKash extends WC_Payment_Gateway {
 			return $response;
 		}
 
-		$trxObject   = new Transactions();
+		$trxObject   = new Transaction();
 		$transaction = $trxObject->getTransaction( "", $id );
 		if ( $transaction ) {
 			if ( empty( $transaction->getRefundID() ) ) {
@@ -799,7 +809,7 @@ class PaymentGatewaybKash extends WC_Payment_Gateway {
 								'refund_payment' => false
 							) );
 
-							$order->add_order_note( sprintf( __( 'bKash PGW: Refunded %s - Refund ID: %s', 'woocommerce-payment-gateway-bkash' ), $refundAmount, $trx['refundTrxID'] ) );
+							$order->add_order_note( sprintf( 'bKash PGW: Refunded %s - Refund ID: %s', $refundAmount, $trx['refundTrxID'] ) );
 
 
 							$transaction->update( [
@@ -831,10 +841,11 @@ class PaymentGatewaybKash extends WC_Payment_Gateway {
 
 		if ( is_string( $trx ) ) {
 			$this->refundError = $trx;
-			$order->add_order_note( __( 'Error in refunding the order. ' . $trx, 'woocommerce-payment-gateway-bkash' ) );
+			$order->add_order_note( 'Error in refunding the order. ' . esc_html( $trx ) );
 
 			if ( $this->debug == 'yes' ) {
-				$this->log->add( $this->id, 'Error in refunding the order #' . $order_id . '. bKash PGW response: ' . print_r( $response, true ) );
+				$this->log->add( $this->id, 'Error in refunding the order #' . $order_id . '. bKash PGW response: '
+				                            . print_r( esc_html( $response ), true ) );
 			}
 		}
 
@@ -863,7 +874,7 @@ class PaymentGatewaybKash extends WC_Payment_Gateway {
 			return $response;
 		}
 
-		$trxObject   = new Transactions();
+		$trxObject   = new Transaction();
 		$transaction = $trxObject->getTransaction( "", $id );
 		if ( $transaction ) {
 			if ( ! empty( $transaction->getRefundID() ) ) {
@@ -896,7 +907,8 @@ class PaymentGatewaybKash extends WC_Payment_Gateway {
 	 * @return bool|WP_Error
 	 */
 	public function capture_charge( $amount, $order ) {
-		return new WP_Error( 'capture-error', sprintf( __( 'There was an error capturing the charge. Reason: %1$s', 'woocommerce-payment-gateway-bkash' ) ) );
+		return new WP_Error( 'capture-error',
+			sprintf( 'There was an error capturing the charge.' ) );
 	}
 
 	/**
@@ -912,30 +924,30 @@ class PaymentGatewaybKash extends WC_Payment_Gateway {
 			if ( $response->success ) {
 				$this->save_order_meta( $response->transaction, $order );
 				$order->update_status( 'cancelled' );
-				$order->add_order_note( sprintf( __( 'Transaction %1$s has been voided in Braintree.', 'woo-payment-gateway' ), $id ) );
+				$order->add_order_note( sprintf( 'Transaction %1$s has been voided in bKash.', $id ) );
 
 				return true;
-			} else {
-				return new WP_Error( 'capture-error', sprintf( __( 'There was an error voiding the transaction. Reason: %1$s', 'woo-payment-gateway' ), wc_braintree_errors_from_object( $response ) ) );
 			}
+
+			return new WP_Error( 'capture-error', sprintf( 'There was an error voiding the transaction. Reason: %1$s', json_encode( $response ) ) );
 		} catch ( Exception $e ) {
-			return new WP_Error( 'capture-error', sprintf( __( 'There was an error voiding the transaction. Reason: %1$s', 'woo-payment-gateway' ), wc_braintree_errors_from_object( $e ) ) );
+			return new WP_Error( 'capture-error', sprintf( 'There was an error voiding the transaction. Reason: %1$s', json_encode( $e ) ) );
 		}
 	}
 
 
 	/**
-	 * Webhook Integration
+	 * WebhookModule Integration
 	 *
 	 * @return void
 	 */
 	public function webhook() {
 
 		if ( isset( $this->is_webhook ) && $this->is_webhook === 'yes' ) {
-			$webhook = new Webhook( wc_get_logger(), true );
+			$webhook = new WebhookProcessor( wc_get_logger(), true );
 			$webhook->processRequest();
 		} else {
-			$this->log->add( $this->id, 'Webhook is not enabled in settings' );
+			$this->log->add( $this->id, 'WebhookModule is not enabled in settings' );
 		}
 
 		$payload = (array) json_decode( file_get_contents( 'php://input' ), true );
@@ -951,7 +963,7 @@ class PaymentGatewaybKash extends WC_Payment_Gateway {
 	 * @return void
 	 */
 	public function receipt_page( $order ) {
-		echo '<p>' . __( 'Thank you - your order is now pending payment.', 'woocommerce-payment-gateway-bkash' ) . '</p>';
+		echo '<p>Thank you - your order is now pending payment.</p>';
 	}
 
 	/**
@@ -976,9 +988,9 @@ class PaymentGatewaybKash extends WC_Payment_Gateway {
 		$order = wc_get_order( $order_id );
 		$id    = $order->get_transaction_id();
 
-		echo '<h2>' . __( 'Payment Details', 'woocommerce-payment-gateway-bkash' ) . '</h2>' . PHP_EOL;
+		echo '<h2> Payment Details </h2>' . PHP_EOL;
 
-		$trxObj = new Transactions();
+		$trxObj = new Transaction();
 		$trx    = $trxObj->getTransaction( '', $id );
 		if ( $trx ) {
 			include_once "Admin/pages/extra_details.php";
@@ -1012,9 +1024,9 @@ class PaymentGatewaybKash extends WC_Payment_Gateway {
 		// Iterate through our notices to be displayed and print them.
 		foreach ( $notices as $notice ) {
 			printf( '<div class="notice notice-%1$s %2$s"><p>%3$s</p></div>',
-				esc_attr($notice['type']),
+				esc_attr( $notice['type'] ),
 				$notice['dismissible'],
-				esc_html($notice['notice'])
+				esc_html( $notice['notice'] )
 			);
 		}
 

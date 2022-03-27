@@ -10,7 +10,8 @@
 
         $('form.woocommerce-checkout, form#order_review').on('click', "#place_order", function (event) {
             var payment_method = $('form.checkout, form#order_review').find('input[name^="payment_method"]:checked').val();
-            if (payment_method === 'bkash_pgw') {
+            let bKash_slug = bKash_objects && bKash_objects.bKash_slug ? bKash_objects.bKash_slug : null;
+            if (bKash_slug && payment_method === bKash_slug) {
                 event.preventDefault();
 
                 // setting defaults

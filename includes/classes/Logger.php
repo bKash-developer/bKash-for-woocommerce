@@ -7,10 +7,10 @@ use WC_Logger;
 class Logger {
 	public function __construct() {
 
-		if (class_exists('\\WC_Logger')) {
+		if ( class_exists( '\\WC_Logger' ) ) {
 			$this->log = new WC_Logger();
 		} else {
-			$this->log = isset($woocommerce) ? $woocommerce->logger() : null;
+			$this->log = isset( $woocommerce ) ? $woocommerce->logger() : null;
 		}
 	}
 
