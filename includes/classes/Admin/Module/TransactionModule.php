@@ -11,7 +11,6 @@ class TransactionModule {
 	public static function transaction_list() {
 		AdminUtility::loadTable( "All bKash Transaction", "bkash_transactions",
 			array(
-				"ID"               => "ID",
 				"ORDER ID"         => "order_id",
 				"INVOICE ID"       => "invoice_id",
 				"PAYMENT ID"       => "payment_id",

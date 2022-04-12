@@ -10,6 +10,23 @@ function ifRefundValueIsPresent( $row, $column ) {
 	       && ! empty( $row->{$column[0]} );
 }
 
+function setStatusColor( $status ) {
+	$color = "#909090";
+
+	if ( stripos( $status, "cancel" ) !== false ) {
+		$color = "#f4a938";
+	} else if ( stripos( $status, "complete" ) !== false ) {
+		$color = "#1dae5b";
+	} else if ( stripos( $status, "fail" ) !== false ) {
+		$color = "#ff4136";
+	} else if ( stripos( $status, "auth" ) !== false ) {
+		$color = "#0b608a";
+	}
+
+	return $color;
+
+}
+
 ?>
 
     <div class="wrap abs">
@@ -83,7 +100,7 @@ function ifRefundValueIsPresent( $row, $column ) {
 							if ( is_array( $column ) ) { ?>
                                 <td class='manage-column ss-list-width'>
 									<?php
-									if ( ifRefundValueIsPresent($row, $column)) {
+									if ( ifRefundValueIsPresent( $row, $column ) ) {
 										?>
                                         <span class="bKash-chip">Refunded</span>
 										<?php
@@ -110,7 +127,10 @@ function ifRefundValueIsPresent( $row, $column ) {
 									<?php
 									if ( str_contains( strtolower( $column ), "status" ) ) {
 										?>
-                                        <span class="bKash-chip"><?php esc_html_e( $row->{$column}, "bkash-for-woocommerce" ); ?></span>
+                                        <span class="bKash-chip"
+                                              style="background: <?php esc_attr_e( setStatusColor( $row->{$column} ) ); ?> !important;">
+                                            <?php esc_html_e( $row->{$column}, "bkash-for-woocommerce" ); ?>
+                                        </span>
 										<?php
 									} else {
 										esc_html_e( $row->{$column}, "bkash-for-woocommerce" );
