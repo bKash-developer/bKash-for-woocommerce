@@ -12,22 +12,22 @@ if ( isset( $agreements ) ) {
 				?>
                 <tr>
                     <td>
-                        <label for="<?php esc_html_e( $agreement->agreement_token ?? '', BKASH_FW_TEXT_DOMAIN ); ?>">
+                        <label for="<?php esc_html_e( $agreement->agreement_token ?? '', "bkash-for-woocommerce" ); ?>">
                             <input
-                                    id="<?php esc_html_e( $agreement->agreement_token ?? '', BKASH_FW_TEXT_DOMAIN ); ?>"
+                                    id="<?php esc_html_e( $agreement->agreement_token ?? '', "bkash-for-woocommerce" ); ?>"
                                     type="radio"
                                     name="agreement_id"
-                                    value="<?php esc_html_e( $agreement->agreement_token ?? '', BKASH_FW_TEXT_DOMAIN ); ?>"
+                                    value="<?php esc_html_e( $agreement->agreement_token ?? '', "bkash-for-woocommerce" ); ?>"
 								<?php echo $i === 0 ? 'checked' : ''; ?>
                             />
-							<?php esc_html_e( $agreement->phone ?? '', BKASH_FW_TEXT_DOMAIN ); ?>
+							<?php esc_html_e( $agreement->phone ?? '', "bkash-for-woocommerce" ); ?>
                         </label>
                     </td>
                     <td>
                         <a
                                 class="cancelAgreementButton"
                                 href="javascript:void(0)"
-                                data-agreement="<?php esc_html_e( $agreement->agreement_token ?? '', BKASH_FW_TEXT_DOMAIN ); ?>"
+                                data-agreement="<?php esc_html_e( $agreement->agreement_token ?? '', "bkash-for-woocommerce" ); ?>"
                         >Remove</a>
                     </td>
                 </tr>

@@ -18,11 +18,11 @@ namespace bKash\PGW;
  * License URI:       http://www.gnu.org/licenses/gpl-2.0.txt
  * GitHub Plugin URI: https://github.com/bKash-developer/bKash-for-woocommerce
  *
- * WooCommerce Payment Gateway (bKash PGW) is distributed under the terms of the
+ * WooCommerce Payment Gateway (bKash for WooCommerce) is distributed under the terms of the
  * GNU General Public License as published by the Free Software Foundation,
  * either version 2 of the License, or any later version.
  *
- * WooCommerce Payment Gateway (bKash PGW) is distributed in the hope that it will be useful,
+ * WooCommerce Payment Gateway (bKash for WooCommerce) is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
@@ -32,7 +32,7 @@ namespace bKash\PGW;
  *
  * @package  bkash-for-woocommerce
  * @author   bKash Limited
- * @category Core
+ * @category Payment
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -41,7 +41,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 define( 'BKASH_FW_BASE_PATH', plugin_dir_path( __FILE__ ) );
 define( 'BKASH_FW_BASE_URL', plugin_dir_url( __FILE__ ) );
-define( 'BKASH_FW_TEXT_DOMAIN', "bkash-for-woocommerce" );
 define( 'BKASH_FW_PLUGIN_SLUG', "bkash-for-woocommerce" );
 define( 'BKASH_FW_PLUGIN_VERSION', "1.0.5" );
 define( "BKASH_FW_PLUGIN_BASEPATH", plugin_basename( __FILE__ ) );

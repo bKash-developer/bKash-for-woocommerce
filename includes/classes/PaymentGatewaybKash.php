@@ -16,7 +16,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 } // Exit if accessed directly.
 
 define( "BKASH_FW_WC_API", "/wc-api/" );
-define( "BKASH_FW_CLOSE_PDIV", "</p></div>" );
+define( "BKASH_FW_COMPLETED_STATUS", "Completed" );
+define( "BKASH_FW_CANCELLED_STATUS", "Cancelled" );
 
 /**
  * WooCommerce bKash Payment Gateway.
@@ -36,6 +37,7 @@ class PaymentGatewaybKash extends WC_Payment_Gateway {
 	private $SUCCESS_CALLBACK_URL = "bkash_payment_success";
 	private $FAILURE_CALLBACK_URL = "bkash_payment_failure";
 	private $EXECUTE_URL = "bk_execute";
+	private $PAYMENT_CANCEL_URL = "bk_cancel";
 	private $CANCEL_AGREEMENT_URL = "bk_cancel_agreement";
 	private $REVIEW_ORDER_URL = "bk_review_order";
 	private $WEBHOOK_URL = "bkash_webhook";
@@ -78,7 +80,8 @@ class PaymentGatewaybKash extends WC_Payment_Gateway {
 		$this->notify_url           = WC()->api_request_url( 'WC_Gateway_bKash' );
 		$this->siteUrl              = get_site_url();
 		$this->supports             = array(
-			'products'
+			'products',
+			'refunds'
 		);
 		$this->view_transaction_url = '';
 
@@ -302,6 +305,7 @@ class PaymentGatewaybKash extends WC_Payment_Gateway {
 		add_action( 'woocommerce_api_' . $this->SUCCESS_CALLBACK_URL, array( $this, 'payment_success' ) );
 		add_action( 'woocommerce_api_' . $this->FAILURE_CALLBACK_URL, array( $this, 'payment_failure' ) );
 		add_action( 'woocommerce_api_' . $this->EXECUTE_URL, array( $this, 'create_payment_callback_process' ) );
+		add_action( 'woocommerce_api_' . $this->PAYMENT_CANCEL_URL, array( $this, 'cancel_payment_process' ) );
 		add_action( 'woocommerce_api_' . $this->CANCEL_AGREEMENT_URL, array( $this, 'cancel_agreement_api' ) );
 		add_action( 'woocommerce_api_' . $this->REVIEW_ORDER_URL, array( $this, 'process_review_order_payment' ) );
 		// WebhookModule
@@ -348,10 +352,10 @@ class PaymentGatewaybKash extends WC_Payment_Gateway {
 							} // If any error for checkout
 							else if ( isset( $captured['errorCode'] ) ) {
 								$trx = isset( $captured['errorMessage'] ) ? $captured['errorMessage'] : '';
-							} else if ( isset( $captured['transactionStatus'] ) && $captured['transactionStatus'] === 'Completed' ) {
+							} else if ( isset( $captured['transactionStatus'] ) && $captured['transactionStatus'] === BKASH_FW_COMPLETED_STATUS ) {
 								$trx = $captured;
 
-								$updated = $trxObj->update( [ 'status' => 'Completed' ], [ 'trx_id' => $transaction->getTrxID() ] );
+								$updated = $trxObj->update( [ 'status' => BKASH_FW_COMPLETED_STATUS ], [ 'trx_id' => $transaction->getTrxID() ] );
 								if ( $updated == 0 ) {
 									// on update error
 									$orderDetails->add_order_note( sprintf( 'bKash PGW: Status update failed in DB, %s', $trxObj->errorMessage ) );
@@ -424,7 +428,7 @@ class PaymentGatewaybKash extends WC_Payment_Gateway {
 	 */
 	public static function void_transaction_from_status( $order_id, $order ) {
 		$trx            = '';
-		$orderDetails   = wc_get_order( $order_id );
+		$orderDetails   = $order;
 		$id             = $orderDetails->get_transaction_id();
 		$payment_method = $orderDetails->get_payment_method();
 
@@ -433,31 +437,31 @@ class PaymentGatewaybKash extends WC_Payment_Gateway {
 			$transaction = $trxObj->getTransaction( '', $id );
 			if ( $transaction ) {
 				if ( $transaction->getStatus() === 'Authorized' ) {
-					$comm        = new ApiComm();
-					$captureCall = $comm->voidPayment( $transaction->getPaymentID() );
+					$comm      = new ApiComm();
+					$void_call = $comm->voidPayment( $transaction->getPaymentID() );
 
-					if ( isset( $captureCall['status_code'] ) && $captureCall['status_code'] === 200 ) {
-						$captured = isset( $captureCall['response'] ) && is_string( $captureCall['response'] ) ? json_decode( $captureCall['response'], true ) : [];
+					if ( isset( $void_call['status_code'] ) && $void_call['status_code'] === 200 ) {
+						$voided = isset( $void_call['response'] ) && is_string( $void_call['response'] ) ? json_decode( $void_call['response'], true ) : [];
 
-						if ( $captured ) {
+						if ( $voided ) {
 							// Sample payload - array(3) { ["status_code"]=> int(200) ["header"]=> NULL ["response"]=> string(177) "{"completedTime":"2021-02-21T18:46:18:085 GMT+0000","trxID":"8BM304KJ37","transactionStatus":"Completed","amount":"10","currency":"BDT","transferType":"Collection2Disbursement"}" }
 
 							// If any error for tokenized
-							if ( isset( $captured['statusMessage'] ) && $captured['statusMessage'] !== 'Successful' ) {
-								$trx = $captured['statusMessage'];
+							if ( isset( $voided['statusMessage'] ) && $voided['statusMessage'] !== 'Successful' ) {
+								$trx = $voided['statusMessage'];
 							} // If any error for checkout
-							else if ( isset( $captured['errorCode'] ) ) {
-								$trx = isset( $captured['errorMessage'] ) ? $captured['errorMessage'] : '';
-							} else if ( isset( $captured['transactionStatus'] ) && $captured['transactionStatus'] === 'Completed' ) {
-								$trx = $captured;
+							else if ( isset( $voided['errorCode'] ) ) {
+								$trx = isset( $voided['errorMessage'] ) ? $voided['errorMessage'] : '';
+							} else if ( isset( $voided['transactionStatus'] ) && $voided['transactionStatus'] === BKASH_FW_CANCELLED_STATUS ) {
+								$trx = $voided;
 
-								$updated = $trxObj->update( [ 'status' => 'Void' ], [ 'trx_id' => $transaction->getTrxID() ] );
+								$updated = $trxObj->update( [ 'status' => BKASH_FW_CANCELLED_STATUS ], [ 'trx_id' => $transaction->getTrxID() ] );
 								if ( $updated == 0 ) {
 									// on update error
 									$orderDetails->add_order_note( sprintf( 'bKash PGW: Status update failed in DB, ' . $trxObj->errorMessage ) );
 								}
 
-								$orderDetails->add_order_note( sprintf( 'bKash PGW: Payment was updated as Void of amount %s - Payment ID: %s', $transaction->getAmount(), $captured['trxID'] ) );
+								$orderDetails->add_order_note( sprintf( 'bKash PGW: Payment was updated as Void of amount %s - Payment ID: %s', $transaction->getAmount(), $voided['trxID'] ) );
 							} else {
 								$trx = "Transfer is not possible right now. try again";
 							}
@@ -470,21 +474,15 @@ class PaymentGatewaybKash extends WC_Payment_Gateway {
 				} else {
 					$trx = "Transaction is not in authorized state, thus ignore, try again";
 				}
-			} else {
-				$trx = "no transaction found with this order, try again";
 			}
-		} else {
-			$trx = "payment gateway is not bKash, try again";
 		}
 
 		if ( isset( $trx ) && ! empty( $trx ) ) {
 			if ( is_string( $trx ) ) {
-				// error occurred, show message
-				// $orderDetails->update_status('on-hold', $trx, false);
-				self::add_flash_notice( "Capture Error, " . $trx );
+				self::add_flash_notice( "Void Error, " . $trx );
 			} else if ( is_array( $trx ) ) {
-				// Capture Success
-				self::add_flash_notice( "Payment has been captured", "success" );
+				// Void Success
+				self::add_flash_notice( "Payment has been voided", "success" );
 			}
 		}
 	}
@@ -524,7 +522,7 @@ class PaymentGatewaybKash extends WC_Payment_Gateway {
 			?>
             <div class="error ssl-error">
                 <p>bKash PGW is enabled, but the
-                    <a href="<?php esc_html_e( $admin_checkout_setting_url, BKASH_FW_TEXT_DOMAIN ); ?>">
+                    <a href="<?php esc_html_e( $admin_checkout_setting_url, "bkash-for-woocommerce" ); ?>">
                         force SSL option
                     </a>
                     is disabled; your checkout may not be secure! Please enable SSL and ensure your server has a valid
@@ -617,6 +615,7 @@ class PaymentGatewaybKash extends WC_Payment_Gateway {
 				'submit_order'         => esc_url( WC_AJAX::get_endpoint( 'checkout' ) ),
 				'ajaxURL'              => esc_url( admin_url( 'admin-ajax.php' ) ),
 				'wcAjaxURL'            => esc_url( $this->siteUrl . BKASH_FW_WC_API . $this->EXECUTE_URL ),
+				'wcPaymentCancelUrl'   => esc_url( $this->siteUrl . BKASH_FW_WC_API . $this->PAYMENT_CANCEL_URL ),
 				'cancelAgreement'      => esc_url( $this->siteUrl . BKASH_FW_WC_API . $this->CANCEL_AGREEMENT_URL ),
 				'review_order_payment' => esc_url( $this->siteUrl . BKASH_FW_WC_API . $this->REVIEW_ORDER_URL ),
 				'bKashScriptURL'       => esc_url( $bk_script_url )
@@ -700,6 +699,16 @@ class PaymentGatewaybKash extends WC_Payment_Gateway {
 		die();
 	}
 
+	public function cancel_payment_process() {
+		$order_id = sanitize_text_field( $_REQUEST['orderId'] );
+
+		$process = new ProcessPayments( $this->integration_type );
+		$resp    = $process->cancelPayment( $order_id );
+		echo json_encode( $resp );
+
+		die();
+	}
+
 	public function cancel_agreement_api() {
 		$message      = "";
 		$agreement_id = sanitize_text_field( $_REQUEST['id'] );
@@ -713,7 +722,7 @@ class PaymentGatewaybKash extends WC_Payment_Gateway {
 
 			$decoded_response = isset( $cancelUsingAPI['response'] ) && is_string( $cancelUsingAPI['response'] ) ?
 				json_decode( $cancelUsingAPI['response'], true ) : [];
-			if ( isset( $decoded_response['agreementStatus'] ) && $decoded_response['agreementStatus'] === 'Cancelled' ) {
+			if ( isset( $decoded_response['agreementStatus'] ) && $decoded_response['agreementStatus'] === BKASH_FW_CANCELLED_STATUS ) {
 				// CANCELED
 
 				$agreementModel->delete( $agreement_id );

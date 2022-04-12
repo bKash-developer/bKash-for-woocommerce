@@ -189,22 +189,22 @@ final class WC_Gateway_bKash {
 		$lang_dir = apply_filters( 'woocommerce_' . BKASH_FW_PLUGIN_SLUG . '_languages_directory', $lang_dir );
 
 		// Traditional WordPress plugin locale filter
-		$locale = apply_filters( 'plugin_locale', get_locale(), BKASH_FW_TEXT_DOMAIN );
-		$mofile = sprintf( '%1$s-%2$s.mo', BKASH_FW_TEXT_DOMAIN, $locale );
+		$locale = apply_filters( 'plugin_locale', get_locale(), "bkash-for-woocommerce" );
+		$mofile = sprintf( '%1$s-%2$s.mo', "bkash-for-woocommerce", $locale );
 
 		// Setup paths to current locale file
 		$mofile_local  = $lang_dir . $mofile;
-		$mofile_global = WP_LANG_DIR . '/' . BKASH_FW_TEXT_DOMAIN . '/' . $mofile;
+		$mofile_global = WP_LANG_DIR . '/' . "bkash-for-woocommerce" . '/' . $mofile;
 
 		if ( file_exists( $mofile_global ) ) {
 			// Look in global /wp-content/languages/plugin-name/ folder
-			load_textdomain( BKASH_FW_TEXT_DOMAIN, $mofile_global );
+			load_textdomain( "bkash-for-woocommerce", $mofile_global );
 		} else if ( file_exists( $mofile_local ) ) {
 			// Look in local /wp-content/plugins/plugin-name/languages/ folder
-			load_textdomain( BKASH_FW_TEXT_DOMAIN, $mofile_local );
+			load_textdomain( "bkash-for-woocommerce", $mofile_local );
 		} else {
 			// Load the default language files
-			load_plugin_textdomain( BKASH_FW_TEXT_DOMAIN, false, $lang_dir );
+			load_plugin_textdomain( "bkash-for-woocommerce", false, $lang_dir );
 		}
 	}
 

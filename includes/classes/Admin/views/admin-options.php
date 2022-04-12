@@ -1,7 +1,7 @@
 <h3>bKash Payment Gateway</h3>
 
 <div class="gateway-banner bKash-hero-div bKash-success">
-    <img alt="bKash logo" src="<?php echo \bKash\PGW\WC_Gateway_bKash()->plugin_url() . '/assets/images/logo.png'; ?>"/>
+    <img alt="bKash logo" src="<?php echo esc_url(\bKash\PGW\WC_Gateway_bKash()->plugin_url() . '/assets/images/logo.png'); ?>"/>
     <p class="main">
         <strong>Getting started</strong>
     </p>
@@ -11,8 +11,8 @@
         <strong>Gateway Status</strong>
     </p>
     <ul>
-        <li>Debug Enabled? : <strong><?php esc_html_e( $this->debug, BKASH_FW_TEXT_DOMAIN ); ?></strong></li>
-        <li>Sandbox Enabled? : <strong><?php esc_html_e( $this->sandbox, BKASH_FW_TEXT_DOMAIN ); ?></strong></li>
+        <li>Debug Enabled? : <strong><?php esc_html_e( $this->debug, "bkash-for-woocommerce" ); ?></strong></li>
+        <li>Sandbox Enabled? : <strong><?php esc_html_e( $this->sandbox, "bkash-for-woocommerce" ); ?></strong></li>
     </ul>
 
 	<?php if ( empty( $this->app_key ) ) { ?>

@@ -26,11 +26,11 @@ class ProcessPayments {
 
 		global $woocommerce;
 		//To receive order id
-		$order = wc_get_order( $order_id );
+		$order       = wc_get_order( $order_id );
+		$trx         = new Transaction();
+		$transaction = $trx->getTransaction( $invoice_id );
 
 		if ( $status === 'success' ) {
-			$trx         = new Transaction();
-			$transaction = $trx->getTransaction( $invoice_id );
 			if ( $transaction && $transaction->getPaymentID() === $payment_id ) {
 
 				$transaction->update( [
@@ -156,11 +156,17 @@ class ProcessPayments {
 									die();
 								}
 							}
-							$message = $this->processResponse( "Could not get transaction status" );
+							$message = "Could not get transaction status";
 						} else {
 							$message = is_string( $paymentResp ) ? $paymentResp : '';
-							$message = $this->processResponse( $message );
 						}
+
+						$transaction->update( [
+							'status' => 'Failed',
+						] );
+						$order->add_order_note( "bKash Payment: " . $message );
+
+						$message = $this->processResponse( $message );
 					}
 				} else {
 					$message = $this->processResponse( "Communication issue with payment gateway" );
@@ -183,6 +189,16 @@ class ProcessPayments {
 
 		} else {
 			// transaction failed/cancelled.
+			$status = str_replace( [ 'cancel', 'failure' ], [ 'Cancelled', 'Failed' ], $status );
+			if ( $transaction->getStatus() !== 'Completed' ) {
+				$transaction->update( [
+					'status' => esc_html( $status ),
+				] );
+				$order->add_order_note( "bKash Payment is not successful. Status => " . esc_html( $status ) );
+			} else {
+				$order->add_order_note( "bKash Payment is already in Completed state. Tried to change Status to => " . esc_html( $status ) );
+			}
+
 			$message = $this->processResponse( "Transaction is " . $status );
 		}
 
@@ -376,6 +392,54 @@ class ProcessPayments {
 
 	public function processResponse( $message, $type = 'error' ) {
 		return "<h3 style='color: #fff;font-weight: bold;margin: 0;font-size: 20px;line-height: 14px;'>Payment Failed</h3>" . $message;
+	}
+
+
+	public function cancelPayment( string $order_id ) {
+
+		global $woocommerce;
+		//To receive order id
+		$order = wc_get_order( $order_id );
+		if ( $order ) {
+
+			if ( $order->get_status() === 'pending' ) {
+
+				$trx         = new Transaction();
+				$transaction = $trx->getTransactionByOrderId( $order_id );
+				if ( $transaction ) {
+
+					$transaction->update( [
+						'status' => 'Cancelled',
+					] );
+					$order->add_order_note( "bKash Payment has been cancelled, either failed or customer cancelled" );
+					$order->update_status( 'cancelled', 'Payment has been cancelled!' );
+
+					return array(
+						'result'   => 'success',
+						'redirect' => null,
+						'response' => "Order cancelled!"
+					);
+
+				}
+
+				return array(
+					'result'  => 'failure',
+					'message' => 'Transaction not found in bKash database'
+				);
+
+			}
+
+			return array(
+				'result'  => 'failure',
+				'message' => 'Order is not in pending status to cancel the payment'
+			);
+		}
+
+		return array(
+			'result'  => 'failure',
+			'message' => 'Order not found'
+		);
+
 	}
 
 

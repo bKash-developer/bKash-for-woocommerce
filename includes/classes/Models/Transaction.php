@@ -440,34 +440,51 @@ class Transaction {
 	}
 
 	public function getTransaction( $invoice_id = "", $trx_id = "" ) {
+		$transaction = null;
 		if ( ! is_null( $this->wpdb ) ) {
 			if ( ! empty( $invoice_id ) ) {
 				$transaction = $this->wpdb->get_row( $this->wpdb->prepare( "SELECT * FROM $this->tableName WHERE `invoice_id` = %s", $invoice_id ) );
 			} else if ( ! empty( $trx_id ) ) {
 				$transaction = $this->wpdb->get_row( $this->wpdb->prepare( "SELECT * FROM $this->tableName WHERE `trx_id` = %s", $trx_id ) );
-			} else {
-				$transaction = null;
 			}
-			if ( $transaction ) {
-				$this->orderID         = $transaction->order_id ?? null;
-				$this->trxID           = $transaction->trx_id ?? null;
-				$this->paymentID       = $transaction->payment_id ?? null;
-				$this->invoiceID       = $transaction->invoice_id ?? null;
-				$this->integrationType = $transaction->integration_type ?? null;
-				$this->mode            = $transaction->mode ?? null;
-				$this->intent          = $transaction->intent ?? null;
-				$this->amount          = $transaction->amount ?? null;
-				$this->currency        = $transaction->currency ?? null;
-				$this->refundID        = $transaction->refund_id ?? null;
-				$this->refundAmount    = $transaction->refund_amount ?? null;
-				$this->status          = $transaction->status ?? null;
-				$this->dateTime        = $transaction->datetime ?? null;
 
-				return $this;
+			if ( $transaction ) {
+				return $this->buildTransaction( $transaction );
 			}
 		}
 
-		return null;
+		return $transaction;
+	}
+
+	private function buildTransaction( $transaction ) {
+		$this->orderID         = $transaction->order_id ?? null;
+		$this->trxID           = $transaction->trx_id ?? null;
+		$this->paymentID       = $transaction->payment_id ?? null;
+		$this->invoiceID       = $transaction->invoice_id ?? null;
+		$this->integrationType = $transaction->integration_type ?? null;
+		$this->mode            = $transaction->mode ?? null;
+		$this->intent          = $transaction->intent ?? null;
+		$this->amount          = $transaction->amount ?? null;
+		$this->currency        = $transaction->currency ?? null;
+		$this->refundID        = $transaction->refund_id ?? null;
+		$this->refundAmount    = $transaction->refund_amount ?? null;
+		$this->status          = $transaction->status ?? null;
+		$this->dateTime        = $transaction->datetime ?? null;
+
+		return $this;
+	}
+
+	public function getTransactionByOrderId( $order_id ) {
+		$transaction = null;
+		if (! empty( $order_id ) && ! is_null( $this->wpdb ) ) {
+			$transaction = $this->wpdb->get_row( $this->wpdb->prepare( "SELECT * FROM $this->tableName WHERE `order_id` = %s", $order_id ) );
+
+			if ( $transaction ) {
+				return $this->buildTransaction( $transaction );
+			}
+		}
+
+		return $transaction;
 	}
 
 

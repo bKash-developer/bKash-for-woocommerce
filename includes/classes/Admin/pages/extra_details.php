@@ -11,11 +11,11 @@ if ( isset( $trx ) && $trx ) {
         </tr>
         <tr>
             <td>Transaction ID</td>
-            <td><?php esc_html_e( $trx->getTrxID() ?? '', BKASH_FW_TEXT_DOMAIN ); ?></td>
+            <td><?php esc_html_e( $trx->getTrxID() ?? '', "bkash-for-woocommerce" ); ?></td>
         </tr>
         <tr>
             <td>Payment Status</td>
-            <td><?php esc_html_e( $trx->getStatus() ?? '', BKASH_FW_TEXT_DOMAIN ); ?></td>
+            <td><?php esc_html_e( $trx->getStatus() ?? '', "bkash-for-woocommerce" ); ?></td>
         </tr>
     </table>
 

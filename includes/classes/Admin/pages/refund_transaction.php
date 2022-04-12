@@ -3,7 +3,7 @@
         border-left-color: #e23e3e !important;
     }
 </style>
-<h1><?php esc_html_e( get_admin_page_title(), BKASH_FW_TEXT_DOMAIN ); ?></h1>
+<h1><?php esc_html_e( get_admin_page_title(), "bkash-for-woocommerce" ); ?></h1>
 <br>
 <form action="#" method="post">
 
@@ -22,7 +22,7 @@
 				}
 				?>
                 <input name="trxid" type="text" id="trxid" placeholder="Transaction ID" class="form-text-input"
-                       value="<?php esc_attr_e( $current_trx_id, BKASH_FW_TEXT_DOMAIN ); ?> "/>
+                       value="<?php esc_attr_e( $current_trx_id, "bkash-for-woocommerce" ); ?> "/>
             </td>
         </tr>
         <tr>
@@ -31,7 +31,7 @@
             </td>
             <td>
                 <input name="amount" type="text" id="amount" placeholder="Amount" class="form-text-input"
-                       value="<?php esc_attr_e( $amount ?? '', BKASH_FW_TEXT_DOMAIN ); ?>"/>
+                       value="<?php esc_attr_e( $amount ?? '', "bkash-for-woocommerce" ); ?>"/>
             </td>
         </tr>
         <tr>
@@ -58,7 +58,7 @@
             </td>
             <td>
                 <input name="trxid" type="text" id="trxid" placeholder="Transaction ID" class="form-text-input"
-                       value="<?php esc_html_e( $current_trx_id, BKASH_FW_TEXT_DOMAIN ); ?> "/>
+                       value="<?php esc_html_e( $current_trx_id, "bkash-for-woocommerce" ); ?> "/>
             </td>
         </tr>
     </table>
@@ -72,7 +72,7 @@ if ( isset( $trx ) && is_string( $trx ) && ! empty( $trx ) ) {
 	// FAILED TO GET BALANCES
 	?>
     <div id="message" class="bKash-hero-div woocommerce-message bKash-error">
-        <p><?php esc_html_e( $trx ?? '', BKASH_FW_TEXT_DOMAIN ); ?></p>
+        <p><?php esc_html_e( $trx ?? '', "bkash-for-woocommerce" ); ?></p>
     </div>
 	<?php
 
@@ -82,26 +82,26 @@ if ( isset( $trx ) && is_string( $trx ) && ! empty( $trx ) ) {
     <div class="gateway-banner bKash-hero-div bKash-success">
         <img style="max-width: 90px; margin: 10px 5px"
              alt="bKash logo"
-             src="<?php echo \bKash\PGW\WC_Gateway_bKash()->plugin_url() . '/assets/images/logo.png'; ?>"/>
+             src="<?php echo esc_url(\bKash\PGW\WC_Gateway_bKash()->plugin_url() . '/assets/images/logo.png'); ?>"/>
         <p class="main">
             <strong>Transaction
                 ID: <?php _e( $trx['originalTrxID'] ?? '', 'woocommerce-payment-gateway-bkash' ); ?></strong></p>
         <hr>
-        <p>Refund ID: <b><?php esc_html_e( $trx['refundTrxID'] ?? '', BKASH_FW_TEXT_DOMAIN ); ?></b></p>
+        <p>Refund ID: <b><?php esc_html_e( $trx['refundTrxID'] ?? '', "bkash-for-woocommerce" ); ?></b></p>
         <p>Amount:
-            <b><?php esc_html_e( ( $trx['amount'] ?? '' ) . ' ' . ( $trx['currency'] ?? '' ), BKASH_FW_TEXT_DOMAIN ); ?></b>
+            <b><?php esc_html_e( ( $trx['amount'] ?? '' ) . ' ' . ( $trx['currency'] ?? '' ), "bkash-for-woocommerce" ); ?></b>
         </p>
         <hr>
         <ul>
-            <li>Charge: <strong><?php esc_html_e( $trx['charge'] ?? '', BKASH_FW_TEXT_DOMAIN ); ?></strong></li>
-            <li>Completed At: <strong><?php esc_html_e( $trx['completedTime'] ?? '', BKASH_FW_TEXT_DOMAIN ); ?></strong>
+            <li>Charge: <strong><?php esc_html_e( $trx['charge'] ?? '', "bkash-for-woocommerce" ); ?></strong></li>
+            <li>Completed At: <strong><?php esc_html_e( $trx['completedTime'] ?? '', "bkash-for-woocommerce" ); ?></strong>
             </li>
         </ul>
         <p>
 			<?php $btn_class = isset( $trx['transactionStatus'] ) && $trx['transactionStatus'] === 'Completed' ? 'button-primary' : 'button'; ?>
-            <button class="button button-small <?php esc_attr_e( $btn_class, BKASH_FW_TEXT_DOMAIN ) ?>">
+            <button class="button button-small <?php esc_attr_e( $btn_class, "bkash-for-woocommerce" ) ?>">
                 Refund Status -
-				<?php esc_html_e( $trx['transactionStatus'] ?? '', BKASH_FW_TEXT_DOMAIN ); ?>
+				<?php esc_html_e( $trx['transactionStatus'] ?? '', "bkash-for-woocommerce" ); ?>
             </button>
         </p>
     </div>
