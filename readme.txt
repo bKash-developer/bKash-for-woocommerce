@@ -1,9 +1,9 @@
 === bKash For WooCommerce ===
 Contributors: bkashpayment
-Tags: bKash, bKashPayment,bKashForWooCommerce, online payment, ecommerce, woocommerce
+Tags: bKash,bKashPayment,bKashForWooCommerce,online payment,ecommerce,woocommerce
 Requires at least: 4.0
-Tested up to: 5.9
-Stable tag: 1.0.3
+Tested up to: 5.9.3
+Stable tag: 1.0.5
 Requires PHP: 7.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -63,6 +63,7 @@ This plugin supports below environments of bKash payment gateway.
 * Refund a Transaction
 * Agreements
 * Web-hooks
+* Payment Settings
 
 ### Actions for Merchant:
    *  For Checkout:
