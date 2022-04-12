@@ -3,9 +3,11 @@
 namespace bKash\PGW;
 
 
+use bKash\PGW\Models\Webhook;
+
 class WebhookProcessor {
 	private $payload;
-	private $context = array( "source" => 'bKash PGW' );
+	private $context = array( "source" => BKASH_FW_PLUGIN_SLUG );
 	private $log;
 	private $canSubscribe;
 
@@ -176,7 +178,7 @@ class WebhookProcessor {
 				}
 
 
-				$webhooks = new WebhookProcessor();
+				$webhooks = new Webhook();
 				$webhooks->set_sender( isset( $message->debitMSISDN ) ? $message->debitMSISDN : '' );
 				$webhooks->set_receiver( isset( $message->creditShortCode ) ? $message->creditShortCode : '' );
 				$webhooks->set_amount( isset( $message->amount ) ? (float) $message->amount : '' );
@@ -193,9 +195,9 @@ class WebhookProcessor {
 				if ( $isSaved ) {
 					$this->writeLog( "Payment added successfully, " . json_encode( $message ) );
 					return true;
-				} else {
-					$this->writeLog( "Payment can't be added, " . json_encode( $webhooks->errorMessage ) );
 				}
+
+				$this->writeLog( "Payment can't be added, " . json_encode( $webhooks->errorMessage ) );
 			}
 		}
 
