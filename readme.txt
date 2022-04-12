@@ -177,7 +177,8 @@ Ans: Yes, we have a detailed manual for this plugin, you can download it from he
 4. Transaction list for admin to check
 
 == Changelog ==
-
+= 1.0.5 =
+* Escaped variables, added cancel payment, colored transaction list status.
 = 1.0.4 =
 * Minor bug fix of unwanted message during capturing a non-bKash payment.
 = 1.0.3 =
