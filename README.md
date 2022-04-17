@@ -3,7 +3,7 @@
 - User Story and Features
 - Prepared By: Md. Shahnawaz Ahmed (Asst. Lead Engineer, Solution Engineering, P&T), Aritra Banerjee (Asst. Lead Engineer, Solution Engineering, P&T)
 - Dated: 12th May 2021
-- Version: 1.0.4
+- Version: 1.0.5
 ```
 ### Introduction
 Using this plugin, merchant can setup bKash payment gateway with selected product. Then merchant can start collecting payment from bKash customer for any requested service from merchant website.

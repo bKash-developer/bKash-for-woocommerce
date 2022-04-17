@@ -3,7 +3,7 @@
         border-left-color: #e23e3e !important;
     }
 </style>
-<h1><?php echo esc_html(get_admin_page_title()); ?></h1>
+<h1><?php esc_html_e( get_admin_page_title(), "bkash-for-woocommerce" ); ?></h1>
 <br>
 <form action="#" method="post">
 
@@ -13,16 +13,16 @@
                 <label for="trxid" class="form-label">Transaction ID *</label>
             </td>
             <td>
-                <?php
-                    $current_trx_id = '';
-                    if(!empty($fill_trx_id)) {
-                        $current_trx_id = $fill_trx_id;
-                    } else if(!empty($trx_id)) {
-                        $current_trx_id = $trx_id;
-                    }
-                ?>
+				<?php
+				$current_trx_id = '';
+				if ( ! empty( $fill_trx_id ) ) {
+					$current_trx_id = $fill_trx_id;
+				} else if ( ! empty( $trx_id ) ) {
+					$current_trx_id = $trx_id;
+				}
+				?>
                 <input name="trxid" type="text" id="trxid" placeholder="Transaction ID" class="form-text-input"
-                       value="<?php echo esc_attr($current_trx_id); ?> "/>
+                       value="<?php esc_attr_e( $current_trx_id, "bkash-for-woocommerce" ); ?> "/>
             </td>
         </tr>
         <tr>
@@ -31,7 +31,7 @@
             </td>
             <td>
                 <input name="amount" type="text" id="amount" placeholder="Amount" class="form-text-input"
-                       value="<?php echo esc_attr($amount) ?? ''; ?>"/>
+                       value="<?php esc_attr_e( $amount ?? '', "bkash-for-woocommerce" ); ?>"/>
             </td>
         </tr>
         <tr>
@@ -58,7 +58,7 @@
             </td>
             <td>
                 <input name="trxid" type="text" id="trxid" placeholder="Transaction ID" class="form-text-input"
-                       value="<?php echo esc_html($current_trx_id); ?> "/>
+                       value="<?php esc_html_e( $current_trx_id, "bkash-for-woocommerce" ); ?> "/>
             </td>
         </tr>
     </table>
@@ -68,38 +68,43 @@
 <br/>
 
 <?php
-if (isset($trx) && is_string($trx) && !empty($trx)) {
-    // FAILED TO GET BALANCES
-    ?>
+if ( isset( $trx ) && is_string( $trx ) && ! empty( $trx ) ) {
+	// FAILED TO GET BALANCES
+	?>
     <div id="message" class="bKash-hero-div woocommerce-message bKash-error">
-        <p><?php echo esc_html($trx) ?? '' ?></p>
+        <p><?php esc_html_e( $trx ?? '', "bkash-for-woocommerce" ); ?></p>
     </div>
-    <?php
+	<?php
 
-} else if (isset($trx['refundTrxID']) && is_array($trx)) {
-    // GOT TRANSACTION
-    ?>
+} else if ( isset( $trx['refundTrxID'] ) && is_array( $trx ) ) {
+	// GOT TRANSACTION
+	?>
     <div class="gateway-banner bKash-hero-div bKash-success">
         <img style="max-width: 90px; margin: 10px 5px"
              alt="bKash logo"
-             src="<?php echo \bKash\PGW\WC_Gateway_bKash()->plugin_url() . '/assets/images/logo.png'; ?>"/>
+             src="<?php echo esc_url(\bKash\PGW\WC_Gateway_bKash()->plugin_url() . '/assets/images/logo.png'); ?>"/>
         <p class="main">
-            <strong>Transaction ID: <?php _e($trx['originalTrxID'] ?? '', 'woocommerce-payment-gateway-bkash'); ?></strong></p>
+            <strong>Transaction
+                ID: <?php _e( $trx['originalTrxID'] ?? '', 'woocommerce-payment-gateway-bkash' ); ?></strong></p>
         <hr>
-        <p><?php _e('Refund ID: <b>' . ($trx['refundTrxID'] ?? '') . '</b>', 'woocommerce-payment-gateway-bkash'); ?></p>
-        <p><?php _e('Amount: <b>' . ($trx['amount'] ?? '') . ' ' . ($trx['currency'] ?? '') . '</b>', 'woocommerce-payment-gateway-bkash'); ?></p>
+        <p>Refund ID: <b><?php esc_html_e( $trx['refundTrxID'] ?? '', "bkash-for-woocommerce" ); ?></b></p>
+        <p>Amount:
+            <b><?php esc_html_e( ( $trx['amount'] ?? '' ) . ' ' . ( $trx['currency'] ?? '' ), "bkash-for-woocommerce" ); ?></b>
+        </p>
         <hr>
         <ul>
-            <li><?php echo __('Charge', 'woocommerce-payment-gateway-bkash') . ' <strong>' . ($trx['charge'] ?? '') . '</strong>'; ?></li>
-            <li><?php echo __('Completed At', 'woocommerce-payment-gateway-bkash') . ' <strong>' . ($trx['completedTime'] ?? '') . '</strong>'; ?></li>
+            <li>Charge: <strong><?php esc_html_e( $trx['charge'] ?? '', "bkash-for-woocommerce" ); ?></strong></li>
+            <li>Completed At: <strong><?php esc_html_e( $trx['completedTime'] ?? '', "bkash-for-woocommerce" ); ?></strong>
+            </li>
         </ul>
         <p>
-            <button
-                    class="button button-small <?php echo ($trx['transactionStatus'] ?? '') === 'Completed' ? 'button-primary' : 'button'; ?>">
-                <?php _e('Refund Status - ' . ($trx['transactionStatus'] ?? ''), 'woocommerce-payment-gateway-bkash'); ?>
+			<?php $btn_class = isset( $trx['transactionStatus'] ) && $trx['transactionStatus'] === 'Completed' ? 'button-primary' : 'button'; ?>
+            <button class="button button-small <?php esc_attr_e( $btn_class, "bkash-for-woocommerce" ) ?>">
+                Refund Status -
+				<?php esc_html_e( $trx['transactionStatus'] ?? '', "bkash-for-woocommerce" ); ?>
             </button>
         </p>
     </div>
-    <?php
+	<?php
 }
 ?>

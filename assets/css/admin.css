@@ -28,3 +28,12 @@ div.bKash-error {
 div.bKash-warning {
     border-left-color: #ffb900;
 }
+
+.bKash-chip {
+    display: inline;
+    padding: 5px 12px;
+    border-radius: 32px;
+    font-size: 11px;
+    color: #ffffff;
+    font-weight: bold;
+}

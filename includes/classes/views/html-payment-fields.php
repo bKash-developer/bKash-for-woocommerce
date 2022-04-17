@@ -3,77 +3,83 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 } // Exit if accessed directly.
 
-
-if ( isset( $agreements ) && ( $this->integration_type === "tokenized" || $this->integration_type === "tokenized-both" ) ) {
-	echo "<table id='payment-fields-table'>";
-	?>
-	<?php
-	foreach ( $agreements as $i => $agreement ) {
+if ( isset( $agreements ) ) {
+	if ( $this->integration_type === "tokenized" || $this->integration_type === "tokenized-both" ) {
 		?>
-        <tr>
-            <td>
-                <label for="<?php echo esc_html($agreement->agreement_token) ?? ""; ?>">
-                    <input id="<?php echo esc_html($agreement->agreement_token) ?? ""; ?>" type="radio" name="agreement_id"
-                           value="<?php echo esc_html($agreement->agreement_token) ?? ""; ?>"
-						<?php if ( $i === 0 ) {
-							echo 'checked';
-						} ?>
-                    />
-					<?php echo esc_html($agreement->phone) ?? '' ?>
-                </label>
-            </td>
-            <td><a class="cancelAgreementButton" href="javascript:void(0)"
-                   data-agreement="<?php echo esc_html($agreement->agreement_token) ?? ""; ?>">Remove</a></td>
-        </tr>
+        <table id='payment-fields-table'>
+			<?php
+			foreach ( $agreements as $i => $agreement ) {
+				?>
+                <tr>
+                    <td>
+                        <label for="<?php esc_html_e( $agreement->agreement_token ?? '', "bkash-for-woocommerce" ); ?>">
+                            <input
+                                    id="<?php esc_html_e( $agreement->agreement_token ?? '', "bkash-for-woocommerce" ); ?>"
+                                    type="radio"
+                                    name="agreement_id"
+                                    value="<?php esc_html_e( $agreement->agreement_token ?? '', "bkash-for-woocommerce" ); ?>"
+								<?php echo $i === 0 ? 'checked' : ''; ?>
+                            />
+							<?php esc_html_e( $agreement->phone ?? '', "bkash-for-woocommerce" ); ?>
+                        </label>
+                    </td>
+                    <td>
+                        <a
+                                class="cancelAgreementButton"
+                                href="javascript:void(0)"
+                                data-agreement="<?php esc_html_e( $agreement->agreement_token ?? '', "bkash-for-woocommerce" ); ?>"
+                        >Remove</a>
+                    </td>
+                </tr>
+				<?php
+			}
+			?>
+            <tr>
+                <td colspan="2">
+                    <label for="new-agreement">
+                        <input id="new-agreement" type="radio" name="agreement_id"
+                               value="new"
+                        />
+                        Pay and remember a new bKash account
+                    </label>
+                </td>
+            </tr>
+			<?php
+
+			if ( $this->integration_type === "tokenized-both" ) {
+				?>
+                <tr>
+                    <td colspan="2">
+                        <label for="non-agreement">
+                            <input id="non-agreement" type="radio" name="agreement_id" value="no"/>
+                            Pay without remembering
+                        </label>
+                    </td>
+                </tr>
+
+				<?php
+			} ?>
+        </table>
+		<?php
+	} else if ( count( (array) $agreements ) === 0 && $this->integration_type === "tokenized" ) {
+		?>
+        <table id="tokenized-login-table" aria-describedby="tokenized login table">
+            <tr>
+                <th scope="col">Login Required</th>
+            </tr>
+            <tr>
+                <td>Please login to complete the payment</td>
+            </tr>
+        </table>
 		<?php
 	}
-
-	?>
-    <tr>
-        <td colspan="2">
-            <label for="new-agreement">
-                <input id="new-agreement" type="radio" name="agreement_id"
-                       value="new"
-                />
-                Pay and remember a new bKash account
-            </label>
-        </td>
-    </tr>
-	<?php
-
-	if ( $this->integration_type === "tokenized-both" ) {
-		?>
-        <tr>
-            <td colspan="2">
-                <label for="non-agreement">
-                    <input id="non-agreement" type="radio" name="agreement_id"
-                           value="no"
-                    />
-                    Pay without remembering
-                </label>
-            </td>
-        </tr>
-
-		<?php
-	}
-	echo "</table>";
-} else if ( isset( $agreements ) && count( (array) $agreements ) === 0 && $this->integration_type === "tokenized" ) {
-	?>
-    <table id="tokenized-login-table" aria-describedby="tokenized login table">
-        <tr>
-            <th scope="col">Login Required</th>
-        </tr>
-        <tr>
-            <td>Please login to complete the payment</td>
-        </tr>
-    </table>
-	<?php
 }
 
 if ( get_current_user_id() === 0 ) {
 	echo "To remember your bKash account number, please login and check remember";
 }
 
-echo '<input type="hidden" name="bkash-ajax-nonce" id="bkash-ajax-nonce" value="' . wp_create_nonce( 'bkash-ajax-nonce' ) . '" />';
-
 ?>
+
+<input type="hidden" name="bkash-ajax-nonce" id="bkash-ajax-nonce"
+       value="<?php echo wp_kses_post( wp_create_nonce( 'bkash-ajax-nonce' ) ); ?>"/>

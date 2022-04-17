@@ -177,9 +177,9 @@ class Agreement {
 
 				return $this;
 			}
-
-			return null;
 		}
+
+		return null;
 	}
 
 	public function getAgreements( $user_id ) {

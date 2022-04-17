@@ -53,8 +53,7 @@ class ApiComm {
 	}
 
 	public function get_option( $key, $default = null ) {
-		$plugin_id = 'bkash_pgw';
-		$settings  = get_option( 'woocommerce_' . $plugin_id . '_settings' );
+		$settings = get_option( 'woocommerce_' . BKASH_FW_PLUGIN_SLUG . '_settings' );
 		if ( ! is_null( $settings ) ) {
 			return $settings[ $key ] ?? $default;
 		}
@@ -150,15 +149,6 @@ class ApiComm {
 		];
 	}
 
-	/**
-	 * Reset Stored Token
-	 * */
-	public function resetToken() {
-		delete_option( "bkash_grant_token");
-		delete_option( "bkash_grant_token_expiry");
-		delete_option( "bkash_integration_product");
-	}
-
 	public function httpRequest( $api_title, $url, &$http_status, $method = "POST", $post_data = null, &$header = null, $grantHeader = false ) {
 
 		$log = "\n======== bKash PGW REQUEST LOG ========== \n\nAPI TITLE: $api_title \n";
@@ -189,7 +179,7 @@ class ApiComm {
 				'httpversion' => '1.0',
 				'blocking'    => true,
 				'headers'     => $headers,
-				'body'        => strtolower($method) === 'get' ? $post_data : json_encode( $post_data )
+				'body'        => strtolower( $method ) === 'get' ? $post_data : json_encode( $post_data )
 			)
 		);
 
@@ -223,6 +213,15 @@ class ApiComm {
 		} else {
 			update_option( $key, $value );
 		}
+	}
+
+	/**
+	 * Reset Stored Token
+	 * */
+	public function resetToken() {
+		delete_option( "bkash_grant_token" );
+		delete_option( "bkash_grant_token_expiry" );
+		delete_option( "bkash_integration_product" );
 	}
 
 	/**
@@ -731,7 +730,7 @@ class Log {
 
 	public static function is_debug() {
 		$is_debug  = 'no';
-		$plugin_id = 'bkash_pgw';
+		$plugin_id = BKASH_FW_PLUGIN_SLUG;
 		$settings  = get_option( 'woocommerce_' . $plugin_id . '_settings' );
 		if ( ! is_null( $settings ) ) {
 			$is_debug = $settings['debug'] ?? 'no';

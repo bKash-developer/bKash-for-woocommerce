@@ -3,11 +3,11 @@
 namespace bKash\PGW;
 
 
-use bKash\PGW\Models\Webhooks;
+use bKash\PGW\Models\Webhook;
 
-class Webhook {
+class WebhookProcessor {
 	private $payload;
-	private $context = array( "source" => 'bKash PGW' );
+	private $context = array( "source" => BKASH_FW_PLUGIN_SLUG );
 	private $log;
 	private $canSubscribe;
 
@@ -40,7 +40,7 @@ class Webhook {
 	}
 
 	/**
-	 * Subscribe a Webhook URL
+	 * Subscribe a WebhookModule URL
 	 */
 	public function subscribe() {
 		if ( $this->canSubscribe ) {
@@ -59,7 +59,7 @@ class Webhook {
 					$this->writeLog( "Could not found subscription URL" );
 				}
 			} else {
-				$this->writeLog( "Webhook source can not be verified" );
+				$this->writeLog( "WebhookModule source can not be verified" );
 			}
 		} else {
 			$this->writeLog( "Subscription to webhook disabled from settings" );
@@ -156,7 +156,7 @@ class Webhook {
 	}
 
 	/**
-	 * Store Webhook notification payload
+	 * Store WebhookModule notification payload
 	 *
 	 * @param $message
 	 *
@@ -178,7 +178,7 @@ class Webhook {
 				}
 
 
-				$webhooks = new Webhooks();
+				$webhooks = new Webhook();
 				$webhooks->set_sender( isset( $message->debitMSISDN ) ? $message->debitMSISDN : '' );
 				$webhooks->set_receiver( isset( $message->creditShortCode ) ? $message->creditShortCode : '' );
 				$webhooks->set_amount( isset( $message->amount ) ? (float) $message->amount : '' );
@@ -195,9 +195,9 @@ class Webhook {
 				if ( $isSaved ) {
 					$this->writeLog( "Payment added successfully, " . json_encode( $message ) );
 					return true;
-				} else {
-					$this->writeLog( "Payment can't be added, " . json_encode( $webhooks->errorMessage ) );
 				}
+
+				$this->writeLog( "Payment can't be added, " . json_encode( $webhooks->errorMessage ) );
 			}
 		}
 

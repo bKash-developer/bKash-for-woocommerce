@@ -1,8 +1,8 @@
 <?php
+
 namespace bKash\PGW;
 
 define( "BKASH_UPGRADE_FILE", "wp-admin/includes/upgrade.php" );
-define( "BKASH_PGW_VERSION", "1.2.0" );
 
 class TableGeneration {
 
@@ -10,7 +10,7 @@ class TableGeneration {
 	public function CreateTransactionTable() {
 		global $wpdb;
 		$table_name             = $wpdb->prefix . "bkash_transactions";
-		$my_products_db_version = BKASH_PGW_VERSION;
+		$my_products_db_version = BKASH_FW_PGW_VERSION;
 		$charset_collate        = $wpdb->get_charset_collate();
 
 		if ( $wpdb->get_var( "SHOW TABLES LIKE '{$table_name}'" ) != $table_name ) {
@@ -42,7 +42,7 @@ class TableGeneration {
 	public function CreateWebhookTable() {
 		global $wpdb;
 		$table_name             = $wpdb->prefix . "bkash_webhooks";
-		$my_products_db_version = BKASH_PGW_VERSION;
+		$my_products_db_version = BKASH_FW_PGW_VERSION;
 		$charset_collate        = $wpdb->get_charset_collate();
 
 		if ( $wpdb->get_var( "SHOW TABLES LIKE '{$table_name}'" ) != $table_name ) {
@@ -71,7 +71,7 @@ class TableGeneration {
 	public function CreateAgreementMappingTable() {
 		global $wpdb;
 		$table_name             = $wpdb->prefix . "bkash_agreement_mapping";
-		$my_products_db_version = BKASH_PGW_VERSION;
+		$my_products_db_version = BKASH_FW_PGW_VERSION;
 		$charset_collate        = $wpdb->get_charset_collate();
 
 		if ( $wpdb->get_var( "SHOW TABLES LIKE '{$table_name}'" ) != $table_name ) {
@@ -94,7 +94,7 @@ class TableGeneration {
 	public function CreateTransferHistoryTable() {
 		global $wpdb;
 		$table_name             = $wpdb->prefix . "bkash_transfers";
-		$my_products_db_version = BKASH_PGW_VERSION;
+		$my_products_db_version = BKASH_FW_PGW_VERSION;
 		$charset_collate        = $wpdb->get_charset_collate();
 
 		if ( $wpdb->get_var( "SHOW TABLES LIKE '{$table_name}'" ) != $table_name ) {
