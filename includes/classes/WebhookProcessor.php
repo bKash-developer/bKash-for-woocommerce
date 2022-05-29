@@ -1,9 +1,21 @@
 <?php
+/**
+ * Webhook Processor
+ *
+ * @category    Api
+ * @package     bkash-for-woocommerce
+ * @author      Md. Shahnawaz Ahmed <shahnawaz.ahmed@bkash.com>
+ * @copyright   Copyright 2022 bKash Limited. All rights reserved.
+ * @license     GNU General Public License version 2 or later; see LICENSE
+ * @link        https://bkash.com
+ */
 
 namespace bKash\PGW;
 
-
 use bKash\PGW\Models\Webhook;
+use DateTime;
+use Exception;
+use WC_Logger;
 
 class WebhookProcessor {
 	private $payload;
@@ -14,25 +26,27 @@ class WebhookProcessor {
 	private $messageType = "";
 	private $signingCertURL;
 
-	public function __construct( $logger = null, $canSubscribe = false ) {
+	public function __construct( WC_Logger $logger = null, bool $canSubscribe = false ) {
 		$this->canSubscribe = $canSubscribe;
 
 		// GET THE RAW STREAM OF POST PAYLOAD
 		$this->payload = json_decode( file_get_contents( 'php://input' ), false );
 		if ( $this->payload ) {
-			$this->messageType    = isset( $_SERVER['HTTP_X_AMZ_SNS_MESSAGE_TYPE'] ) ? $_SERVER['HTTP_X_AMZ_SNS_MESSAGE_TYPE'] : null;
-			$this->signingCertURL = isset( $this->payload->SigningCertURL ) ? $this->payload->SigningCertURL : null;
+			$this->messageType    = Utils::safeServerValue( "HTTP_X_AMZ_SNS_MESSAGE_TYPE" );
+			$this->signingCertURL = $this->payload->SigningCertURL ?? null;
 		}
 		if ( $logger ) {
 			$this->log = $logger;
 		}
 	}
 
-	public function processRequest() {
-
+	/**
+	 * @return void
+	 */
+	final public function processRequest() {
 		if ( $this->messageType === 'SubscriptionConfirmation' ) {
 			$this->subscribe();
-		} else if ( $this->messageType === 'Notification' ) {
+		} elseif ( $this->messageType === 'Notification' ) {
 			$this->storeNotification();
 		} else {
 			$this->writeLog( "No method present to process the webhook" );
@@ -41,16 +55,16 @@ class WebhookProcessor {
 
 	/**
 	 * Subscribe a WebhookModule URL
+	 * @return void
 	 */
-	public function subscribe() {
+	final public function subscribe() {
 		if ( $this->canSubscribe ) {
 			if ( $this->payload && $this->verifySource() ) {
-
 				if ( isset( $this->payload->SubscribeURL ) ) {
 					$this->writeLog( "Subscribing to ==> " . $this->payload->SubscribeURL );
 					$subscriptionResponse = wp_remote_get( $this->payload->SubscribeURL );
 					if ( is_wp_error( $subscriptionResponse ) ) {
-						$this->writeLog( "Getting error in subscribing the URL... " . json_encode( $subscriptionResponse ) );
+						$this->writeLog( "Error subscribing the URL: " . wp_json_encode( $subscriptionResponse ) );
 					} else {
 						$subscriptionResponse = wp_remote_retrieve_body( $subscriptionResponse );
 						$this->writeLog( $subscriptionResponse );
@@ -69,8 +83,9 @@ class WebhookProcessor {
 	/**
 	 * Supporting Operations
 	 * @methods verifySource, validateURL, getContent, getStringToSign, writeLog
+	 * @return bool
 	 */
-	public function verifySource() {
+	final public function verifySource(): bool {
 		if ( $this->signingCertURL ) {
 			$isValidURL = $this->validateURL( $this->signingCertURL );
 			if ( $isValidURL ) {
@@ -81,7 +96,7 @@ class WebhookProcessor {
 				$formattedString = $this->getStringToSign( $this->payload );
 				if ( $formattedString ) {
 					$verify = openssl_verify( $formattedString, $signature, $publicCert, OPENSSL_ALGO_SHA1 );
-					$this->writeLog( "Verifying ..." . json_encode( $verify ) );
+					$this->writeLog( "Verifying ..." . wp_json_encode( $verify ) );
 
 					return $verify;
 				}
@@ -91,9 +106,14 @@ class WebhookProcessor {
 		return false;
 	}
 
-	public function validateURL( $url ) {
-		$defaultHostPattern = '/^sns\.[a-zA-Z0-9\-]{3,}\.amazonaws\.com(\.cn)?$/';
-		$parsed             = parse_url( $url );
+	/**
+	 * @param string $url
+	 *
+	 * @return bool
+	 */
+	final public function validateURL( string $url ): bool {
+		$defaultHostPattern = '/^sns\.[a-zA-Z\d\-]{3,}\.amazonaws\.com(\.cn)?$/';
+		$parsed             = wp_parse_url( $url );
 
 		return ! (
 			empty( $parsed['scheme'] ) || empty( $parsed['host'] )
@@ -102,11 +122,16 @@ class WebhookProcessor {
 		);
 	}
 
-	public function getContent( $url ) {
+	/**
+	 * @param string $url
+	 *
+	 * @return string
+	 */
+	final public function getContent( string $url ): string {
 		$body     = '';
 		$response = wp_remote_get( $url );
 		if ( is_wp_error( $response ) ) {
-			$this->writeLog("Error in getting content.. ". json_encode($response));
+			$this->writeLog( "Error in getting content.. " . wp_json_encode( $response ) );
 		} else {
 			$body = wp_remote_retrieve_body( $response );
 		}
@@ -114,13 +139,23 @@ class WebhookProcessor {
 		return $body;
 	}
 
-	public function writeLog( $logging_item ) {
+	/**
+	 * @param mixed $logging_item
+	 *
+	 * @return void
+	 */
+	final public function writeLog( $logging_item ) {
 		if ( $this->log ) {
 			$this->log->debug( $logging_item, $this->context );
 		}
 	}
 
-	public function getStringToSign( $message ) {
+	/**
+	 * @param $message
+	 *
+	 * @return string
+	 */
+	final public function getStringToSign( $message ): string {
 		$signAbleKeys = [
 			'Message',
 			'MessageId',
@@ -134,19 +169,18 @@ class WebhookProcessor {
 
 		$stringToSign = '';
 
-		if ( isset( $message->SignatureVersion ) && $message->SignatureVersion != '1' ) {
-			$errorLog = "The SignatureVersion \"{$message->SignatureVersion}\" is not supported.";
+		if ( isset( $message->SignatureVersion ) && $message->SignatureVersion !== '1' ) {
+			$errorLog = "The SignatureVersion \"$message->SignatureVersion\" is not supported.";
 			$this->writeLog( $errorLog );
 		} else {
 			foreach ( $signAbleKeys as $key ) {
 				if ( isset( $message->$key ) ) {
-					$data = "";
-					if(is_string($message->$key)) {
+					if ( is_string( $message->$key ) ) {
 						$data = $message->$key;
 					} else {
-						$data = json_encode($message->$key);
+						$data = wp_json_encode( $message->$key );
 					}
-					$stringToSign .= "{$key}\n{$data}\n";
+					$stringToSign .= "$key\n$data\n";
 				}
 			}
 			$this->writeLog( $stringToSign . "\n" );
@@ -158,12 +192,9 @@ class WebhookProcessor {
 	/**
 	 * Store WebhookModule notification payload
 	 *
-	 * @param $message
-	 *
 	 * @return bool
 	 */
-	public function storeNotification() {
-
+	final public function storeNotification(): bool {
 		if ( $this->payload && $this->verifySource() ) {
 			if ( is_string( $this->payload->Message ) ) {
 				$this->payload->Message = json_decode( $this->payload->Message, false );
@@ -172,37 +203,38 @@ class WebhookProcessor {
 			if ( $message ) {
 				// process date format
 				try {
-					$parseDate = \DateTime::createFromFormat( 'YmdHis', $message->dateTime );
-				} catch ( \Exception $e ) {
+					$parseDate = DateTime::createFromFormat( 'YmdHis', $message->dateTime );
+				} catch ( Exception $e ) {
 					$parseDate = date( 'Y-m-d H:i:s' );
 				}
 
 
 				$webhooks = new Webhook();
-				$webhooks->set_sender( isset( $message->debitMSISDN ) ? $message->debitMSISDN : '' );
-				$webhooks->set_receiver( isset( $message->creditShortCode ) ? $message->creditShortCode : '' );
-				$webhooks->set_amount( isset( $message->amount ) ? (float) $message->amount : '' );
-				$webhooks->set_trx_id( isset( $message->trxID ) ? $message->trxID : '' );
-				$webhooks->set_currency( isset( $message->currency ) ? $message->currency : '' );
-				$webhooks->set_datetime(
+				$webhooks->setSender( $message->debitMSISDN ?? '' );
+				$webhooks->setReceiver( $message->creditShortCode ?? '' );
+				$webhooks->setAmount( isset( $message->amount ) ? (float) $message->amount : '' );
+				$webhooks->setTrxId( $message->trxID ?? '' );
+				$webhooks->setCurrency( $message->currency ?? '' );
+				$webhooks->setDatetime(
 					$parseDate->format( "Y-m-d H:i:s" )
 				);
-				$webhooks->set_type( isset( $message->transactionType ) ? $message->transactionType : '' );
-				$webhooks->set_receiver_name( isset( $message->creditOrganizationName ) ? $message->creditOrganizationName : '' );
-				$webhooks->set_status( isset( $message->transactionStatus ) ? $message->transactionStatus : '' );
+				$webhooks->setType( $message->transactionType ?? '' );
+				if ( isset( $message->creditOrganizationName ) ) {
+					$webhooks->setReceiverName( $message->creditOrganizationName );
+				}
+				$webhooks->setStatus( $message->transactionStatus ?? '' );
 				$isSaved = $webhooks->save();
-				$this->writeLog( "Saving webhook payment, " . json_encode( $isSaved ) );
+				$this->writeLog( "Saving webhook payment, " . wp_json_encode( $isSaved ) );
 				if ( $isSaved ) {
-					$this->writeLog( "Payment added successfully, " . json_encode( $message ) );
+					$this->writeLog( "Payment added successfully, " . wp_json_encode( $message ) );
+
 					return true;
 				}
 
-				$this->writeLog( "Payment can't be added, " . json_encode( $webhooks->errorMessage ) );
+				$this->writeLog( "Payment can't be added, " . wp_json_encode( $webhooks->errorMessage ) );
 			}
 		}
 
 		return false;
 	}
-
-
 }

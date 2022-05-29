@@ -1,18 +1,38 @@
 <?php
+/**
+ * Operation Module
+ *
+ * @category    Operation
+ * @package     bkash-for-woocommerce
+ * @author      Md. Shahnawaz Ahmed <shahnawaz.ahmed@bkash.com>
+ * @copyright   Copyright 2022 bKash Limited. All rights reserved.
+ * @license     GNU General Public License version 2 or later; see LICENSE
+ * @link        https://bkash.com
+ */
 
 namespace bKash\PGW;
 
 class Operations {
-	public static function CheckoutScriptURL( bool $sandbox = false, string $version = "1.2.0-beta" ): string {
-		$version = str_replace( "v", "", $version );
+	public static function checkoutScriptURL( bool $sandbox = false, string $version = '1.2.0-beta' ): string {
+		$version = str_replace( 'v', '', $version );
 
-		return "https://scripts." . ( $sandbox ? 'sandbox' : 'pay' ) .
-		       ".bka.sh/versions/$version/checkout/bKash-checkout" . ( $sandbox ? '-sandbox' : '' ) . ".js";
+		return 'https://scripts.' . ( $sandbox ? 'sandbox' : 'pay' ) . ".bka.sh/versions/$version/checkout/bKash-checkout" . ( $sandbox ? '-sandbox' : '' ) . '.js';
 	}
 
-	public static function getTokenizedPaymentMode( $integration_type, $order_id = "", $isAgreement = false, $agreementID = "" ): string {
+	/**
+	 * @param string $integration_type
+	 * @param bool   $isAgreement
+	 * @param string $agreementID
+	 *
+	 * @return string
+	 */
+	public static function getTokenizedPaymentMode(
+		string $integration_type,
+		bool $isAgreement = false,
+		string $agreementID = ''
+	): string {
 		// agreement = 0000, paymentWithAgreementID = 0001, paymentWithoutAgreementID = 0011
-		$mode = "";
+		$mode = '';
 		switch ( $integration_type ) {
 			case 'checkout-url':
 				$mode = '0011';
@@ -31,32 +51,34 @@ class Operations {
 		return $mode;
 	}
 
-	public static function processResponse( $response, $expectation = "" ) {
-		$resp = "";
+	/**
+	 * @param array  $response
+	 * @param string $expectation
+	 *
+	 * @return array|mixed|string
+	 */
+	public static function processResponse( array $response, string $expectation = '' ) {
+		$resp = '';
 
 		if ( isset( $response['response'] ) ) {
-			$response = isset( $response['response'] ) && is_string( $response['response'] ) ?
-				json_decode( $response['response'], true ) : [];
-
+			$response = is_string( $response['response'] ) ?
+				json_decode( $response['response'], true ) : array();
 
 			// If any error for tokenized
 			if ( isset( $response['statusMessage'] ) && $response['statusMessage'] !== 'Successful' ) {
 				$resp = $response['statusMessage'];
-			} // If any error for checkout
-			else if ( isset( $response['errorCode'] ) ) {
+			} elseif ( isset( $response['errorCode'] ) ) { // If any error for checkout
 				$resp = $response['errorMessage'] ?? '';
-			} else {
-				if ( ! empty( $expectation ) ) {
-					if ( isset( $response[ $expectation ] ) && ! empty( $response[ $expectation ] ) ) {
-						$resp = $response;
-					} else if ( isset( $response['paymentID'] ) && ! empty( $response['paymentID'] ) ) {
-						$resp = $response;
-					} else {
-						$resp = "expected parameter is not exists in response";
-					}
-				} else {
+			} elseif ( ! empty( $expectation ) ) {
+				if ( isset( $response[ $expectation ] ) && ! empty( $response[ $expectation ] ) ) {
 					$resp = $response;
+				} elseif ( isset( $response['paymentID'] ) && ! empty( $response['paymentID'] ) ) {
+					$resp = $response;
+				} else {
+					$resp = 'expected parameter is not exists in response';
 				}
+			} else {
+				$resp = $response;
 			}
 		}
 
