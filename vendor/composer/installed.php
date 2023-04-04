@@ -1,24 +1,24 @@
 <?php return array (
   'root' => 
   array (
-    'pretty_version' => '1.0.0+no-version-set',
-    'version' => '1.0.0.0',
+    'pretty_version' => 'dev-main',
+    'version' => 'dev-main',
     'aliases' => 
     array (
     ),
-    'reference' => NULL,
+    'reference' => '51b7ae465ff44150dc242ca1893c16ae8d52233a',
     'name' => 'bkash/woocomerce-bkash-pgw',
   ),
   'versions' => 
   array (
     'bkash/woocomerce-bkash-pgw' => 
     array (
-      'pretty_version' => '1.0.0+no-version-set',
-      'version' => '1.0.0.0',
+      'pretty_version' => 'dev-main',
+      'version' => 'dev-main',
       'aliases' => 
       array (
       ),
-      'reference' => NULL,
+      'reference' => '51b7ae465ff44150dc242ca1893c16ae8d52233a',
     ),
   ),
 );

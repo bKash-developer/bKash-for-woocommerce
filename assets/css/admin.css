@@ -1,39 +1,43 @@
 .pagination-links .page-numbers {
-    font-size: 15px;
-    padding: 5px 10px;
-    border: 1px solid #b3b3b3;
-    text-decoration: none;
+	font-size: 15px;
+	padding: 5px 10px;
+	border: 1px solid #b3b3b3;
+	text-decoration: none;
 }
 
 .pagination-links .page-numbers.current {
-    font-weight: bold;
-    background: #fff;
-    color: #e2136e;
-    border: 1px solid #999;
+	font-weight: bold;
+	background: #fff;
+	color: #e2136e;
+	border: 1px solid #999;
 }
+
 .bKash-hero-div {
-    background: #fff;
-    border: 1px solid #c3c4c7;
-    border-left-width: 4px;
-    box-shadow: 0 1px 1px rgb(0 0 0 / 4%);
-    margin: 5px 15px 2px;
-    padding: 1px 12px;
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	border-left-width: 4px;
+	box-shadow: 0 1px 1px rgb(0 0 0 / 4%);
+	margin: 5px 15px 2px;
+	padding: 1px 12px;
 }
+
 div.bKash-success {
-    border-left-color: #00a32a;
+	border-left-color: #00a32a;
 }
+
 div.bKash-error {
-    border-left-color: #dc3232;
+	border-left-color: #dc3232;
 }
+
 div.bKash-warning {
-    border-left-color: #ffb900;
+	border-left-color: #ffb900;
 }
 
 .bKash-chip {
-    display: inline;
-    padding: 5px 12px;
-    border-radius: 32px;
-    font-size: 11px;
-    color: #ffffff;
-    font-weight: bold;
+	display: inline;
+	padding: 5px 12px;
+	border-radius: 32px;
+	font-size: 11px;
+	color: #ffffff;
+	font-weight: bold;
 }
