@@ -1,20 +1,9 @@
 <?php
-/**
- * Transfer Model
- *
- * @category    Model
- * @package     bkash-for-woocommerce
- * @author      bKash Developer <developer@bkash.com>
- * @copyright   Copyright 2023 bKash Limited. All rights reserved.
- * @license     GNU General Public License version 2 or later; see LICENSE
- * @link        https://bkash.com
- */
 
 namespace bKash\PGW\Models;
 
-use bKash\PGW\Utils;
-
 class Transfer {
+
 	public $errorMessage = "";
 
 	private $ID;
@@ -28,8 +17,8 @@ class Transfer {
 	private $initiation_time;
 	private $completed_time;
 
-	private $tableName;
-	private $wpdb;
+	private $tableName = "";
+	private $wpdb = null;
 
 	public function __construct() {
 		global $wpdb;
@@ -38,27 +27,24 @@ class Transfer {
 	}
 
 	/**
-	 * @return int
+	 * @return mixed
 	 */
-	final public function getID(): int {
+	public function get_ID() {
 		return $this->ID;
 	}
 
 	/**
-	 * @param int $ID
+	 * @param mixed $ID
 	 *
 	 * @return Transfer
 	 */
-	final public function setID( int $ID ): Transfer {
+	public function set_ID( $ID ) {
 		$this->ID = $ID;
 
 		return $this;
 	}
 
-	/**
-	 * @return false|Transfer|null
-	 * */
-	final public function save() {
+	public function save() {
 		if ( empty( $this->trx_id ) || empty( $this->amount ) ) {
 			$this->errorMessage = "Trx ID or amount field is missing, both are required";
 
@@ -67,15 +53,15 @@ class Transfer {
 
 
 		$insert = $this->wpdb->insert( $this->tableName, [
-			'receiver'            => Utils::safeString( $this->getReceiver() ?? '' ),
-			'trx_id'              => Utils::safeString( $this->getTrxId() ?? '' ),
-			'amount'              => $this->getAmount(), // required
-			'currency'            => Utils::safeString( $this->getCurrency() ?? '' ),
-			'merchant_invoice_no' => Utils::safeString( $this->getMerchantInvoiceNo() ?? '' ),
-			'transactionStatus'   => Utils::safeString( $this->getTransactionStatus() ?? '' ),
-			'b2cFee'              => Utils::safeString( $this->getB2cFee() ?? '' ),
-			'initiationTime'      => $this->getInitiationTime(),
-			'completedTime'       => $this->getCompletedTime()
+			'receiver'            => $this->get_receiver(),
+			'trx_id'              => $this->get_trx_id(),
+			'amount'              => $this->get_amount(), // required
+			'currency'            => $this->get_currency(),
+			'merchant_invoice_no' => $this->get_merchant_invoice_no(),
+			'transactionStatus'   => $this->get_transaction_status(),
+			'b2cFee'              => $this->get_b_2_c_fee(),
+			'initiationTime'      => $this->get_initiation_time(),
+			'completedTime'       => $this->get_completed_time()
 		] );
 
 		$this->errorMessage = $this->wpdb->last_error; // set if any error or null
@@ -84,36 +70,36 @@ class Transfer {
 	}
 
 	/**
-	 * @return string
+	 * @return mixed
 	 */
-	final public function getReceiver(): string {
+	public function get_receiver() {
 		return $this->receiver;
 	}
 
 	/**
-	 * @param string $receiver
+	 * @param mixed $receiver
 	 *
 	 * @return Transfer
 	 */
-	final public function setReceiver( string $receiver ): Transfer {
+	public function set_receiver( $receiver ) {
 		$this->receiver = $receiver;
 
 		return $this;
 	}
 
 	/**
-	 * @return string
+	 * @return mixed
 	 */
-	final public function getTrxId(): string {
+	public function get_trx_id() {
 		return $this->trx_id;
 	}
 
 	/**
-	 * @param string $trx_id
+	 * @param mixed $trx_id
 	 *
 	 * @return Transfer
 	 */
-	final public function setTrxId( string $trx_id ): Transfer {
+	public function set_trx_id( $trx_id ) {
 		$this->trx_id = $trx_id;
 
 		return $this;
@@ -122,7 +108,7 @@ class Transfer {
 	/**
 	 * @return mixed
 	 */
-	final public function getAmount() {
+	public function get_amount() {
 		return $this->amount;
 	}
 
@@ -131,79 +117,79 @@ class Transfer {
 	 *
 	 * @return Transfer
 	 */
-	final public function setAmount( $amount ): Transfer {
+	public function set_amount( $amount ) {
 		$this->amount = $amount;
 
 		return $this;
 	}
 
 	/**
-	 * @return string
+	 * @return mixed
 	 */
-	final public function getCurrency(): string {
+	public function get_currency() {
 		return $this->currency;
 	}
 
 	/**
-	 * @param string $currency
+	 * @param mixed $currency
 	 *
 	 * @return Transfer
 	 */
-	final public function setCurrency( string $currency ): Transfer {
+	public function set_currency( $currency ) {
 		$this->currency = $currency;
 
 		return $this;
 	}
 
 	/**
-	 * @return string
+	 * @return mixed
 	 */
-	final public function getMerchantInvoiceNo(): string {
+	public function get_merchant_invoice_no() {
 		return $this->merchant_invoice_no;
 	}
 
 	/**
-	 * @param string $merchant_invoice_no
+	 * @param mixed $merchant_invoice_no
 	 *
 	 * @return Transfer
 	 */
-	final public function setMerchantInvoiceNo( string $merchant_invoice_no ): Transfer {
+	public function set_merchant_invoice_no( $merchant_invoice_no ) {
 		$this->merchant_invoice_no = $merchant_invoice_no;
 
 		return $this;
 	}
 
 	/**
-	 * @return string
+	 * @return mixed
 	 */
-	final public function getTransactionStatus(): string {
+	public function get_transaction_status() {
 		return $this->transaction_status;
 	}
 
 	/**
-	 * @param string $transaction_status
+	 * @param mixed $transaction_status
 	 *
 	 * @return Transfer
 	 */
-	final public function setTransactionStatus( string $transaction_status ): Transfer {
+	public function set_transaction_status( $transaction_status ) {
 		$this->transaction_status = $transaction_status;
 
 		return $this;
 	}
 
 	/**
-	 * @return string
+	 * @return mixed
 	 */
-	final public function getB2cFee(): string {
+	public function get_b_2_c_fee() {
 		return $this->b2c_fee;
 	}
 
 	/**
-	 * @param string $b2c_fee
+	 * @param mixed $b2c_fee
 	 *
 	 * @return Transfer
 	 */
-	final public function setB2cFee( string $b2c_fee ): Transfer {
+	public function set_b_2_c_fee( $b2c_fee ) {
 		$this->b2c_fee = $b2c_fee;
 
 		return $this;
@@ -212,7 +198,7 @@ class Transfer {
 	/**
 	 * @return mixed
 	 */
-	final public function getInitiationTime() {
+	public function get_initiation_time() {
 		return $this->initiation_time;
 	}
 
@@ -221,7 +207,7 @@ class Transfer {
 	 *
 	 * @return Transfer
 	 */
-	final public function setInitiationTime( $initiation_time ): Transfer {
+	public function set_initiation_time( $initiation_time ) {
 		$this->initiation_time = $initiation_time;
 
 		return $this;
@@ -230,7 +216,7 @@ class Transfer {
 	/**
 	 * @return mixed
 	 */
-	final public function getCompletedTime() {
+	public function get_completed_time() {
 		return $this->completed_time;
 	}
 
@@ -239,13 +225,13 @@ class Transfer {
 	 *
 	 * @return Transfer
 	 */
-	final public function setCompletedTime( $completed_time ): Transfer {
+	public function set_completed_time( $completed_time ) {
 		$this->completed_time = $completed_time;
 
 		return $this;
 	}
 
-	final public function update( array $data, array $where = [] ): bool {
+	public function update( array $data, array $where = [] ): bool {
 		$where['trx_id'] = $this->trx_id;
 		$updated         = $this->wpdb->update( $this->tableName, $data, $where );
 
@@ -254,20 +240,13 @@ class Transfer {
 		return $updated > 0;
 	}
 
-	/**
-	 * @param string $trx_id
-	 *
-	 * @return $this|null
-	 */
-	final public function getTransfer( string $trx_id = "" ) {
-		$tableName  = Utils::safeSqlString( $this->tableName );
-		$whereValue = Utils::safeString( $trx_id );
-		$sqlQuery   = "SELECT * FROM $tableName WHERE `trx_id` = %s";
-
+	public function getTransfer( $trx_id = "" ) {
 		if ( ! is_null( $this->wpdb ) ) {
-			$transaction = $this->wpdb->get_row(
-				$this->wpdb->prepare( $sqlQuery, $whereValue )
-			);
+			if ( ! empty( $trx_id ) ) {
+				$transaction = $this->wpdb->get_row( $this->wpdb->prepare( "SELECT * FROM $this->tableName WHERE `trx_id` = %s", $trx_id ) );
+			} else {
+				$transaction = null;
+			}
 			if ( $transaction ) {
 				$this->ID                  = $transaction->ID ?? null;
 				$this->receiver            = $transaction->receiver ?? null;
@@ -286,4 +265,5 @@ class Transfer {
 
 		return null;
 	}
+
 }

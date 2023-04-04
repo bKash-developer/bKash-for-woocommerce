@@ -2,17 +2,17 @@
 Contributors: bkashpayment
 Tags: bKash,bKashPayment,bKashForWooCommerce,online payment,ecommerce,woocommerce
 Requires at least: 4.0
-Tested up to: 6.0
-Stable tag: 1.0.8
+Tested up to: 5.9.3
+Stable tag: 1.0.5
 Requires PHP: 7.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-bKash for WooCommerce plugin is a WordPress based WooCommerce plugin. bKash merchants can install it as a plugin at their online WordPress store.
+bKash for WooCommerce plugin is a Wordpress based WooCommerce plugin. bKash merchants can install it as a plugin at their online Wordpress store.
 
 == Description ==
 
-bKash Payment Gateway provides range of payment solutions to merchants of the online sphere. This is the official bKash PGW plugin, by installing this plugin you’ll be able to integrate the bKash PGW, into your WooCommerce Webshop. The bKash PGW plugin extends WooCommerce allowing you to take payments directly on your store via bKash’s API. This will only take a few minutes. If the plugin is successfully installed your customers will then be able to check out with bKash payment gateway.
+bKash Payment Gateway provides range of payment solutions to merchants of the online sphere. This is the official bKash PGW plugin, by installing this plugin you’ll be able to integrate the bKash PGW, into your WooCommerce Webshop. The bKash PGW plugin extends WooCommerce allowing you to take payments directly on your store via bKash’s API. This will only take a few minutes. If the plugin is successfully installed your customers will then be able to checkout with bKash payment gateway.
 bKash has different payment option available, by installing this plugin merchant will be able to integrate bKash “Regular Checkout and Tokenized Checkout”.
 Regular Checkout: On the checkout page, the plugin loads an iFrame which is provided by bKash, customer will complete the payment by entering their bKash account credentials (Account Number, Verification Code, PIN).
 Tokenized Checkout: bKash's tokenized checkout provides the customers a more convenient way of payment. Using this product, the customers can create an agreement in merchant websites/apps that for further payment using bKash, they will only use bKash wallet PIN. In this case the merchant system needs to store these agreements against different user accounts. This provides a faster and convenient payment opportunity for both the merchant and the customer.
@@ -68,22 +68,22 @@ This plugin supports below environments of bKash payment gateway.
 ### Actions for Merchant:
    *  For Checkout:
          - Can make a payment.
-         - Can set up bKash payment gateway.
+         - Can setup bKash payment gateway.
          - Can manage credentials for bKash payment gateway.
          - Can set intent of payment modes. (Sale or Authorise)
          - Can view all transactions - online and offline (using webhook integration).
          - Can transfer money within wallet parts (Collection, Disbursement).
          - Can refund a transaction.
          - Can disburse money to bKash customer wallet.
-         - Can search a transaction from its merchant wallet.
+         - Can search a transaction from it's merchant wallet.
    * For Tokenization:
          - Can make a payment
-         - Can set up bKash payment gateway.
+         - Can setup bKash payment gateway.
          - Can manage credentials for bKash payment gateway.
          - Can set intent of payment modes. (Sale or Authorise)
          - Can view all transactions - online and offline (using webhook integration).
          - Can refund a transaction.
-         - Can search a transaction from its merchant wallet.
+         - Can search a transaction from it's merchant wallet.
          - Can view and delete all agreements from customers.
 
 == Installation ==
@@ -119,7 +119,7 @@ This section describes how to install the plugin and get it working.
     - B2C Payout – Enable B2C Payout (Using this solution a specific amount of fund can be transferred to a receiver's personal bKash account)
     - Debug Log – Enable logging (If you need API response)
     - Webhook – Enable Webhook listener (You will need to share this webhook link with bKash team)
-    - Sandbox – Enable if you need to do sandbox testing, otherwise live credentials' field will be available there.
+    - Sandbox – Enable if you need to do sandbox testing, otherwise live credentials field will be available there.
     - Application Key - Sandbox/Production Key
     - Application Secrete - Sandbox/Production Secrete
     - UserName – Sandbox/Production username shared by bKash
@@ -135,22 +135,22 @@ and share it through a Microsoft docs file.
 
 
 ### Change Permalink
-* Important! Change Permalink from WordPress Settings → Reading to Post Name (etc).
-* Align .htaccess file accordingly with the guidance of WordPress on permalink setting page.
+* Important! Change Permalink from Wordpress Settings → Reading to Post Name (etc).
+* Align .htaccess file accordingly with the guidance of Wordpress on permalink setting page.
 
 ### Webhook configuration process:
 Share webhook URL to bKash team by collecting from WooCommerce settings for bKash payment gateway.
 
 ### Authorisation (Capture/Void) process:
-To capture a payment collected from customer, merchant has to change order status from ON-HOLD to 'COMPLETED'.
-To void a payment initiate by merchant, merchant has to change order status from ON-HOLD to 'CANCELLED'.
+To capture a payment collected from customer, merchant has to change order status from ON-HOLD to COMPLETED.
+To void a payment initiate by merchant, merchant has to change order status from ON-HOLD to CANCELLED.
 
 If merchant wants to handle Capture/Void scenario programmatically, use standard WooCommerce API/Hooks to change the status.
 
 ### Additional Features
 
 * Logging of request and response traces, so that file can be prepared for SO validation.
-    (In WooCommerce Status Page you can find logs tab and Search for bKash_PGW_API_LOG_<current date> file).
+    (In WooCommerce Status Page you can find logs tab and Search for bKash_PGW_API_LOG_<current date> file.
 * Refund can also be initiated from WooCommerce Orders actions.
 * Authorised and Capture action can be performed by changing order status On Hold → Completed.
 * All transactions and history list are made using pagination, so on each page 10 entries can be viewed.
@@ -164,25 +164,11 @@ Ans: Regular checkout and tokenized checkout and besides Refund, webhooks, searc
 = What does plugin cost? =
 Ans: bKash PGW plugin has no setup fees, no monthly fees, no hidden costs: you only get charged when you will make the bank settlement!
 = Does this plugin need SSL certificate? =
-Ans: Yes! Whenever you go live, an SSL certificate must be installed on your site to use bKash plugin.
+Ans: Yes! Whenever you go live, a SSL certificate must be installed on your site to use bKash plugin.
 = Does this support sandbox mode for testing? =
 Ans: Yes, we have sandbox environment for testing.
 = Is there any manual available for this plugin? =
 Ans: Yes, we have a detailed manual for this plugin, you can download it from here
-= How to Download & Install bKash WooCommerce Payment Plugin =
-Ans: Visit this link for the tutorial - https://drive.google.com/file/d/1ED5f1pfvAXrk2dZShUvvIIHEIUcIQ0Sg/view?usp=sharing
-= How to configure bKash Checkout WooCommerce Part-1 =
-Ans: Visit this link for the tutorial - https://drive.google.com/file/d/15MlWEjkqus6k2LHv01nfUyCgsg5VSVWp/view?usp=sharing
-= Process of bKash Checkout API Log File Creation Part 2.1 =
-Ans: Visit this link for the tutorial - https://drive.google.com/file/d/1K0LbRzGWLSZfnieuCWmG5dAbRc-gicCD/view?usp=sharing
-= Process of bKash Checkout-Refund API Log Part-2.2 =
-Ans: Visit this link for the tutorial - https://drive.google.com/file/d/1TIqD24xIG9YvyjME0Y4sdJYYFPVXvDmy/view?usp=sharing
-= Process of bKash Checkout-Search Transaction API Log Part-2.3 =
-Ans: Visit this link for the tutorial - https://drive.google.com/file/d/1kFX45QwvxHwZJ9MAUJPXTYpTRQGBg5RF/view?usp=sharing
-= Process of bKash Checkout-Error Case Implementation Part-2.4 =
-Ans: Visit this link for the tutorial - https://drive.google.com/file/d/11DLX8KrstzHJj3w2UX89lMbTUQzQ5R7x/view?usp=sharing
-= Process of bKash Checkout-Generate Final Log File (Checkout, Search, Error Case & Refund) Part-2.5 =
-Ans: Visit this link for the tutorial - https://drive.google.com/file/d/15hXTl-KG2RwI94JX3yBBUURQq9X5G2g8/view?usp=sharing
 
 == Screenshots ==
 1. bKash payment method in Woocommerce payment method list
@@ -191,12 +177,6 @@ Ans: Visit this link for the tutorial - https://drive.google.com/file/d/15hXTl-K
 4. Transaction list for admin to check
 
 == Changelog ==
-= 1.0.8 =
-* Updated WP version support to 6.0
-= 1.0.7 =
-* Escaped Echos
-= 1.0.6 =
-* Adopted recommendation from code scanning tools. also fixed issues raised by WP team.
 = 1.0.5 =
 * Escaped variables, added cancel payment, colored transaction list status.
 = 1.0.4 =

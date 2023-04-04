@@ -1,18 +1,6 @@
 <?php
-/**
- * Webhook Model
- *
- * @category    Model
- * @package     bkash-for-woocommerce
- * @author      bKash Developer <developer@bkash.com>
- * @copyright   Copyright 2023 bKash Limited. All rights reserved.
- * @license     GNU General Public License version 2 or later; see LICENSE
- * @link        https://bkash.com
- */
 
 namespace bKash\PGW\Models;
-
-use bKash\PGW\Utils;
 
 class Webhook {
 	public $errorMessage = "";
@@ -26,8 +14,8 @@ class Webhook {
 	private $currency = '';
 	private $reference = '';
 	private $datetime = '';
-	private $tableName;
-	private $wpdb;
+	private $tableName = "";
+	private $wpdb = null;
 
 	public function __construct() {
 		global $wpdb;
@@ -36,165 +24,143 @@ class Webhook {
 	}
 
 	/**
-	 * @return string
+	 * @return mixed
 	 */
-	final public function getSender(): string {
+	public function get_sender() {
 		return $this->sender;
 	}
 
 	/**
-	 * @param string $sender
-	 *
-	 * @return Webhook
+	 * @param mixed $sender
 	 */
-	final public function setSender( string $sender ): Webhook {
+	public function set_sender( $sender ) {
 		$this->sender = $sender;
-
-		return $this;
 	}
 
 	/**
-	 * @return string
+	 * @return mixed
 	 */
-	final public function getReceiver(): string {
+	public function get_receiver() {
 		return $this->receiver;
 	}
 
 	/**
-	 * @param string $receiver
-	 *
-	 * @return Webhook
+	 * @param mixed $receiver
 	 */
-	final public function setReceiver( string $receiver ): Webhook {
+	public function set_receiver( $receiver ) {
 		$this->receiver = $receiver;
-
-		return $this;
 	}
 
 	/**
-	 * @return string
+	 * @return mixed
 	 */
-	final public function getReceiverName(): string {
+	public function get_receiver_name() {
 		return $this->receiver_name;
 	}
 
 	/**
-	 * @param string $receiver_name
-	 *
-	 * @return Webhook
+	 * @param mixed $receiver_name
 	 */
-	final public function setReceiverName( string $receiver_name ): Webhook {
+	public function set_receiver_name( $receiver_name ) {
 		$this->receiver_name = $receiver_name;
-
-		return $this;
 	}
 
 	/**
-	 * @return string
+	 * @return mixed
 	 */
-	final public function getStatus(): string {
+	public function get_trx_id() {
+		return $this->trx_id;
+	}
+
+	/**
+	 * @param mixed $trx_id
+	 */
+	public function set_trx_id( $trx_id ) {
+		$this->trx_id = $trx_id;
+	}
+
+	/**
+	 * @return mixed
+	 */
+	public function get_status() {
 		return $this->status;
 	}
 
 	/**
-	 * @param string $status
-	 *
-	 * @return Webhook
+	 * @param mixed $status
 	 */
-	final public function setStatus( string $status ): Webhook {
+	public function set_status( $status ) {
 		$this->status = $status;
-
-		return $this;
 	}
 
 	/**
-	 * @return string
+	 * @return mixed
 	 */
-	final public function getType(): string {
+	public function get_type() {
 		return $this->type;
 	}
 
 	/**
-	 * @param string $type
-	 *
-	 * @return Webhook
+	 * @param mixed $type
 	 */
-	final public function setType( string $type ): Webhook {
+	public function set_type( $type ) {
 		$this->type = $type;
-
-		return $this;
 	}
 
 	/**
-	 * @return string
+	 * @return mixed
 	 */
-	final public function getAmount(): string {
+	public function get_amount() {
 		return $this->amount;
 	}
 
 	/**
-	 * @param string $amount
-	 *
-	 * @return Webhook
+	 * @param mixed $amount
 	 */
-	final public function setAmount( string $amount ): Webhook {
+	public function set_amount( $amount ) {
 		$this->amount = $amount;
-
-		return $this;
 	}
 
 	/**
-	 * @return string
+	 * @return mixed
 	 */
-	final public function getCurrency(): string {
+	public function get_currency() {
 		return $this->currency;
 	}
 
 	/**
-	 * @param string $currency
-	 *
-	 * @return Webhook
+	 * @param mixed $currency
 	 */
-	final public function setCurrency( string $currency ): Webhook {
+	public function set_currency( $currency ) {
 		$this->currency = $currency;
-
-		return $this;
 	}
 
 	/**
-	 * @return string
+	 * @return mixed
 	 */
-	final public function getReference(): string {
+	public function get_reference() {
 		return $this->reference;
 	}
 
 	/**
-	 * @param string $reference
-	 *
-	 * @return Webhook
+	 * @param mixed $reference
 	 */
-	final public function setReference( string $reference ): Webhook {
+	public function set_reference( $reference ) {
 		$this->reference = $reference;
-
-		return $this;
 	}
 
 	/**
-	 * @return string
+	 * @return mixed
 	 */
-	final public function getDatetime(): string {
+	public function get_datetime() {
 		return $this->datetime;
 	}
 
 	/**
-	 * @param string $datetime
-	 *
-	 * @return Webhook
+	 * @param mixed $datetime
 	 */
-	final public function setDatetime( string $datetime ): Webhook {
+	public function set_datetime( $datetime ) {
 		$this->datetime = $datetime;
-
-		return $this;
 	}
 
 	/**
@@ -202,9 +168,9 @@ class Webhook {
 	 *
 	 * table name: wp_bkash_transactions where wp_ is the prefix set by application
 	 *
-	 * @return false|Webhook|null
+	 * @return mixed
 	 */
-	final public function save() {
+	public function save() {
 		if ( empty( $this->trx_id ) ) {
 			$this->errorMessage = "Transaction ID field is missing, both are required";
 
@@ -212,12 +178,7 @@ class Webhook {
 		}
 
 		// Check if transaction already exists
-		$tableName   = Utils::safeSqlString( $this->tableName );
-		$whereValue  = Utils::safeString( $this->getTrxId() ?? '' );
-		$sqlQuery    = "SELECT * FROM $tableName WHERE `trx_id` = %s";
-		$transaction = $this->wpdb->get_row(
-			$this->wpdb->prepare( $sqlQuery, $whereValue )
-		);
+		$transaction = $this->wpdb->get_row( $this->wpdb->prepare( "SELECT * FROM $this->tableName WHERE `trx_id` = %s", $this->trx_id ) );
 		if ( $transaction ) {
 			$this->errorMessage = "Transaction is already saved";
 
@@ -226,38 +187,20 @@ class Webhook {
 
 
 		$insert = $this->wpdb->insert( $this->tableName, [
-			'sender'        => Utils::safeString( $this->sender ?? '' ),
-			'receiver'      => Utils::safeString( $this->receiver ?? '' ),
-			'receiver_name' => Utils::safeString( $this->receiver_name ?? '' ),
-			'trx_id'        => Utils::safeString( $this->trx_id ?? '' ),
-			'status'        => Utils::safeString( $this->status ?? '' ),
-			'type'          => Utils::safeString( $this->type ?? '' ),
+			'sender'        => $this->sender,
+			'receiver'      => $this->receiver,
+			'receiver_name' => $this->receiver_name,
+			'trx_id'        => $this->trx_id,
+			'status'        => $this->status,
+			'type'          => $this->type,
 			'amount'        => $this->amount,
-			'currency'      => Utils::safeString( $this->currency ?? '' ),
-			'reference'     => Utils::safeString( $this->reference ?? '' ),
+			'currency'      => $this->currency,
+			'reference'     => $this->reference,
 			'datetime'      => $this->datetime //date( 'Y-m-d H:i:s' )
 		] );
 
 		$this->errorMessage = $this->wpdb->last_error; // set if any error or null
 
 		return $insert > 0 ? $this : null; // if inserted then it will return value greater than zero or false on error.
-	}
-
-	/**
-	 * @return string
-	 */
-	final public function getTrxId(): string {
-		return $this->trx_id;
-	}
-
-	/**
-	 * @param string $trx_id
-	 *
-	 * @return Webhook
-	 */
-	final public function setTrxId( string $trx_id ): Webhook {
-		$this->trx_id = $trx_id;
-
-		return $this;
 	}
 }

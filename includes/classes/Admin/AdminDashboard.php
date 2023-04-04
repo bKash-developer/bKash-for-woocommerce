@@ -1,21 +1,7 @@
 <?php
-/**
- * Admin Dashboard
- *
- * @category    Admin
- * @package     bkash-for-woocommerce
- * @author      bKash Developer <developer@bkash.com>
- * @copyright   Copyright 2023 bKash Limited. All rights reserved.
- * @license     GNU General Public License version 2 or later; see LICENSE
- * @link        https://bkash.com
- */
 
 namespace bKash\PGW\Admin;
 
-use bKash\PGW\Admin\Module\AgreementModule;
-use bKash\PGW\Admin\Module\TransactionModule;
-use bKash\PGW\Admin\Module\TransferModule;
-use bKash\PGW\Admin\Module\WebhookModule;
 use bKash\PGW\TableGeneration;
 
 define( "BKASH_FW_PGW_VERSION", "1.2.0" );
@@ -25,7 +11,8 @@ define( "BKASH_FW_ADMIN_PAGE_SLUG", 'bkash_admin_menu_120beta' );
 class AdminDashboard {
 	private static $instance;
 
-	final public static function getInstance(): AdminDashboard {
+	static function GetInstance() {
+
 		if ( ! isset( self::$instance ) ) {
 			self::$instance = new self();
 		}
@@ -33,124 +20,122 @@ class AdminDashboard {
 		return self::$instance;
 	}
 
-	/**
-	 * @return void
-	 * */
-	final public function pluginMenu() {
+	public function PluginMenu() {
 		/* Adding menu and sub-menu to the admin portal */
 		$this->AddMainMenu();
 		$this->AddSubMenus();
+
 	}
 
 	/**
 	 * Add menu for bKash PGW in WP Admin
 	 */
-	private function addMainMenu() {
+	protected function AddMainMenu() {
 		add_menu_page(
 			'Woocommerce Payment Gateway - bKash',
 			'bKash',
 			'manage_options',
 			BKASH_FW_ADMIN_PAGE_SLUG,
-			array( TransactionModule::class, 'transactionList' ),
+			array( 'bKash\PGW\Admin\Module\TransactionModule', 'transaction_list' ),
 			plugins_url( '../../assets/images/bkash_favicon_0.ico', __DIR__ )
 		);
+
 	}
 
 	/**
 	 * Add submenu for bKash PGW in WP Admin
 	 */
-	private function addSubMenus() {
+	protected function AddSubMenus() {
 		$pid                = BKASH_FW_PLUGIN_SLUG;
-		$is_b2c_enabled     = AdminUtility::getBKashOptions( $pid, 'enable_b2c' );
-		$is_webhook_enabled = AdminUtility::getBKashOptions( $pid, 'webhook' );
-		$integration_type   = AdminUtility::getBKashOptions( $pid, 'integration_type' );
+		$is_b2c_enabled     = AdminUtility::get_bKash_options( $pid, 'enable_b2c' );
+		$is_webhook_enabled = AdminUtility::get_bKash_options( $pid, 'webhook' );
+		$integration_type   = AdminUtility::get_bKash_options( $pid, 'integration_type' );
 
 		$sub_menus = array(
 			array(
 				'title'      => 'All Transaction',
 				'menu_title' => 'Transaction',
 				'route'      => '',
-				'function'   => array( TransactionModule::class, 'transactionList' ),
+				'function'   => array( 'bKash\PGW\Admin\Module\TransactionModule', 'transaction_list' ),
 				'show'       => true
 			),
 			array(
 				'title'      => 'Search a bKash Transaction',
 				'menu_title' => 'Search',
 				'route'      => '/search',
-				'function'   => array( TransactionModule::class, 'transactionSearch' ),
+				'function'   => array( 'bKash\PGW\Admin\Module\TransactionModule', 'transaction_search' ),
 				'show'       => true
 			),
 			array(
 				'title'      => 'Refund a bKash Transaction',
 				'menu_title' => 'Refund',
 				'route'      => '/refund',
-				'function'   => array( TransactionModule::class, 'refundATransaction' ),
+				'function'   => array( 'bKash\PGW\Admin\Module\TransactionModule', 'refund_a_transaction' ),
 				'show'       => true
 			),
 			array(
 				'title'      => 'Webhook notifications',
 				'menu_title' => 'Webhook',
 				'route'      => '/webhooks',
-				'function'   => array( WebhookModule::class, 'webhooks' ),
+				'function'   => array( 'bKash\PGW\Admin\Module\TransferModule', 'transfer_history' ),
 				'show'       => $is_webhook_enabled
 			),
 			array(
 				'title'      => 'Check Balances',
 				'menu_title' => 'Check Balances',
 				'route'      => '/balances',
-				'function'   => array( TransferModule::class, 'checkBalances' ),
+				'function'   => array( 'bKash\PGW\Admin\Module\TransferModule', 'check_balances' ),
 				'show'       => $integration_type === 'checkout'
 			),
 			array(
 				'title'      => 'Intra account transfer',
 				'menu_title' => 'Intra Account Transfer',
 				'route'      => '/intra_account',
-				'function'   => array( TransferModule::class, 'transferBalance' ),
+				'function'   => array( 'bKash\PGW\Admin\Module\TransferModule', 'transfer_balance' ),
 				'show'       => $integration_type === 'checkout'
 			),
 			array(
 				'title'      => 'B2C Payout - Disbursement',
 				'menu_title' => 'Disburse Money (B2C)',
 				'route'      => '/b2c_payout',
-				'function'   => array( TransferModule::class, 'disburseMoney' ),
+				'function'   => array( 'bKash\PGW\Admin\Module\TransferModule', 'disburse_money' ),
 				'show'       => $integration_type === 'checkout' && $is_b2c_enabled
 			),
 			array(
 				'title'      => 'Transfer History',
 				'menu_title' => 'Transfer History',
 				'route'      => '/transfers',
-				'function'   => array( TransferModule::class, 'transferHistory' ),
+				'function'   => array( 'bKash\PGW\Admin\Module\TransferModule', 'transfer_history' ),
 				'show'       => $integration_type === 'checkout'
 			),
 			array(
 				'title'      => 'Agreements',
 				'menu_title' => 'Agreements',
 				'route'      => '/agreements',
-				'function'   => array( AgreementModule::class, 'agreementList' ),
+				'function'   => array( 'bKash\PGW\Admin\Module\AgreementModule', 'agreement_list' ),
 				'show'       => strpos( $integration_type, 'tokenized' ) === 0
 			),
 			array(
 				'title'      => 'Payment Settings',
 				'menu_title' => 'Settings',
-				'route'      => esc_url(
-					admin_url( 'admin.php?page=wc-settings&tab=checkout&section=' . BKASH_FW_PLUGIN_SLUG )
-				),
+				'route'      => esc_url( admin_url( 'admin.php?page=wc-settings&tab=checkout&section=' . BKASH_FW_PLUGIN_SLUG ) ),
 				'show'       => 'link'
 			)
 		);
 
 		foreach ( $sub_menus as $sub_menu ) {
+
+
 			if ( isset( $sub_menu['show'] ) && $sub_menu["show"] === true ) {
 				$sub_page = add_submenu_page(
 					BKASH_FW_ADMIN_PAGE_SLUG,
 					$sub_menu['title'],
 					$sub_menu['menu_title'],
 					'manage_options',
-					BKASH_FW_ADMIN_PAGE_SLUG . $sub_menu['route'],
-					$sub_menu['function']
+					BKASH_FW_ADMIN_PAGE_SLUG . $sub_menu['route'], $sub_menu['function']
 				);
-				add_action( 'admin_print_styles-' . $sub_page, array( $this, "adminStyles" ) );
-			} elseif ( $sub_menu["show"] === "link" ) {
+				add_action( 'admin_print_styles-' . $sub_page, array( $this, "admin_styles" ) );
+			} else if ( $sub_menu["show"] === "link" ) {
 				global $submenu;
 				$submenu[ BKASH_FW_ADMIN_PAGE_SLUG ][] = array(
 					$sub_menu['title'],
@@ -164,28 +149,22 @@ class AdminDashboard {
 	/**
 	 * Outputs styles used for the bKash gateway admin in wp.
 	 *
-	 * @access final public
-	 * @return void
+	 * @access public
 	 */
-	final public function adminStyles() {
+	public function admin_styles() {
 		wp_enqueue_style( 'bfw-admin-css', plugins_url( '../../../assets/css/admin.css', __FILE__ ) );
 	}
 
-	/**
-	 * @return void
-	 */
-	final public function initiate() {
+	public function Initiate() {
 		add_action( 'admin_menu', array( $this, 'PluginMenu' ) );
 	}
 
-	/**
-	 * @return void
-	 */
-	final public function beginInstall() {
+	public function BeginInstall() {
 		$tableGenerator = new TableGeneration();
-		$tableGenerator->createTransactionTable();
-		$tableGenerator->createWebhookTable();
-		$tableGenerator->createAgreementMappingTable();
-		$tableGenerator->createTransferHistoryTable();
+		$tableGenerator->CreateTransactionTable();
+		$tableGenerator->CreateWebhookTable();
+		$tableGenerator->CreateAgreementMappingTable();
+		$tableGenerator->CreateTransferHistoryTable();
+
 	}
 }

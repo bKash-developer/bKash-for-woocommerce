@@ -1,30 +1,20 @@
 <?php
-/**
- * Table Generation
- *
- * @category    Database
- * @package     bkash-for-woocommerce
- * @author      bKash Developer <developer@bkash.com>
- * @copyright   Copyright 2023 bKash Limited. All rights reserved.
- * @license     GNU General Public License version 2 or later; see LICENSE
- * @link        https://bkash.com
- */
 
 namespace bKash\PGW;
 
-define( 'BKASH_UPGRADE_FILE', 'wp-admin/includes/upgrade.php' );
+define( "BKASH_UPGRADE_FILE", "wp-admin/includes/upgrade.php" );
 
 class TableGeneration {
-	/**
-	 * @return void
-	 */
-	final public function createTransactionTable() {
+
+
+	public function CreateTransactionTable() {
 		global $wpdb;
-		$table_name             = $wpdb->prefix . 'bkash_transactions';
+		$table_name             = $wpdb->prefix . "bkash_transactions";
 		$my_products_db_version = BKASH_FW_PGW_VERSION;
 		$charset_collate        = $wpdb->get_charset_collate();
 
-		if ( $wpdb->get_var( $this->prepareQuery( $table_name ) ) !== $table_name ) {
+		if ( $wpdb->get_var( "SHOW TABLES LIKE '{$table_name}'" ) != $table_name ) {
+
 			$sql = "CREATE TABLE $table_name (
                     ID bigint NOT NULL AUTO_INCREMENT,
                     `order_id` VARCHAR(100) NOT NULL,
@@ -43,35 +33,20 @@ class TableGeneration {
                     PRIMARY KEY  (ID)
             ) $charset_collate;";
 
-			require_once ABSPATH . BKASH_UPGRADE_FILE;
+			require_once( ABSPATH . BKASH_UPGRADE_FILE );
 			dbDelta( $sql );
 			add_option( 'bkash_transaction_table_version', $my_products_db_version );
 		}
 	}
 
-	/**
-	 * Prepare Query
-	 *
-	 * @param $tableName
-	 *
-	 * @return string|void
-	 */
-	private function prepareQuery( $tableName ) {
+	public function CreateWebhookTable() {
 		global $wpdb;
-
-		return $wpdb->prepare( 'SHOW TABLES LIKE %s', $tableName );
-	}
-
-	/**
-	 * @return void
-	 */
-	final public function createWebhookTable() {
-		global $wpdb;
-		$table_name             = $wpdb->prefix . 'bkash_webhooks';
+		$table_name             = $wpdb->prefix . "bkash_webhooks";
 		$my_products_db_version = BKASH_FW_PGW_VERSION;
 		$charset_collate        = $wpdb->get_charset_collate();
 
-		if ( $wpdb->get_var( $this->prepareQuery( $table_name ) ) !== $table_name ) {
+		if ( $wpdb->get_var( "SHOW TABLES LIKE '{$table_name}'" ) != $table_name ) {
+
 			$sql = "CREATE TABLE $table_name (
                     ID bigint NOT NULL AUTO_INCREMENT,
                     `sender` VARCHAR(20) NOT NULL,
@@ -87,22 +62,20 @@ class TableGeneration {
                     PRIMARY KEY  (ID)
             ) $charset_collate;";
 
-			require_once ABSPATH . BKASH_UPGRADE_FILE;
+			require_once( ABSPATH . BKASH_UPGRADE_FILE );
 			dbDelta( $sql );
 			add_option( 'bkash_webhook_table_version', $my_products_db_version );
 		}
 	}
 
-	/**
-	 * @return void
-	 */
-	final public function createAgreementMappingTable() {
+	public function CreateAgreementMappingTable() {
 		global $wpdb;
-		$table_name             = $wpdb->prefix . 'bkash_agreement_mapping';
+		$table_name             = $wpdb->prefix . "bkash_agreement_mapping";
 		$my_products_db_version = BKASH_FW_PGW_VERSION;
 		$charset_collate        = $wpdb->get_charset_collate();
 
-		if ( $wpdb->get_var( $this->prepareQuery( $table_name ) ) !== $table_name ) {
+		if ( $wpdb->get_var( "SHOW TABLES LIKE '{$table_name}'" ) != $table_name ) {
+
 			$sql = "CREATE TABLE $table_name (
                     ID bigint NOT NULL AUTO_INCREMENT,
                     `phone` VARCHAR(20) NOT NULL,
@@ -112,22 +85,20 @@ class TableGeneration {
                     PRIMARY KEY  (ID)
             ) $charset_collate;";
 
-			require_once ABSPATH . BKASH_UPGRADE_FILE;
+			require_once( ABSPATH . BKASH_UPGRADE_FILE );
 			dbDelta( $sql );
 			add_option( 'bkash_agreement_mapping_table_version', $my_products_db_version );
 		}
 	}
 
-	/**
-	 * @return void
-	 */
-	final public function createTransferHistoryTable() {
+	public function CreateTransferHistoryTable() {
 		global $wpdb;
-		$table_name             = $wpdb->prefix . 'bkash_transfers';
+		$table_name             = $wpdb->prefix . "bkash_transfers";
 		$my_products_db_version = BKASH_FW_PGW_VERSION;
 		$charset_collate        = $wpdb->get_charset_collate();
 
-		if ( $wpdb->get_var( $this->prepareQuery( $table_name ) ) !== $table_name ) {
+		if ( $wpdb->get_var( "SHOW TABLES LIKE '{$table_name}'" ) != $table_name ) {
+
 			$sql = "CREATE TABLE $table_name (
                     ID bigint NOT NULL AUTO_INCREMENT,
                     `receiver` VARCHAR(20) NOT NULL,
@@ -142,7 +113,7 @@ class TableGeneration {
                     PRIMARY KEY (ID)
             ) $charset_collate;";
 
-			require_once ABSPATH . BKASH_UPGRADE_FILE;
+			require_once( ABSPATH . BKASH_UPGRADE_FILE );
 			dbDelta( $sql );
 			add_option( 'bkash_agreement_mapping_table_version', $my_products_db_version );
 		}

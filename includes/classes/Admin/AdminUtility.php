@@ -1,23 +1,12 @@
 <?php
-/**
- * Admin Utility
- *
- * @category    Utility
- * @package     bkash-for-woocommerce
- * @author      bKash Developer <developer@bkash.com>
- * @copyright   Copyright 2023 bKash Limited. All rights reserved.
- * @license     GNU General Public License version 2 or later; see LICENSE
- * @link        https://bkash.com
- */
 
 namespace bKash\PGW\Admin;
-
-use bKash\PGW\Utils;
 
 class AdminUtility {
 	private static $instance;
 
-	public static function getInstance(): AdminUtility {
+	static function getInstance() {
+
 		if ( ! isset( self::$instance ) ) {
 			self::$instance = new self();
 		}
@@ -25,72 +14,51 @@ class AdminUtility {
 		return self::$instance;
 	}
 
-	public static function loadTable(
-		string $title,
-		string $tbl_name,
-		array $columns = array(),
-		array $filters = array(),
-		array $actions = array()
-	) {
+	public static function loadTable( $title, $tbl_name, $columns = array(), $filters = array(), $actions = array() ) {
 		global $wpdb;
-		$primaryColumn = 'ID';
-		$table_name    = Utils::safeSqlString( $wpdb->prefix . $tbl_name );
-		$pageNumber    = Utils::hasGetField( "pagenum" ) ? absint( Utils::safeGetValue( "pagenum" ) ) : 1;
-		$limit         = BKASH_FW_TABLE_LIMIT;
-		$offset        = ( $pageNumber - 1 ) * $limit;
+		$table_name = $wpdb->prefix . $tbl_name;
+		$pagenum    = isset( $_GET['pagenum'] ) ? absint( sanitize_text_field( $_GET['pagenum'] ) ) : 1;
 
-		$queryValue[] = 0; // primary columnn value for %d
-		$whereQuery   = "$primaryColumn > %d ";
-
-		$filterColumns    = [];
-		$countColumnValue = [];
-
+		$searchFilters = [];
 		if ( count( $filters ) > 0 ) {
 			foreach ( $filters as $key => $filter ) {
-				$input = Utils::safeGetValue( $key );
+				$input = isset( $_GET[ $key ] ) ? sanitize_text_field( $_GET[ $key ] ) : null;
 				if ( $input ) {
-					$filterColumns[] = Utils::safeSqlString( $key );
-					$queryValue[]    = Utils::safeSqlString( $input );
+					$partialQuery    = $wpdb->prepare( 'AND ' . $key . ' LIKE %s', esc_sql( $input ) );
+					$searchFilters[] = $partialQuery;
 				}
 			}
-
-			if ( count( $filterColumns ) > 0 ) {
-				$whereQuery .= 'AND ' . implode( ' = %s AND ', $filterColumns ) . ' = %s ';
-			}
-
-			$countColumnValue = $queryValue; // for counting purpose keeping where info only
-			$queryValue[]     = $offset; // value of offset as %s
-			$queryValue[]     = $limit; // value of limit as %s
 		}
 
-		$sqlQuery   = "SELECT * from $table_name where $whereQuery ORDER BY `ID` DESC limit %d, %d";
-		$countQuery = "SELECT count(*) as total from $table_name where $whereQuery";
+		$limit           = BKASH_FW_TABLE_LIMIT;
+		$offset          = ( $pagenum - 1 ) * $limit;
+		$selectFrom      = "SELECT * from $table_name where ID > %d ";
+		$selectCountFrom = "SELECT count(*) as total from $table_name where ID > %d ";
 
-		$rows     = $wpdb->get_results(
-			$wpdb->prepare( $sqlQuery, $queryValue )
+		$prepareQuery = $wpdb->prepare(
+			$selectFrom . implode( "", $searchFilters ), 0
 		);
-		$rowcount = $wpdb->num_rows ?? 0;
+		$rows         = $wpdb->get_results( $prepareQuery . " ORDER BY id DESC limit  $offset, $limit" );
+		$rowcount     = $wpdb->num_rows ?? 0;
 
 		$total        = $wpdb->get_var(
-			$wpdb->prepare( $countQuery, $countColumnValue )
+			$wpdb->prepare( $selectCountFrom . implode( "", $searchFilters ), 0 )
 		);
 		$num_of_pages = ceil( $total / $limit );
 
-		$page_links = paginate_links(
-			array(
-				'base'      => add_query_arg( 'pagenum', '%#%' ),
-				'format'    => '',
-				'prev_text' => __( '&laquo;', 'bkash-for-woocommerce' ),
-				'next_text' => __( '&raquo;', 'bkash-for-woocommerce' ),
-				'total'     => $num_of_pages,
-				'current'   => $pageNumber
-			)
-		);
+		$page_links = paginate_links( array(
+			'base'      => add_query_arg( 'pagenum', '%#%' ),
+			'format'    => '',
+			'prev_text' => __( '&laquo;', 'text-domain' ),
+			'next_text' => __( '&raquo;', 'text-domain' ),
+			'total'     => $num_of_pages,
+			'current'   => $pagenum
+		) );
 
 		include_once "pages/table.php";
 	}
 
-	public static function getBKashOptions( string $plugin_id, string $key ) {
+	public static function get_bKash_options( $plugin_id, $key ) {
 		$option_value = false;
 		$options      = get_option( 'woocommerce_' . $plugin_id . '_settings' );
 
@@ -105,7 +73,7 @@ class AdminUtility {
 		return $option_value;
 	}
 
-	public static function validateResponse( array $apiResp = array(), array $specificField = array() ): array {
+	public static function validate_response( $apiResp = array(), $specificField = array() ) {
 		$feedback = array(
 			'valid'    => false,
 			'message'  => '',
@@ -121,7 +89,7 @@ class AdminUtility {
 
 			if ( isset( $response['errorMessage'] ) ) {
 				$feedback['message'] = $response['errorMessage'];
-			} elseif ( isset( $response['statusMessage'] ) && $response['statusMessage'] !== 'Successful' ) {
+			} else if ( isset( $response['statusMessage'] ) && $response['statusMessage'] !== 'Successful' ) {
 				$feedback['message'] = $response['statusMessage'];
 			} else {
 				if ( count( $specificField ) > 0 ) {
@@ -144,11 +112,15 @@ class AdminUtility {
 	}
 
 
-	public static function redirectToPage( string $url = "" ) {
-		wp_safe_redirect( esc_url( $url ) );
+	public static function redirect_to_page() {
+
+		$page        = sanitize_text_field( $_GET["page"] ?? '' );
+		$actual_link = strtok( "http://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]", '?' );
+
+		wp_redirect( esc_url( $actual_link . "?page=" . $page ) );
 	}
 
-	public static function addFlashNotice( string $notice = "", string $type = "warning", bool $dismissible = true ) {
+	public static function add_flash_notice( $notice = "", $type = "warning", $dismissible = true ) {
 		$notices = get_option( "bKash_flash_notices", array() );
 
 		$dismissible_text = ( $dismissible ) ? "is-dismissible" : "";
@@ -160,44 +132,5 @@ class AdminUtility {
 		);
 
 		update_option( "bKash_flash_notices", $notices );
-	}
-
-
-	/**
-	 * @param string $str
-	 * @param string $separator
-	 *
-	 * @return string
-	 */
-	public static function keyToLabel( string $str, string $separator = "_" ): string {
-		$str = str_replace( $separator, " ", $str );
-
-		return ucwords( $str );
-	}
-
-	/**
-	 * @param $row
-	 * @param array $column
-	 *
-	 * @return bool
-	 */
-	public static function ifRefundValueIsPresent( $row, array $column ): bool {
-		return isset( $column[0] ) && str_contains( strtolower( $column[0] ), "refund" ) && ! empty( $row->{$column[0]} );
-	}
-
-	public static function setStatusColor( string $status ): string {
-		$color = "#909090";
-
-		if ( stripos( $status, "cancel" ) !== false ) {
-			$color = "#f4a938";
-		} elseif ( stripos( $status, "complete" ) !== false ) {
-			$color = "#1dae5b";
-		} elseif ( stripos( $status, "fail" ) !== false ) {
-			$color = "#ff4136";
-		} elseif ( stripos( $status, "auth" ) !== false ) {
-			$color = "#0b608a";
-		}
-
-		return $color;
 	}
 }
