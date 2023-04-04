@@ -1,19 +1,6 @@
 <?php
-/**
- * Transaction Model
- *
- * @category    Model
- * @package     bkash-for-woocommerce
- * @author      bKash Developer <developer@bkash.com>
- * @copyright   Copyright 2023 bKash Limited. All rights reserved.
- * @license     GNU General Public License version 2 or later; see LICENSE
- * @link        https://bkash.com
- */
 
 namespace bKash\PGW\Models;
-
-use bKash\PGW\Utils;
-
 class Transaction {
 	public $errorMessage = "";
 	private $ID;
@@ -36,10 +23,10 @@ class Transaction {
 	private $customerNumber;
 	private $merchantNumber;
 	private $intent;
-	private $tableName;
-	private $wpdb;
+	private $tableName = "";
+	private $wpdb = null;
 
-	final public function __construct() {
+	public function __construct() {
 		global $wpdb;
 		$this->wpdb      = $wpdb;
 		$this->tableName = $wpdb->prefix . "bkash_transactions";
@@ -48,16 +35,16 @@ class Transaction {
 	/**
 	 * @return mixed
 	 */
-	final public function getID() {
+	public function getID() {
 		return $this->ID;
 	}
 
 	/**
-	 * @param int $ID
+	 * @param mixed $ID
 	 *
 	 * @return Transaction
 	 */
-	final public function setID( int $ID ): Transaction {
+	public function setID( $ID ) {
 		$this->ID = $ID;
 
 		return $this;
@@ -66,7 +53,7 @@ class Transaction {
 	/**
 	 * @return mixed
 	 */
-	final public function getPaymentID() {
+	public function getPaymentID() {
 		return $this->paymentID;
 	}
 
@@ -75,7 +62,7 @@ class Transaction {
 	 *
 	 * @return Transaction
 	 */
-	final public function setPaymentID( string $paymentID ): Transaction {
+	public function setPaymentID( $paymentID ) {
 		$this->paymentID = $paymentID;
 
 		return $this;
@@ -84,7 +71,7 @@ class Transaction {
 	/**
 	 * @return mixed
 	 */
-	final public function getTrxID() {
+	public function getTrxID() {
 		return $this->trxID;
 	}
 
@@ -93,7 +80,7 @@ class Transaction {
 	 *
 	 * @return Transaction
 	 */
-	final public function setTrxID( string $trxID ): Transaction {
+	public function setTrxID( $trxID ) {
 		$this->trxID = $trxID;
 
 		return $this;
@@ -102,7 +89,7 @@ class Transaction {
 	/**
 	 * @return mixed
 	 */
-	final public function getOrderID() {
+	public function getOrderID() {
 		return $this->orderID;
 	}
 
@@ -111,7 +98,7 @@ class Transaction {
 	 *
 	 * @return Transaction
 	 */
-	final public function setOrderID( string $orderID ): Transaction {
+	public function setOrderID( $orderID ) {
 		$this->orderID = $orderID;
 
 		return $this;
@@ -120,7 +107,7 @@ class Transaction {
 	/**
 	 * @return mixed
 	 */
-	final public function getIntegrationType() {
+	public function getIntegrationType() {
 		return $this->integrationType;
 	}
 
@@ -129,7 +116,7 @@ class Transaction {
 	 *
 	 * @return Transaction
 	 */
-	final public function setIntegrationType( string $integrationType ): Transaction {
+	public function setIntegrationType( $integrationType ) {
 		$this->integrationType = $integrationType;
 
 		return $this;
@@ -138,7 +125,7 @@ class Transaction {
 	/**
 	 * @return mixed
 	 */
-	final public function getMode() {
+	public function getMode() {
 		return $this->mode;
 	}
 
@@ -147,7 +134,7 @@ class Transaction {
 	 *
 	 * @return Transaction
 	 */
-	final public function setMode( string $mode ): Transaction {
+	public function setMode( $mode ) {
 		$this->mode = $mode;
 
 		return $this;
@@ -156,16 +143,16 @@ class Transaction {
 	/**
 	 * @return mixed
 	 */
-	final public function getAmount() {
+	public function getAmount() {
 		return $this->amount;
 	}
 
 	/**
-	 * @param string $amount
+	 * @param mixed $amount
 	 *
 	 * @return Transaction
 	 */
-	final public function setAmount( string $amount ): Transaction {
+	public function setAmount( $amount ) {
 		$this->amount = $amount;
 
 		return $this;
@@ -174,16 +161,16 @@ class Transaction {
 	/**
 	 * @return mixed
 	 */
-	final public function getCurrency() {
+	public function getCurrency() {
 		return $this->currency;
 	}
 
 	/**
-	 * @param string $currency
+	 * @param mixed $currency
 	 *
 	 * @return Transaction
 	 */
-	final public function setCurrency( string $currency ): Transaction {
+	public function setCurrency( $currency ) {
 		$this->currency = $currency;
 
 		return $this;
@@ -192,7 +179,7 @@ class Transaction {
 	/**
 	 * @return mixed
 	 */
-	final public function getRefundID() {
+	public function getRefundID() {
 		return $this->refundID;
 	}
 
@@ -201,7 +188,7 @@ class Transaction {
 	 *
 	 * @return Transaction
 	 */
-	final public function setRefundID( string $refundID ): Transaction {
+	public function setRefundID( $refundID ) {
 		$this->refundID = $refundID;
 
 		return $this;
@@ -210,7 +197,7 @@ class Transaction {
 	/**
 	 * @return mixed
 	 */
-	final public function getRefundAmount() {
+	public function getRefundAmount() {
 		return $this->refundAmount;
 	}
 
@@ -219,7 +206,7 @@ class Transaction {
 	 *
 	 * @return Transaction
 	 */
-	final public function setRefundAmount( string $refundAmount ): Transaction {
+	public function setRefundAmount( $refundAmount ) {
 		$this->refundAmount = $refundAmount;
 
 		return $this;
@@ -228,7 +215,7 @@ class Transaction {
 	/**
 	 * @return mixed
 	 */
-	final public function getStatus() {
+	public function getStatus() {
 		return $this->status;
 	}
 
@@ -237,7 +224,7 @@ class Transaction {
 	 *
 	 * @return Transaction
 	 */
-	final public function setStatus( string $status ): Transaction {
+	public function setStatus( $status ) {
 		$this->status = $status;
 
 		return $this;
@@ -246,7 +233,7 @@ class Transaction {
 	/**
 	 * @return mixed
 	 */
-	final public function getDateTime() {
+	public function getDateTime() {
 		return $this->dateTime;
 	}
 
@@ -255,7 +242,7 @@ class Transaction {
 	 *
 	 * @return Transaction
 	 */
-	final public function setDateTime( $dateTime ): Transaction {
+	public function setDateTime( $dateTime ) {
 		$this->dateTime = $dateTime;
 
 		return $this;
@@ -264,7 +251,7 @@ class Transaction {
 	/**
 	 * @return mixed
 	 */
-	final public function getTransactionReference() {
+	public function getTransactionReference() {
 		return $this->transactionReference;
 	}
 
@@ -273,7 +260,7 @@ class Transaction {
 	 *
 	 * @return Transaction
 	 */
-	final public function setTransactionReference( string $transactionReference ): Transaction {
+	public function setTransactionReference( $transactionReference ) {
 		$this->transactionReference = $transactionReference;
 
 		return $this;
@@ -282,7 +269,7 @@ class Transaction {
 	/**
 	 * @return mixed
 	 */
-	final public function getInitiationTime() {
+	public function getInitiationTime() {
 		return $this->initiationTime;
 	}
 
@@ -291,7 +278,7 @@ class Transaction {
 	 *
 	 * @return Transaction
 	 */
-	final public function setInitiationTime( $initiationTime ): Transaction {
+	public function setInitiationTime( $initiationTime ) {
 		$this->initiationTime = $initiationTime;
 
 		return $this;
@@ -300,7 +287,7 @@ class Transaction {
 	/**
 	 * @return mixed
 	 */
-	final public function getCompletionTime() {
+	public function getCompletionTime() {
 		return $this->completionTime;
 	}
 
@@ -309,7 +296,7 @@ class Transaction {
 	 *
 	 * @return Transaction
 	 */
-	final public function setCompletionTime( $completionTime ): Transaction {
+	public function setCompletionTime( $completionTime ) {
 		$this->completionTime = $completionTime;
 
 		return $this;
@@ -318,7 +305,7 @@ class Transaction {
 	/**
 	 * @return mixed
 	 */
-	final public function getTransactionType() {
+	public function getTransactionType() {
 		return $this->transactionType;
 	}
 
@@ -327,7 +314,7 @@ class Transaction {
 	 *
 	 * @return Transaction
 	 */
-	final public function setTransactionType( string $transactionType ): Transaction {
+	public function setTransactionType( $transactionType ) {
 		$this->transactionType = $transactionType;
 
 		return $this;
@@ -336,7 +323,7 @@ class Transaction {
 	/**
 	 * @return mixed
 	 */
-	final public function getCustomerNumber() {
+	public function getCustomerNumber() {
 		return $this->customerNumber;
 	}
 
@@ -345,7 +332,7 @@ class Transaction {
 	 *
 	 * @return Transaction
 	 */
-	final public function setCustomerNumber( string $customerNumber ): Transaction {
+	public function setCustomerNumber( $customerNumber ) {
 		$this->customerNumber = $customerNumber;
 
 		return $this;
@@ -354,7 +341,7 @@ class Transaction {
 	/**
 	 * @return mixed
 	 */
-	final public function getMerchantNumber() {
+	public function getMerchantNumber() {
 		return $this->merchantNumber;
 	}
 
@@ -363,7 +350,7 @@ class Transaction {
 	 *
 	 * @return Transaction
 	 */
-	final public function setMerchantNumber( string $merchantNumber ): Transaction {
+	public function setMerchantNumber( $merchantNumber ) {
 		$this->merchantNumber = $merchantNumber;
 
 		return $this;
@@ -372,7 +359,7 @@ class Transaction {
 	/**
 	 * @return mixed
 	 */
-	final public function getIntent() {
+	public function getIntent() {
 		return $this->intent;
 	}
 
@@ -381,7 +368,7 @@ class Transaction {
 	 *
 	 * @return Transaction
 	 */
-	final public function setIntent( string $intent ): Transaction {
+	public function setIntent( $intent ) {
 		$this->intent = $intent;
 
 		return $this;
@@ -392,9 +379,9 @@ class Transaction {
 	 *
 	 * table name: wp_bkash_transactions where wp_ is the prefix set by application
 	 *
-	 * @return false|Transaction|null
+	 * @return mixed
 	 */
-	final public function save() {
+	public function save() {
 		if ( empty( $this->orderID ) || empty( $this->amount ) ) {
 			$this->errorMessage = "Order ID or amount field is missing, both are required";
 
@@ -403,17 +390,17 @@ class Transaction {
 
 
 		$insert = $this->wpdb->insert( $this->tableName, [
-			'order_id'         => Utils::safeString( $this->orderID ), // required
-			'trx_id'           => Utils::safeString( $this->trxID ?? '' ),
-			'payment_id'       => Utils::safeString( $this->paymentID ?? '' ),
-			'invoice_id'       => Utils::safeString( $this->getInvoiceID() ?? '' ),
-			'integration_type' => Utils::safeString( $this->integrationType ?? 'checkout' ),
-			'mode'             => Utils::safeString( $this->mode ?? 'NONE' ),
-			'intent'           => Utils::safeString( $this->intent ?? 'NONE' ),
+			'order_id'         => $this->orderID, // required
+			'trx_id'           => $this->trxID ?? null,
+			'payment_id'       => $this->paymentID ?? null,
+			'invoice_id'       => $this->getInvoiceID(),
+			'integration_type' => $this->integrationType ?? 'checkout',
+			'mode'             => $this->mode ?? 'NONE',
+			'intent'           => $this->intent ?? 'NONE',
 			'amount'           => $this->amount, // required
-			'currency'         => Utils::safeString( $this->currency ?? 'BDT' ),
-			'refund_id'        => Utils::safeString( $this->refundID ?? '' ),
-			'status'           => Utils::safeString( $this->status ?? 'CREATED' ),
+			'currency'         => $this->currency ?? 'BDT',
+			'refund_id'        => $this->refundID ?? null,
+			'status'           => $this->status ?? 'CREATED',
 			'datetime'         => date( 'Y-m-d H:i:s' ),
 		] );
 
@@ -425,11 +412,9 @@ class Transaction {
 	/**
 	 * @return mixed
 	 */
-	final public function getInvoiceID() {
+	public function getInvoiceID() {
 		$inv_id = uniqid( "wc_bkash_", false );
-		if ( empty( $this->invoiceID ) ) {
-			$this->setInvoiceID( $inv_id );
-		}
+		empty( $this->invoiceID ) ? $this->setInvoiceID( $inv_id ) : null;
 
 		return $this->invoiceID;
 	}
@@ -439,13 +424,13 @@ class Transaction {
 	 *
 	 * @return Transaction
 	 */
-	final public function setInvoiceID( string $invoiceID ): Transaction {
+	public function setInvoiceID( $invoiceID ) {
 		$this->invoiceID = $invoiceID;
 
 		return $this;
 	}
 
-	final public function update( array $data, array $where = [] ): bool {
+	public function update( array $data, array $where = [] ): bool {
 		$where['invoice_id'] = $this->invoiceID;
 		$updated             = $this->wpdb->update( $this->tableName, $data, $where );
 
@@ -454,22 +439,14 @@ class Transaction {
 		return $updated > 0;
 	}
 
-	final public function getTransaction( $invoice_id = "", $trx_id = "" ) {
+	public function getTransaction( $invoice_id = "", $trx_id = "" ) {
 		$transaction = null;
-		$tableName   = Utils::safeSqlString( $this->tableName );
-		if ( ! empty( $invoice_id ) ) {
-			$whereColumn = '`invoice_id`';
-			$whereValue  = Utils::safeSqlString( $invoice_id );
-		} else {
-			$whereColumn = '`trx_id`';
-			$whereValue  = Utils::safeSqlString( $trx_id );
-		}
-
-		$sqlQuery = "SELECT * FROM $tableName WHERE $whereColumn = %s";
 		if ( ! is_null( $this->wpdb ) ) {
-			$transaction = $this->wpdb->get_row(
-				$this->wpdb->prepare( $sqlQuery, $whereValue )
-			);
+			if ( ! empty( $invoice_id ) ) {
+				$transaction = $this->wpdb->get_row( $this->wpdb->prepare( "SELECT * FROM $this->tableName WHERE `invoice_id` = %s", $invoice_id ) );
+			} else if ( ! empty( $trx_id ) ) {
+				$transaction = $this->wpdb->get_row( $this->wpdb->prepare( "SELECT * FROM $this->tableName WHERE `trx_id` = %s", $trx_id ) );
+			}
 
 			if ( $transaction ) {
 				return $this->buildTransaction( $transaction );
@@ -479,7 +456,7 @@ class Transaction {
 		return $transaction;
 	}
 
-	private function buildTransaction( $transaction ): Transaction {
+	private function buildTransaction( $transaction ) {
 		$this->orderID         = $transaction->order_id ?? null;
 		$this->trxID           = $transaction->trx_id ?? null;
 		$this->paymentID       = $transaction->payment_id ?? null;
@@ -497,15 +474,10 @@ class Transaction {
 		return $this;
 	}
 
-	final public function getTransactionByOrderId( $order_id ) {
-		$tableName   = Utils::safeSqlString( $this->tableName );
-		$whereValue  = Utils::safeSqlString( $order_id ?? '' );
-		$sqlQuery    = "SELECT * FROM $tableName WHERE `order_id` = %s";
+	public function getTransactionByOrderId( $order_id ) {
 		$transaction = null;
-		if ( ! empty( $order_id ) && ! is_null( $this->wpdb ) ) {
-			$transaction = $this->wpdb->get_row(
-				$this->wpdb->prepare( $sqlQuery, $whereValue )
-			);
+		if (! empty( $order_id ) && ! is_null( $this->wpdb ) ) {
+			$transaction = $this->wpdb->get_row( $this->wpdb->prepare( "SELECT * FROM $this->tableName WHERE `order_id` = %s", $order_id ) );
 
 			if ( $transaction ) {
 				return $this->buildTransaction( $transaction );
@@ -514,4 +486,6 @@ class Transaction {
 
 		return $transaction;
 	}
+
+
 }
