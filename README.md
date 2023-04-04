@@ -1,9 +1,9 @@
 # Wordpress (WooCommerce) Plugin For PGW
 ```
 - User Story and Features
-- Prepared By: Md. Shahnawaz Ahmed (Asst. Lead Engineer, Solution Engineering, P&T), Aritra Banerjee (Asst. Lead Engineer, Solution Engineering, P&T)
-- Dated: 12th May 2021
-- Version: 1.0.5
+- Prepared By: Prabal Mallick (Senior Officer, Product Delivery, Merchant Products, Product & Technology)
+- Updated: 04th April 2023
+- Version: 1.0.9
 ```
 ### Introduction
 Using this plugin, merchant can setup bKash payment gateway with selected product. Then merchant can start collecting payment from bKash customer for any requested service from merchant website.
@@ -29,9 +29,9 @@ Using this plugin, merchant can setup bKash payment gateway with selected produc
 ### Available Payment Methods for bKash Payment Gateway in this plugin
 * Checkout Sale (Regular Checkout)
 * Checkout Authorised and Capture Payment
-* Tokenised - Without Agreement
-* Tokenised - With Agreement Only
-* Tokenised - Agreement and Without Agreement
+* Tokenized - Without Agreement
+* Tokenized - With Agreement Only
+* Tokenized - Agreement and Without Agreement
 
 ### Additional Features of different bKash payment gateway products.
 * Merchant Wallet Balance Check (In Checkout Only)
@@ -62,7 +62,7 @@ Using this plugin, merchant can setup bKash payment gateway with selected produc
          - Can refund a transaction.
          - Can disburse money to bKash customer wallet.
          - Can search a transaction from it's merchant wallet.
-   * ##### For Tokenisation:
+   * ##### For Tokenization:
          - Can setup bKash payment gateway.
          - Can manage credentials for bKash payment gateway.
          - Can set intent of payment modes. (Sale or Authorize)
@@ -82,6 +82,26 @@ Using this plugin, merchant can setup bKash payment gateway with selected produc
 * Now bKash PGW should be available for use.
 * Important! Change Permalink from Wordpress Settings → Reading to Post Name (etc).
 * Align .htaccess file accordingly with the guidance of Wordpress on permalink setting page.
+
+
+## Video Tutorials:
+
+
+* **Download & Install bKash WooCommerce Payment Plugin**
+  * Visit this link for the tutorial - https://drive.google.com/file/d/1ED5f1pfvAXrk2dZShUvvIIHEIUcIQ0Sg/view?usp=sharing
+* **Configure bKash Checkout WooCommerce Part-1**
+  * Visit this link for the tutorial - https://drive.google.com/file/d/15MlWEjkqus6k2LHv01nfUyCgsg5VSVWp/view?usp=sharing
+* **Process of bKash Checkout API Log File Creation Part 2.1**
+  * Visit this link for the tutorial - https://drive.google.com/file/d/1K0LbRzGWLSZfnieuCWmG5dAbRc-gicCD/view?usp=sharing
+* **Process of bKash Checkout-Refund API Log Part-2.2**
+  * Visit this link for the tutorial - https://drive.google.com/file/d/1TIqD24xIG9YvyjME0Y4sdJYYFPVXvDmy/view?usp=sharing
+* **Process of bKash Checkout-Search Transaction API Log Part-2.3**
+  * Visit this link for the tutorial - https://drive.google.com/file/d/1kFX45QwvxHwZJ9MAUJPXTYpTRQGBg5RF/view?usp=sharing
+* **Process of bKash Checkout-Error Case Implementation Part-2.4**
+  * Visit this link for the tutorial - https://drive.google.com/file/d/11DLX8KrstzHJj3w2UX89lMbTUQzQ5R7x/view?usp=sharing
+* **Process of bKash Checkout-Generate Final Log File (Checkout, Search, Error Case & Refund) Part-2.5**
+  * Visit this link for the tutorial - https://drive.google.com/file/d/15hXTl-KG2RwI94JX3yBBUURQq9X5G2g8/view?usp=sharing
+
 
 ### Webhook configuration process:
    Share webhook URL to bKash by collecting from WooCommerce settings for bKash payment gateway.

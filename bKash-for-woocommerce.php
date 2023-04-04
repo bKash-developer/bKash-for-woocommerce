@@ -1,16 +1,13 @@
 <?php
-
-namespace bKash\PGW;
-
 /**
  * Plugin Name:       bKash for WooCommerce
  * Plugin URI:        https://developer.bka.sh
  * Description:       A bKash payment gateway plugin for WooCommerce.
- * Version:           1.0.5
+ * Version:           1.0.9
  * Author:            bKash Limited
  * Author URI:        http://developer.bka.sh
  * Requires at least: 4.0
- * Tested up to:      4.0
+ * Tested up to:      6.2
  * Text Domain:       bkash-for-woocommerce
  * Domain Path:       languages
  * Network:           false
@@ -35,61 +32,56 @@ namespace bKash\PGW;
  * @category Payment
  */
 
+namespace bKash\PGW;
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
 define( 'BKASH_FW_BASE_PATH', plugin_dir_path( __FILE__ ) );
 define( 'BKASH_FW_BASE_URL', plugin_dir_url( __FILE__ ) );
-define( 'BKASH_FW_PLUGIN_SLUG', "bkash-for-woocommerce" );
-define( 'BKASH_FW_PLUGIN_VERSION', "1.0.5" );
-define( "BKASH_FW_PLUGIN_BASEPATH", plugin_basename( __FILE__ ) );
+define( 'BKASH_FW_PLUGIN_SLUG', 'bkash-for-woocommerce' );
+define( 'BKASH_FW_PLUGIN_VERSION', '1.0.8' );
+define( 'BKASH_FW_PLUGIN_BASEPATH', plugin_basename( __FILE__ ) );
+
+define( 'BKASH_FW_WC_API', '/wc-api/' );
+define( 'BKASH_FW_COMPLETED_STATUS', 'Completed' );
+define( 'BKASH_FW_CANCELLED_STATUS', 'Cancelled' );
+
 require BKASH_FW_BASE_PATH . 'vendor/autoload.php';
 
 use bKash\PGW\Admin\AdminDashboard;
 
-
 /**
  * Initiating tables on plugin activation
  */
-register_activation_hook( __FILE__, array( AdminDashboard::GetInstance(), 'BeginInstall' ) );
+register_activation_hook( __FILE__, array( AdminDashboard::getInstance(), 'beginInstall' ) );
 
+
+if ( ! class_exists( 'WooCommerceBkashPgw' ) ) {
+	/**
+	 * WooCommerce bKash Payment Gateway main class.
+	 *
+	 * @class WooCommerceBkashPgw
+	 */
+
+	add_action( 'plugins_loaded', array( WooCommerceBkashPgw::class, 'getInstance' ), 0 );
+} // end if class exists.
+
+
+if ( ! function_exists( 'WooCommerceBkashPgw' ) ) {
+	/**
+	 * Returns the main instance of WooCommerceBkashPgw to prevent the need to use globals.
+	 *
+	 * @return WooCommerceBkashPgw
+	 */
+	function WooCommerceBkashPgw(): WooCommerceBkashPgw {
+		return WooCommerceBkashPgw::getInstance();
+	}
+}
 
 /**
  * Adding menus to wp admin menu and generating tables for this plugin
  */
 $dashboard = new AdminDashboard();
-$dashboard->Initiate();
-
-
-/**
- * WC Detection
- */
-if ( ! function_exists( 'bKash_is_woocommerce_active' ) ) {
-	function bKash_is_woocommerce_active() {
-		return WC_Dependencies::bKash_woocommerce_active_check();
-	}
-}
-
-
-if ( ! class_exists( 'WC_Gateway_bKash' ) ) {
-
-	/**
-	 * WooCommerce bKash Payment Gateway main class.
-	 *
-	 * @class   WC_Gateway_bKash
-	 * @version 1.0.4
-	 */
-
-	add_action( 'plugins_loaded', array( WC_Gateway_bKash::class, 'get_instance' ), 0 );
-
-} // end if class exists.
-
-/**
- * Returns the main instance of WC_Gateway_bKash to prevent the need to use globals.
- *
- * @return WC_Gateway_bKash
- */
-function WC_Gateway_bKash(): WC_Gateway_bKash {
-	return WC_Gateway_bKash::get_instance();
-}
+$dashboard->initiate();
