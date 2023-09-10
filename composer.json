@@ -1,0 +1,25 @@
+{
+  "name": "bkash/woocomerce-bkash-pgw",
+  "description": "Collect payment from bKash account holders for your online purchase.",
+  "type": "library",
+  "license": "GPL2",
+  "authors": [
+    {
+      "name": "Md. Shahnawaz Ahmed",
+      "email": "shahnawaz.ahmed@bkash.com"
+    }
+  ],
+  "minimum-stability": "dev",
+  "require": {
+  },
+  "require-dev": {
+    "wp-coding-standards/wpcs": "2.3.*",
+    "dealerdirect/phpcodesniffer-composer-installer": "0.7.*",
+    "phpcompatibility/phpcompatibility-wp": "2.1.*"
+  },
+  "autoload": {
+    "psr-4": {
+      "bKash\\PGW\\": "includes/classes"
+    }
+  }
+}
