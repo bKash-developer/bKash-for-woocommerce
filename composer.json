@@ -1,25 +1,34 @@
 {
-  "name": "bkash/woocomerce-bkash-pgw",
+  "name": "bkash/woocommerce-bkash-pgw",
   "description": "Collect payment from bKash account holders for your online purchase.",
-  "type": "library",
-  "license": "GPL2",
+  "type": "wordpress-plugin",
+  "license": "GPL-2.0-or-later",
   "authors": [
     {
       "name": "Md. Shahnawaz Ahmed",
       "email": "shahnawaz.ahmed@bkash.com"
     }
   ],
-  "minimum-stability": "dev",
+  "minimum-stability": "stable",
   "require": {
+    "php": "^8.0 || ^8.1 || ^8.2 || ^8.3"
   },
   "require-dev": {
-    "wp-coding-standards/wpcs": "2.3.*",
-    "dealerdirect/phpcodesniffer-composer-installer": "0.7.*",
-    "phpcompatibility/phpcompatibility-wp": "2.1.*"
+    "wp-coding-standards/wpcs": "^3.1",
+    "dealerdirect/phpcodesniffer-composer-installer": "^1.0",
+    "phpcompatibility/phpcompatibility-wp": "^2.1"
   },
   "autoload": {
     "psr-4": {
-      "bKash\\PGW\\": "includes/classes"
+      "bKash\\PGW\\": "includes/classes/"
+    }
+  },
+  "config": {
+    "allow-plugins": {
+      "dealerdirect/phpcodesniffer-composer-installer": true
+    },
+    "platform": {
+      "php": "8.0"
     }
   }
 }

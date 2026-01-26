@@ -64,6 +64,35 @@ class Operations {
 			$response = is_string( $response['response'] ) ?
 				json_decode( $response['response'], true ) : array();
 
+			// Normalize keys: trim whitespace/control chars and map common variations
+			if ( is_array( $response ) ) {
+				$normalized = array();
+				foreach ( $response as $k => $v ) {
+					$clean_key = preg_replace('/\s+/', '', trim( (string) $k ) );
+					// map common API variants
+					switch ( strtolower( $clean_key ) ) {
+						case 'paymentid':
+							$clean_key = 'paymentID';
+							break;
+						case 'paymentid':
+							$clean_key = 'paymentID';
+							break;
+						case 'trxid':
+							$clean_key = 'trxID';
+							break;
+						case 'transactionstatus':
+							$clean_key = 'transactionStatus';
+							break;
+						default:
+							// preserve original casing if not matched
+							$clean_key = $clean_key;
+					}
+					$normalized[ $clean_key ] = $v;
+				}
+				$response = $normalized;
+			}
+
+
 			// If any error for tokenized
 			if ( isset( $response['statusMessage'] ) && $response['statusMessage'] !== 'Successful' ) {
 				$resp = $response['statusMessage'];

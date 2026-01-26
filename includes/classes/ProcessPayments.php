@@ -133,19 +133,38 @@ class ProcessPayments {
 									$order->update_status( 'pending' );
 								}
 
-								// Store the transaction ID for WC 2.2 or later.
-								add_post_meta( $order->get_id(), '_transaction_id', $paymentResp['trxID'], true );
+								// Store the transaction ID using the WC CRUD methods.
+								if ( method_exists( $order, 'set_transaction_id' ) ) {
+									$order->set_transaction_id( $paymentResp['trxID'] );
+								} else {
+									$order->update_meta_data( '_transaction_id', $paymentResp['trxID'] );
+								}
 
-								// Add order note.
-								$order->add_order_note(
-									sprintf( 'bKash PGW payment approved (ID: %s)', $paymentResp['trxID'] )
-								);
+								// Record completed time if provided by bKash (fallback to updateTime/createTime).
+								$completedRaw = $paymentResp['completedTime'] ?? $paymentResp['updateTime'] ?? $paymentResp['createTime'] ?? '';
+								$completedDatetime = '';
+								if ( ! empty( $completedRaw ) ) {
+									$clean = preg_replace( '/:(\d{3})/', '', $completedRaw );
+									$clean = str_replace( 'GMT', '', $clean );
+									$ts    = strtotime( $clean );
+									if ( $ts !== false ) {
+										$completedDatetime = date( 'Y-m-d H:i:s', $ts );
+									}
+								}
+
+								// Add order note for approval and completed time if available.
+								$note = sprintf( 'bKash PGW payment approved (ID: %s)', $paymentResp['trxID'] );
+								if ( $completedDatetime ) {
+									$note .= ' — Completed at: ' . $completedDatetime;
+									$order->update_meta_data( '_bkash_completed_time', $completedDatetime );
+								}
+								$order->add_order_note( $note );
 
 								if ( isset( $this->log ) && $this->log ) {
-									$this->log->add(
-										$this->id,
-										'bKash PGW payment approved (ID: ' . $response['trxID'] . ')'
-									);
+									if ( function_exists( 'wc_get_logger' ) ) {
+										$logger = wc_get_logger();
+										$logger->info( 'bKash PGW payment approved (ID: ' . ( $paymentResp['trxID'] ?? '' ) . ')', array( 'source' => BKASH_FW_PLUGIN_SLUG ) );
+									}
 								}
 
 								// Reduce stock levels.
@@ -157,6 +176,10 @@ class ProcessPayments {
 
 								// Return thank you page redirect.
 								if ( $this->integration_type === 'checkout' ) {
+									// Ensure order changes are persisted before returning JSON for AJAX checkout flows.
+									if ( method_exists( $order, 'save' ) ) {
+										$order->save();
+									}
 									echo wp_json_encode(
 										array(
 											'result'   => 'success',
@@ -164,6 +187,10 @@ class ProcessPayments {
 										)
 									);
 									die();
+								}
+								// Persist order changes (transaction id, meta and notes) before redirect.
+								if ( method_exists( $order, 'save' ) ) {
+									$order->save();
 								}
 								wp_safe_redirect( $orderPageURL );
 								die();

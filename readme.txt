@@ -1,10 +1,10 @@
 === bKash For WooCommerce ===
 Contributors: bkashpayment
 Tags: bKash,bKashPayment,bKashForWooCommerce,online payment,ecommerce,woocommerce
-Requires at least: 5.1
-Tested up to: 6.3.1
-Stable tag: 1.0.9
-Requires PHP: 7.0
+Requires at least: 6.0
+Tested up to: 6.9
+Stable tag: 2.0.0
+Requires PHP: 8.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -20,9 +20,9 @@ bKash PGW plugin is available for Merchants in Bangladesh, to accepts payments f
 
 
 ### Technical Requirements:
-* Wordpress (4.0 or above).
-* WooCommerce (2.0 or above).
-* PHP (7.0 or above)
+* WordPress (6.0 or above).
+* WooCommerce (7.0 or above).
+* PHP (8.0 or above)
 * MySQL (5.6 or above)
 * Change in Permalink so that .htaccess can be rewritable. (https://wpengine.com/resources/wordpress-permalinks/)
 * File write permission for wp-content directory.
@@ -145,7 +145,13 @@ Share webhook URL to bKash team by collecting from WooCommerce settings for bKas
 To capture a payment collected from customer, merchant has to change order status from ON-HOLD to 'COMPLETED'.
 To void a payment initiate by merchant, merchant has to change order status from ON-HOLD to 'CANCELLED'.
 
-If merchant wants to handle Capture/Void scenario programmatically, use standard WooCommerce API/Hooks to change the status.
+Admin Quick Actions: Authorized orders can now be captured or voided directly from the Order Edit page by users
+with appropriate permissions (shop managers / administrators). When viewing an order paid with bKash that is in
+the "on-hold" state and was authorized, merchant admins will see "Capture" and "Void" quick-action buttons in
+the order edit UI to complete these operations without changing the order status manually.
+
+If you prefer to automate Capture/Void programmatically, continue to use standard WooCommerce APIs/hooks to
+change the order status or trigger the same underlying actions.
 
 ### Additional Features
 
@@ -191,6 +197,15 @@ Ans: Visit this link for the tutorial - https://drive.google.com/file/d/15hXTl-K
 4. Transaction list for admin to check
 
 == Changelog ==
+= 2.0.0 =
+* Bumped minimum requirements: PHP 8.0, WooCommerce 7.0+ (breaking change).
+* Added WP-CLI migration helper for legacy agreement tokens and token persistence improvements.
+* Logging, webhook reliability, security fixes and admin/UI improvements.
+* Added admin quick actions (Capture / Void) on the Order Edit page for authorized bKash transactions.
+* Improved security (AJAX nonces, sensitive data redaction) and compatibility with PHP 8+. 
+* Integrated legacy agreement records with WooCommerce payment tokens and added WP-CLI migration helper.
+* Compatibility improvements for WooCommerce HPOS and other reliability fixes.
+
 = 1.0.9 =
 * Updated WP version support to 6.3.1 and blank page issue resolved.
 = 1.0.8 =

@@ -15,11 +15,14 @@ namespace bKash\PGW;
 use bKash\PGW\Models\Agreement;
 use bKash\PGW\Models\Transaction;
 use Exception;
-use WC_AJAX;
-use WC_Logger;
 use WC_Order;
 use WC_Payment_Gateway;
 use WP_Error;
+use bKash\PGW\ApiComm;
+use bKash\PGW\ProcessPayments;
+use bKash\PGW\Operations;
+use bKash\PGW\Utils;
+use WC_AJAX;
 
 /**
  * WooCommerce bKash Payment Gateway.
@@ -141,11 +144,8 @@ class PaymentGatewayBkash extends WC_Payment_Gateway {
 		$this->enable_b2c       = $this->get_option( 'enable_b2c' );
 		// Logs.
 		if ( $this->debug === 'yes' ) {
-			if ( class_exists( WC_Logger::class ) ) {
-				$this->log = new WC_Logger();
-			} else {
-				global $woocommerce;
-				$this->log = isset( $woocommerce ) ? $woocommerce->logger() : null;
+			if ( function_exists( 'wc_get_logger' ) ) {
+				$this->log = wc_get_logger();
 			}
 		}
 		$this->is_webhook = $this->get_option( 'webhook' );
@@ -220,7 +220,7 @@ class PaymentGatewayBkash extends WC_Payment_Gateway {
 				'default'     => 'no',
 				'description' => sprintf(
 					'Log bKash PGW events inside <code>%s</code>',
-					esc_html( wc_get_log_file_path( $this->id ) )
+					esc_html( WC_LOG_DIR . $this->id . '-' . wp_hash( $this->id ) . '.log' )
 				),
 			),
 			'enable_b2c'         => array(
@@ -590,7 +590,11 @@ class PaymentGatewayBkash extends WC_Payment_Gateway {
 	 * @return void
 	 */
 	final public function admin_options() {
-		include_once WooCommerceBkashPgw()->pluginPath() . '/includes/classes/Admin/views/admin-options.php';
+		if ( ! current_user_can( 'manage_woocommerce' ) ) {
+			wp_die( 'You do not have sufficient permissions to access this page.' );
+		}
+
+		include_once \WooCommerceBkashPgw()->pluginPath() . '/includes/classes/Admin/views/admin-options.php';
 	}
 
 	/**
@@ -669,8 +673,46 @@ class PaymentGatewayBkash extends WC_Payment_Gateway {
 			$agreementModel = new Agreement();
 			$agreements     = $agreementModel->getAgreements( $user_id );
 
+			// If WooCommerce payment tokens are available, merge them so tokenized agreements are shown.
+			if ( class_exists( 'WC_Payment_Tokens' ) ) {
+				try {
+					$tokens = \WC_Payment_Tokens::get_customer_tokens( $user_id, BKASH_FW_PLUGIN_SLUG );
+					if ( is_array( $tokens ) && ! empty( $tokens ) ) {
+						$token_agreements = array();
+						foreach ( $tokens as $t ) {
+							if ( method_exists( $t, 'get_token' ) ) {
+								$token_agreements[] = (object) array(
+									'agreement_token' => $t->get_token(),
+									'phone'           => $t->get_meta( 'phone' ),
+									'ID'              => $t->get_id(),
+								);
+							}
+						}
+						// Prefer WC tokens; append DB agreements that are not already represented
+						if ( empty( $agreements ) ) {
+							$agreements = $token_agreements;
+						} else {
+							foreach ( $token_agreements as $ta ) {
+								$found = false;
+								foreach ( $agreements as $a ) {
+									if ( isset( $a->agreement_token ) && $a->agreement_token === $ta->agreement_token ) {
+										$found = true;
+										break;
+									}
+								}
+								if ( ! $found ) {
+									$agreements[] = $ta;
+								}
+							}
+						}
+					}
+				} catch ( \Exception $e ) {
+					// ignore token read errors, fall back to DB agreements
+				}
+			}
+
 			// This includes your custom payment fields.
-			include_once WooCommerceBkashPgw()->pluginPath() . '/includes/classes/views/html-payment-fields.php';
+			include_once \WooCommerceBkashPgw()->pluginPath() . '/includes/classes/views/html-payment-fields.php';
 		} elseif ( $this->integration_type === 'tokenized' ) {
 			echo "<p style='color:red'>Please login to complete the payment</p>";
 		}
@@ -722,6 +764,7 @@ class PaymentGatewayBkash extends WC_Payment_Gateway {
 					'cancelAgreement'      => esc_url( $this->siteUrl . BKASH_FW_WC_API . $this->CANCEL_AGREEMENT_URL ),
 					'review_order_payment' => esc_url( $this->siteUrl . BKASH_FW_WC_API . $this->REVIEW_ORDER_URL ),
 					'bKashScriptURL'       => esc_url( $bk_script_url ),
+					'ajaxNonce'            => wp_create_nonce( 'bkash-ajax-nonce' ),
 				)
 			);
 		} else {
@@ -740,6 +783,7 @@ class PaymentGatewayBkash extends WC_Payment_Gateway {
 					'apiVersion'      => $this->api_version,
 					'sandbox'         => $this->sandbox,
 					'cancelAgreement' => esc_url( $this->siteUrl . BKASH_FW_WC_API . $this->CANCEL_AGREEMENT_URL ),
+					'ajaxNonce'       => wp_create_nonce( 'bkash-ajax-nonce' ),
 				)
 			);
 		}
@@ -771,6 +815,16 @@ class PaymentGatewayBkash extends WC_Payment_Gateway {
 
 		header( 'Content-Type: application/json' );
 
+		// Verify nonce
+		$nonce = Utils::safePostValue( 'security' );
+		if ( ! $nonce ) {
+			$nonce = Utils::safeGetValue( 'security' );
+		}
+		if ( empty( $nonce ) || ! wp_verify_nonce( $nonce, 'bkash-ajax-nonce' ) ) {
+			echo wp_json_encode( array( 'result' => 'failure', 'message' => 'Invalid nonce' ) );
+			die();
+		}
+
 		if ( $order_id ) {
 			echo wp_json_encode( $this->process_payment( $order_id ) );
 		} else {
@@ -794,6 +848,16 @@ class PaymentGatewayBkash extends WC_Payment_Gateway {
 		$order_id = Utils::safePostValue( 'orderId' );
 		if ( ! $order_id ) {
 			$order_id = Utils::safeGetValue( 'orderId' );
+		}
+
+		// Verify nonce for frontend calls
+		$nonce = Utils::safePostValue( 'security' );
+		if ( ! $nonce ) {
+			$nonce = Utils::safeGetValue( 'security' );
+		}
+		if ( empty( $nonce ) || ! wp_verify_nonce( $nonce, 'bkash-ajax-nonce' ) ) {
+			echo wp_json_encode( array( 'result' => 'failure', 'message' => 'Invalid nonce' ) );
+			die();
 		}
 
 		// To receive order id
@@ -820,6 +884,16 @@ class PaymentGatewayBkash extends WC_Payment_Gateway {
 			$order_id = Utils::safeGetValue( 'orderId' );
 		}
 
+		// Verify nonce for frontend cancel
+		$nonce = Utils::safePostValue( 'security' );
+		if ( ! $nonce ) {
+			$nonce = Utils::safeGetValue( 'security' );
+		}
+		if ( empty( $nonce ) || ! wp_verify_nonce( $nonce, 'bkash-ajax-nonce' ) ) {
+			echo wp_json_encode( array( 'result' => 'failure', 'message' => 'Invalid nonce' ) );
+			die();
+		}
+
 		$process = new ProcessPayments( $this->integration_type );
 		$resp    = $process->cancelPayment( $order_id );
 		echo wp_json_encode( $resp );
@@ -828,7 +902,20 @@ class PaymentGatewayBkash extends WC_Payment_Gateway {
 	}
 
 	final public function cancelAgreementApi() {
-		$agreement_id = Utils::safeGetValue( 'id' );
+		$agreement_id = Utils::safePostValue( 'id' );
+		if ( ! $agreement_id ) {
+			$agreement_id = Utils::safeGetValue( 'id' );
+		}
+
+		// Verify nonce to protect this action from CSRF
+		$nonce = Utils::safePostValue( 'bkash-ajax-nonce' );
+		if ( ! $nonce ) {
+			$nonce = Utils::safeGetValue( 'bkash-ajax-nonce' );
+		}
+		if ( empty( $nonce ) || ! wp_verify_nonce( $nonce, 'bkash-ajax-nonce' ) ) {
+			echo wp_json_encode( array( 'result' => 'failure', 'message' => 'Invalid nonce' ) );
+			die();
+		}
 
 		$agreementModel = new Agreement();
 		$agreement      = $agreementModel->getAgreement( $agreement_id );
@@ -844,6 +931,10 @@ class PaymentGatewayBkash extends WC_Payment_Gateway {
 				// CANCELED
 
 				$agreementModel->delete( $agreement_id );
+				// Also attempt to remove corresponding WC payment token if present.
+				if ( method_exists( $agreementModel, 'deleteWcTokenByToken' ) ) {
+					$agreementModel->deleteWcTokenByToken( $agreement_id );
+				}
 
 				echo wp_json_encode(
 					array(
@@ -971,10 +1062,7 @@ class PaymentGatewayBkash extends WC_Payment_Gateway {
 							);
 
 							if ( $this->debug === 'yes' ) {
-								$this->log->add(
-									$this->id,
-									'bKash PGW order #' . $order_id . ' refunded successfully!'
-								);
+								$this->safe_log( 'bKash PGW order #' . $order_id . ' refunded successfully!', 'info' );
 							}
 
 							return true;
@@ -999,11 +1087,7 @@ class PaymentGatewayBkash extends WC_Payment_Gateway {
 			$order->add_order_note( 'Error in refunding the order. ' . esc_html( $trx ) );
 
 			if ( $this->debug === 'yes' ) {
-				$this->log->add(
-					$this->id,
-					'Error in refunding the order #' . $order_id . '. bKash PGW response: '
-					. print_r( esc_html( $response ), true )
-				);
+				$this->safe_log( 'Error in refunding the order #' . $order_id . '. bKash PGW response: ' . wp_json_encode( $response ), 'error' );
 			}
 		}
 
@@ -1120,11 +1204,13 @@ class PaymentGatewayBkash extends WC_Payment_Gateway {
 			$webhook = new WebhookProcessor( wc_get_logger(), true );
 			$webhook->processRequest();
 		} else {
-			$this->log->add( $this->id, 'WebhookModule is not enabled in settings' );
+			$this->safe_log( 'WebhookModule is not enabled in settings', 'warning' );
 		}
 
 		$payload = (array) json_decode( file_get_contents( 'php://input' ), true );
-		$this->log->add( $this->id, 'WEBHOOK => BODY: ' . print_r( $payload, true ) );
+		// Avoid logging full webhook payloads to prevent leaking secrets. Log payload keys only.
+		$keys = is_array( $payload ) ? array_keys( $payload ) : array();
+		$this->safe_log( 'WEBHOOK => BODY KEYS: ' . implode( ',', $keys ), 'info' );
 
 		die();
 	}
@@ -1222,5 +1308,34 @@ class PaymentGatewayBkash extends WC_Payment_Gateway {
 	 */
 	final public function getTransactionUrl( WC_Order $order ): string {
 		return $this->get_transaction_url( $order );
+	}
+
+	/**
+	 * Safe logging wrapper that uses WooCommerce logger if available and debug is enabled.
+	 *
+	 * @param string $message
+	 * @param string $level one of 'info', 'warning', 'error'
+	 *
+	 * @return void
+	 */
+	public function safe_log( string $message, string $level = 'info' ): void {
+		if ( ! function_exists( 'wc_get_logger' ) ) {
+			return;
+		}
+		if ( isset( $this->debug ) && $this->debug !== 'yes' ) {
+			return;
+		}
+		$logger  = wc_get_logger();
+		$context = array( 'source' => $this->id ?? BKASH_FW_PLUGIN_SLUG );
+		switch ( $level ) {
+			case 'warning':
+				$logger->warning( $message, $context );
+				break;
+			case 'error':
+				$logger->error( $message, $context );
+				break;
+			default:
+				$logger->info( $message, $context );
+		}
 	}
 } // end class.

@@ -149,7 +149,49 @@ class Agreement {
 
 		$this->errorMessage = $this->wpdb->last_error; // set if any error or null
 
-		return $insert > 0 ? $this : null; // if inserted then it will return value greater than zero or false on error.
+		$result = $insert > 0 ? $this : null; // if inserted then it will return value greater than zero or false on error.
+
+		// Also create a WooCommerce payment token for this agreement for future WC_Payment_Tokens migration.
+		if ( $result && class_exists( 'WC_Payment_Token' ) ) {
+			try {
+				$token = new \WC_Payment_Token();
+				$token->set_token( $this->agreementID );
+				$token->set_gateway_id( BKASH_FW_PLUGIN_SLUG );
+				$token->set_user_id( (int) $this->userID );
+				$token->set_type( 'bKash' );
+				// store mobile number in token meta (not last4)
+				$token->add_meta_data( 'phone', $this->mobileNo );
+				$token->save();
+			} catch ( \Exception $e ) {
+				// don't break saving if tokens are not available or fail; record but continue
+				$this->errorMessage .= ' | WC token create error: ' . $e->getMessage();
+			}
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Delete the corresponding WC_Payment_Token if present.
+	 *
+	 * @param string $agreementID
+	 *
+	 * @return void
+	 */
+	final public function deleteWcTokenByToken( string $agreementID ): void {
+		if ( empty( $agreementID ) || ! class_exists( 'WC_Payment_Tokens' ) ) {
+			return;
+		}
+		try {
+			$tokens = \WC_Payment_Tokens::get_tokens( array( 'gateway_id' => BKASH_FW_PLUGIN_SLUG ) );
+			foreach ( $tokens as $token ) {
+				if ( method_exists( $token, 'get_token' ) && $token->get_token() === $agreementID ) {
+					$token->delete();
+				}
+			}
+		} catch ( \Exception $e ) {
+			// ignore
+		}
 	}
 
 	final public function update( array $data, array $where = array() ): bool {
@@ -207,6 +249,25 @@ class Agreement {
 				$this->dateTime    = $agreement->datetime ?? null;
 
 				return $this;
+			}
+		}
+
+		// If not found in legacy table, try WC_Payment_Tokens for the user
+		if ( ! empty( $user_id ) && class_exists( 'WC_Payment_Tokens' ) ) {
+			try {
+				$tokens = \WC_Payment_Tokens::get_customer_tokens( (int) $user_id, BKASH_FW_PLUGIN_SLUG );
+				if ( is_array( $tokens ) && ! empty( $tokens ) ) {
+					// take the most recent token
+					$token = reset( $tokens );
+					if ( method_exists( $token, 'get_token' ) ) {
+						$this->agreementID = $token->get_token();
+						$this->mobileNo    = $token->get_meta( 'phone' );
+						$this->userID      = $user_id;
+						return $this;
+					}
+				}
+			} catch ( \Exception $e ) {
+				// ignore and return null
 			}
 		}
 

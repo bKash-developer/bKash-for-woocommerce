@@ -10,7 +10,6 @@
  * @link        https://bkash.com
  */
 
-use function bKash\PGW\WooCommerceBkashPgw;
 
 ?>
 
@@ -100,7 +99,7 @@ if ( isset( $trx ) && is_string( $trx ) && ! empty( $trx ) ) {
 	// GOT TRANSACTION
 	?>
 	<div class="gateway-banner bKash-hero-div bKash-success">
-		<img style="max-width: 90px; margin: 10px 5px" alt="bKash logo" src="<?php echo esc_url( WooCommerceBkashPgw()->pluginUrl() . '/assets/images/logo.png' ); ?>"/>
+		<img style="max-width: 90px; margin: 10px 5px" alt="bKash logo" src="<?php echo esc_url( \WooCommerceBkashPgw()->pluginUrl() . '/assets/images/logo.png' ); ?>"/>
 		<p class="main">
 			<strong>
 				Transaction ID:

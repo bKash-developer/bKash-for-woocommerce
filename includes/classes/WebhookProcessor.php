@@ -15,18 +15,17 @@ namespace bKash\PGW;
 use bKash\PGW\Models\Webhook;
 use DateTime;
 use Exception;
-use WC_Logger;
 
 class WebhookProcessor {
 	private $payload;
 	private $context = array( "source" => BKASH_FW_PLUGIN_SLUG );
-	private $log;
+	private $logger;
 	private $canSubscribe;
 
 	private $messageType = "";
 	private $signingCertURL;
 
-	public function __construct( WC_Logger $logger = null, bool $canSubscribe = false ) {
+	public function __construct( $logger = null, bool $canSubscribe = false ) {
 		$this->canSubscribe = $canSubscribe;
 
 		// GET THE RAW STREAM OF POST PAYLOAD
@@ -35,9 +34,10 @@ class WebhookProcessor {
 			$this->messageType    = Utils::safeServerValue( "HTTP_X_AMZ_SNS_MESSAGE_TYPE" );
 			$this->signingCertURL = $this->payload->SigningCertURL ?? null;
 		}
-		if ( $logger ) {
-			$this->log = $logger;
+		if ( null === $logger && function_exists( 'wc_get_logger' ) ) {
+			$logger = wc_get_logger();
 		}
+		$this->logger = $logger;
 	}
 
 	/**
@@ -145,8 +145,8 @@ class WebhookProcessor {
 	 * @return void
 	 */
 	final public function writeLog( $logging_item ) {
-		if ( $this->log ) {
-			$this->log->debug( $logging_item, $this->context );
+		if ( $this->logger ) {
+			$this->logger->debug( $logging_item, $this->context );
 		}
 	}
 

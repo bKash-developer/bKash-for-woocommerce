@@ -119,7 +119,7 @@
 												dataType: "json",
 												data: {
 													action: 'bk_execute',
-													security: $( '#bkash-ajax-nonce' ).val(),
+													security: ( $( '#bkash-ajax-nonce' ).length ? $( '#bkash-ajax-nonce' ).val() : bKash_objects.ajaxNonce ),
 													'orderId': paymentObj.orderId,
 													'paymentID': paymentObj.paymentID,
 													'invoiceID': paymentObj.invoiceID,
@@ -223,7 +223,7 @@
 						dataType: "json",
 						data: {
 							action: 'bk_cancel',
-							security: $( '#bkash-ajax-nonce' ).val(),
+							security: ( $( '#bkash-ajax-nonce' ).length ? $( '#bkash-ajax-nonce' ).val() : bKash_objects.ajaxNonce ),
 							'orderId': paymentObj.orderId,
 							'paymentID': paymentObj.paymentID,
 							'invoiceID': paymentObj.invoiceID,

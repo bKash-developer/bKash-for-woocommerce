@@ -10,9 +10,7 @@
  * @link        https://bkash.com
  */
 
-use function bKash\PGW\WooCommerceBkashPgw;
-
-$logoUrl = esc_url( WooCommerceBkashPgw()->pluginUrl() . '/assets/images/logo.png' );
+$logoUrl = esc_url( \WooCommerceBkashPgw()->pluginUrl() . '/assets/images/logo.png' );
 ?>
 
 <h3>bKash Payment Gateway</h3>

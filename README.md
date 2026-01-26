@@ -3,15 +3,16 @@
 - User Story and Features
 - Prepared By: Prabal Mallick (Senior Officer, Product Integrations, Merchant Products, Product & Technology)
 - Dated: 10th September 2023
-- Version: 1.0.9
+- Version: 2.0.0
+- Maintained / Updated by: Muhammad Abid Hasan Turzo
 ```
 ### Introduction
 Using this plugin, merchant can setup bKash payment gateway with selected product. Then merchant can start collecting payment from bKash customer for any requested service from merchant website.
 
 ### Technical Requirements:
-* Wordpress (5.1 or above).
-* WooCommerce (2.0 or above).
-* PHP (7.0 or above)
+* WordPress (6.0 or above).
+* WooCommerce (7.0 or above).
+* PHP (8.0 or above)
 * MySQL (5.6 or above)
 * Change in Permalink so that .htaccess can be rewritable. (https://wpengine.com/resources/wordpress-permalinks/)
 * File write permission for wp-content directory.
@@ -71,7 +72,7 @@ Using this plugin, merchant can setup bKash payment gateway with selected produc
          - Can search a transaction from it's merchant wallet.
          - Can view and delete all agreements from customers.
 
-## Guids:
+## Guides:
 ### Steps to enable
 
 * Download and Setup Wordpress

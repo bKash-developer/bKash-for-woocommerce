@@ -15,6 +15,7 @@ namespace bKash\PGW;
 use Exception;
 use Throwable;
 use UnexpectedValueException;
+use bKash\PGW\Log;
 
 class ApiComm {
 	public $debug;
@@ -131,8 +132,8 @@ class ApiComm {
 			if ( isset( $get_token['status_code'] ) && $get_token['status_code'] === 200 ) {
 				$response = json_decode( $get_token['response'], true );
 				if ( isset( $response['id_token'] ) ) {
-					$this->token = $response['id_token'];
-					$expiry      = time() + $response['expires_in'];
+					$this->token = sanitize_text_field( $response['id_token'] );
+					$expiry      = time() + absint( $response['expires_in'] );
 
 					$this->addOrUpdateOption( 'bkash_grant_token', $this->token );
 					$this->addOrUpdateOption( 'bkash_grant_token_expiry', $expiry );
@@ -198,8 +199,8 @@ class ApiComm {
 			$headers = array_merge( $headers, $header );
 		}
 
-		$log .= 'HEADERS: ' . wp_json_encode( $headers ) . "\n";
-		$log .= 'BODY: ' . wp_json_encode( $post_data ) . "\n";
+		$log .= 'HEADERS: ' . wp_json_encode( Log::redact_sensitive( $headers ) ) . "\n";
+		$log .= 'BODY: ' . wp_json_encode( Log::redact_sensitive( $post_data ) ) . "\n";
 
 		$response = wp_remote_post(
 			$url,
@@ -214,7 +215,17 @@ class ApiComm {
 			)
 		);
 
-		$log .= 'RESPONSE: ' . wp_json_encode( $response ) . "\n\n";
+		$response_body = is_wp_error( $response ) ? $response->get_error_message() : wp_remote_retrieve_body( $response );
+		$response_decoded = json_decode( $response_body, true );
+		// Redact sensitive data from response body
+		$response_copy = $response;
+		if ( ! is_wp_error( $response ) && isset( $response['body'] ) ) {
+			$decoded_body = json_decode( $response['body'], true );
+			if ( is_array( $decoded_body ) ) {
+				$response_copy['body'] = wp_json_encode( Log::redact_sensitive( $decoded_body ) );
+			}
+		}
+		$log .= 'RESPONSE: ' . wp_json_encode( $response_copy ) . "\n\n";
 
 		if ( is_wp_error( $response ) ) {
 			$http_status = - 1;

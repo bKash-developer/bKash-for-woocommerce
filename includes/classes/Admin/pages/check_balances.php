@@ -10,8 +10,6 @@
  * @link        https://bkash.com
  */
 
-use function bKash\PGW\WooCommerceBkashPgw;
-
 if ( isset( $balances ) && is_string( $balances ) ) { ?>
 	<div id="message" class="woocommerce-message bKash-hero-div bKash-error-div"><p>
 			<?php esc_html_e( ( $balances ?? '' ), 'bkash-for-woocommerce' ); ?>
@@ -24,7 +22,7 @@ if ( isset( $balances ) && is_string( $balances ) ) { ?>
 		<div class="gateway-banner bKash-hero-div bKash-success">
 		<img style="max-width: 90px; margin: 10px 5px" alt="bkash logo check balance" src="
 		<?php
-		echo esc_url( WooCommerceBkashPgw()->pluginUrl() . '/assets/images/logo.png' );
+		echo esc_url( \WooCommerceBkashPgw()->pluginUrl() . '/assets/images/logo.png' );
 		?>
 		"/>
 		<p class="main"><strong>
