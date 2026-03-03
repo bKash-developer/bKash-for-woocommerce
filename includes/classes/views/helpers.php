@@ -39,42 +39,22 @@ if ( ! function_exists( 'bkShowAgreementTable' ) ) {
 				?>
 				<tr>
 					<td>
-						<label for="
-						<?php
-						esc_html_e( $agreement->agreement_token ?? '', 'bkash-for-woocommerce' );
-						?>
-						">
+						<label for="<?php esc_attr_e( $agreementToken, 'bkash-for-woocommerce' ); ?>">
 							<input
-								id="
-								<?php
-								esc_html_e( $agreementToken, 'bkash-for-woocommerce' );
-								?>
-								"
+								id="<?php esc_attr_e( $agreementToken, 'bkash-for-woocommerce' ); ?>"
 								type="radio"
 								name="agreement_id"
-								value="
-								<?php
-								esc_html_e( $agreementToken, 'bkash-for-woocommerce' );
-								?>
-								"
-								<?php
-								echo $i === 0 ? esc_html( 'checked' ) : '';
-								?>
+								value="<?php esc_attr_e( $agreementToken, 'bkash-for-woocommerce' ); ?>"
+								<?php echo $i === 0 ? 'checked' : ''; ?>
 							/>
-							<?php
-							esc_html_e( $agreement->phone ?? '', 'bkash-for-woocommerce' );
-							?>
+							<?php esc_html_e( $agreement->phone ?? '', 'bkash-for-woocommerce' ); ?>
 						</label>
 					</td>
 					<td>
 						<a
 							class="cancelAgreementButton"
 							href="javascript:void(0)"
-							data-agreement="
-							<?php
-							esc_html_e( $agreementToken, 'bkash-for-woocommerce' );
-							?>
-							"
+							data-agreement="<?php esc_attr_e( $agreementToken, 'bkash-for-woocommerce' ); ?>"
 						>Remove</a>
 					</td>
 				</tr>

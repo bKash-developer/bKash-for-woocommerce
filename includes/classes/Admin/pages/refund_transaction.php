@@ -95,33 +95,25 @@ if ( isset( $trx ) && is_string( $trx ) && ! empty( $trx ) ) {
 			</p>
 	</div>
 	<?php
-} elseif ( isset( $trx['refundTrxID'] ) && is_array( $trx ) ) {
+} elseif ( isset( $trx ) && is_array( $trx ) && ! empty( $trx['refundTrxId'] ?? $trx['refundTrxID'] ?? '' ) ) {
+	$refundTrxId   = $trx['refundTrxId'] ?? $trx['refundTrxID'] ?? '';
+	$originalTrxId = $trx['originalTrxId'] ?? $trx['originalTrxID'] ?? '';
+	$refundAmount  = $trx['refundAmount'] ?? $trx['amount'] ?? '';
+	$refundStatus  = $trx['refundTransactionStatus'] ?? $trx['transactionStatus'] ?? '';
 	// GOT TRANSACTION
 	?>
 	<div class="gateway-banner bKash-hero-div bKash-success">
 		<img style="max-width: 90px; margin: 10px 5px" alt="bKash logo" src="<?php echo esc_url( \WooCommerceBkashPgw()->pluginUrl() . '/assets/images/logo.png' ); ?>"/>
 		<p class="main">
-			<strong>
-				Transaction ID:
-				<?php
-				esc_html_e( $trx['originalTrxID'] ?? '', 'bkash-for-woocommerce' );
-				?>
-			</strong>
+			<strong>Transaction ID: <?php esc_html_e( $originalTrxId, 'bkash-for-woocommerce' ); ?></strong>
 		</p>
 		<hr>
-		<p>
-			Refund ID:
-			<b>
-			<?php
-				esc_html_e( $trx['refundTrxID'] ?? '', 'bkash-for-woocommerce' );
-			?>
-				</b>
-		</p>
+		<p>Refund ID: <b><?php esc_html_e( $refundTrxId, 'bkash-for-woocommerce' ); ?></b></p>
 		<p>Amount:
 			<b>
 				<?php
 				esc_html_e(
-					( $trx['amount'] ?? '' ) . ' ' . ( $trx['currency'] ?? '' ),
+					$refundAmount . ' ' . ( $trx['currency'] ?? '' ),
 					'bkash-for-woocommerce'
 				);
 				?>
@@ -129,34 +121,26 @@ if ( isset( $trx ) && is_string( $trx ) && ! empty( $trx ) ) {
 		</p>
 		<hr>
 		<ul>
-			<li>Charge: <strong>
-			<?php
-					esc_html_e( $trx['charge'] ?? '', 'bkash-for-woocommerce' );
-			?>
-					</strong></li>
+			<?php if ( ! empty( $trx['charge'] ?? $trx['serviceFee'] ?? '' ) ) { ?>
+			<li>Charge: <strong><?php esc_html_e( $trx['charge'] ?? $trx['serviceFee'] ?? '', 'bkash-for-woocommerce' ); ?></strong></li>
+			<?php } ?>
+			<?php if ( ! empty( $trx['sku'] ) ) { ?>
+			<li>SKU: <strong><?php esc_html_e( $trx['sku'], 'bkash-for-woocommerce' ); ?></strong></li>
+			<?php } ?>
+			<?php if ( ! empty( $trx['reason'] ) ) { ?>
+			<li>Reason: <strong><?php esc_html_e( $trx['reason'], 'bkash-for-woocommerce' ); ?></strong></li>
+			<?php } ?>
 			<li>
 				Completed At:
-				<strong>
-				<?php
-					esc_html_e( $trx['completedTime'] ?? '', 'bkash-for-woocommerce' );
-				?>
-					</strong>
+				<strong><?php esc_html_e( $trx['completedTime'] ?? '', 'bkash-for-woocommerce' ); ?></strong>
 			</li>
 		</ul>
 		<p>
 			<?php
-			$btn_class = isset( $trx['transactionStatus'] ) && $trx['transactionStatus'] === 'Completed'
-				? 'button-primary' : 'button';
+			$btn_class = $refundStatus === 'Completed' ? 'button-primary' : 'button';
 			?>
-			<button class="button button-small 
-			<?php
-			esc_attr_e( $btn_class, 'bkash-for-woocommerce' )
-			?>
-			">
-				Refund Status -
-				<?php
-				esc_html_e( $trx['transactionStatus'] ?? '', 'bkash-for-woocommerce' );
-				?>
+			<button class="button button-small <?php esc_attr_e( $btn_class, 'bkash-for-woocommerce' ); ?>">
+				Refund Status - <?php esc_html_e( $refundStatus, 'bkash-for-woocommerce' ); ?>
 			</button>
 		</p>
 	</div>

@@ -84,16 +84,5 @@ $logoUrl = esc_url( \WooCommerceBkashPgw()->pluginUrl() . '/assets/images/logo.p
 				production.show();
 			}
 		}).change();
-
-		jQuery('#woocommerce_' + bKash_slug + '_integration_type').change(function () {
-			let integration_type = jQuery(this).find(":selected").val();
-			let b2cSetting = jQuery("#woocommerce_" + bKash_slug + "_enable_b2c");
-
-			if (integration_type && integration_type.toLowerCase() === 'checkout') {
-				b2cSetting.closest("tr").show();
-			} else {
-				b2cSetting.closest("tr").hide();
-			}
-		}).change();
 	</script>
 </table>

@@ -42,8 +42,9 @@ class PaymentGatewayBkash extends WC_Payment_Gateway {
 	private $FAILURE_CALLBACK_URL = 'bkash_payment_failure';
 	private $EXECUTE_URL          = 'bk_execute';
 	private $PAYMENT_CANCEL_URL   = 'bk_cancel';
-	private $CANCEL_AGREEMENT_URL = 'bk_cancel_agreement';
-	private $REVIEW_ORDER_URL     = 'bk_review_order';
+	private $CANCEL_AGREEMENT_URL     = 'bk_cancel_agreement';
+	private $AGREEMENT_CALLBACK_URL   = 'bk_agreement_callback';
+	private $REVIEW_ORDER_URL         = 'bk_review_order';
 	private $WEBHOOK_URL          = 'bkash_webhook';
 	/**
 	 * @var string|null
@@ -86,10 +87,6 @@ class PaymentGatewayBkash extends WC_Payment_Gateway {
 	 * @var string|null
 	 */
 	private $integration_type;
-	/**
-	 * @var string|null
-	 */
-	private $enable_b2c;
 
 	/**
 	 * Constructor for the gateway.
@@ -141,7 +138,6 @@ class PaymentGatewayBkash extends WC_Payment_Gateway {
 		$this->username         = $this->getEnvSpecificOption( 'username' );
 		$this->password         = $this->getEnvSpecificOption( 'password' );
 		$this->debug            = $this->get_option( 'debug' );
-		$this->enable_b2c       = $this->get_option( 'enable_b2c' );
 		// Logs.
 		if ( $this->debug === 'yes' ) {
 			if ( function_exists( 'wc_get_logger' ) ) {
@@ -187,10 +183,10 @@ class PaymentGatewayBkash extends WC_Payment_Gateway {
 				'type'        => 'select',
 				'description' => 'Payment will be initiated with selected bKash PGW integration type',
 				'options'     => array(
-					'checkout'       => 'Checkout',
+					// 'checkout'       => 'Checkout',
 					'checkout-url'   => 'Checkout URL (Tokenized Non-Agreement)',
 					'tokenized'      => 'Tokenized (With Agreement)',
-					'tokenized-both' => 'Tokenized (With and without Agreement)',
+					'tokenized-both' => 'Tokenized (With or without Agreement)',
 				),
 				'default'     => 'checkout',
 				'desc_tip'    => true,
@@ -206,13 +202,13 @@ class PaymentGatewayBkash extends WC_Payment_Gateway {
 				'default'     => 'checkout',
 				'desc_tip'    => true,
 			),
-			'bkash_api_version'  => array(
-				'title'       => 'API Version',
-				'type'        => 'text',
-				'description' => 'This api version will be used for calling API to bKash',
-				'default'     => 'v1.2.0-beta',
-				'desc_tip'    => true,
-			),
+			// 'bkash_api_version'  => array(
+			// 	'title'       => 'API Version',
+			// 	'type'        => 'text',
+			// 	'description' => 'This api version will be used for calling API to bKash',
+			// 	'default'     => 'v1.2.0-beta',
+			// 	'desc_tip'    => true,
+			// ),
 			'debug'              => array(
 				'title'       => 'Debug Log',
 				'type'        => 'checkbox',
@@ -222,13 +218,6 @@ class PaymentGatewayBkash extends WC_Payment_Gateway {
 					'Log bKash PGW events inside <code>%s</code>',
 					esc_html( WC_LOG_DIR . $this->id . '-' . wp_hash( $this->id ) . '.log' )
 				),
-			),
-			'enable_b2c'         => array(
-				'title'       => 'Enable B2C API',
-				'type'        => 'checkbox',
-				'label'       => 'Enable B2C API',
-				'default'     => 'no',
-				'description' => 'Enable B2C Disbursement API',
 			),
 			'webhook'            => array(
 				'title'       => 'Webhook',
@@ -353,6 +342,7 @@ class PaymentGatewayBkash extends WC_Payment_Gateway {
 		add_action( 'woocommerce_api_' . $this->EXECUTE_URL, array( $this, 'createPaymentCallbackProcess' ) );
 		add_action( 'woocommerce_api_' . $this->PAYMENT_CANCEL_URL, array( $this, 'cancelPaymentProcess' ) );
 		add_action( 'woocommerce_api_' . $this->CANCEL_AGREEMENT_URL, array( $this, 'cancelAgreementApi' ) );
+		add_action( 'woocommerce_api_' . $this->AGREEMENT_CALLBACK_URL, array( $this, 'createAgreementCallbackProcess' ) );
 		add_action( 'woocommerce_api_' . $this->REVIEW_ORDER_URL, array( $this, 'processReviewOrderPayment' ) );
 		// WebhookModule
 		add_action( 'woocommerce_api_' . $this->WEBHOOK_URL, array( $this, 'webhook' ) );
@@ -377,7 +367,7 @@ class PaymentGatewayBkash extends WC_Payment_Gateway {
 			if ( $transaction ) {
 				if ( $transaction->getStatus() === 'Authorized' ) {
 					$comm        = new ApiComm();
-					$captureCall = $comm->capturePayment( $transaction->getPaymentID() );
+					$captureCall = $comm->capturePayment( $transaction->getPaymentID(), $transaction->getMode() ?? '0011' );
 
 					if ( isset( $captureCall['status_code'] ) && $captureCall['status_code'] === 200 ) {
 						$captured = array();
@@ -500,7 +490,7 @@ class PaymentGatewayBkash extends WC_Payment_Gateway {
 			if ( $transaction ) {
 				if ( $transaction->getStatus() === 'Authorized' ) {
 					$comm      = new ApiComm();
-					$void_call = $comm->voidPayment( $transaction->getPaymentID() );
+					$void_call = $comm->voidPayment( $transaction->getPaymentID(), $transaction->getMode() ?? '0011' );
 
 					if ( isset( $void_call['status_code'] ) && $void_call['status_code'] === 200 ) {
 						$voided = array();
@@ -839,9 +829,10 @@ class PaymentGatewayBkash extends WC_Payment_Gateway {
 	}
 
 	final public function process_payment( $order_id ) {
-		$cbURL = get_site_url() . BKASH_FW_WC_API . $this->CALLBACK_URL . '?orderId=' . $order_id;
+		$cbURL          = get_site_url() . BKASH_FW_WC_API . $this->CALLBACK_URL . '?orderId=' . $order_id;
+		$agreementCbURL = get_site_url() . BKASH_FW_WC_API . $this->AGREEMENT_CALLBACK_URL . '?orderId=' . $order_id;
 
-		return ( new ProcessPayments( $this->integration_type ) )->createPayment( $order_id, $this->intent, $cbURL );
+		return ( new ProcessPayments( $this->integration_type ) )->createPayment( $order_id, $this->intent, $cbURL, null, $agreementCbURL );
 	}
 
 	final public function createPaymentCallbackProcess() {
@@ -850,31 +841,113 @@ class PaymentGatewayBkash extends WC_Payment_Gateway {
 			$order_id = Utils::safeGetValue( 'orderId' );
 		}
 
-		// Verify nonce for frontend calls
-		$nonce = Utils::safePostValue( 'security' );
-		if ( ! $nonce ) {
-			$nonce = Utils::safeGetValue( 'security' );
-		}
-		if ( empty( $nonce ) || ! wp_verify_nonce( $nonce, 'bkash-ajax-nonce' ) ) {
-			echo wp_json_encode( array( 'result' => 'failure', 'message' => 'Invalid nonce' ) );
-			die();
+		$invoice_id = Utils::safePostValue( 'invoiceId' );
+		if ( ! $invoice_id ) {
+			$invoice_id = Utils::safeGetValue( 'invoiceId' );
 		}
 
-		// To receive order id
+		$agreement_id = Utils::safePostValue( 'agreementId' );
+		if ( ! $agreement_id ) {
+			$agreement_id = Utils::safeGetValue( 'agreementId' );
+		}
+
 		$order = wc_get_order( $order_id );
-		if ( $order ) {
-			$cbURL = get_site_url() . BKASH_FW_WC_API . $this->CALLBACK_URL . '?orderId=' . $order_id;
-
-			$process = new ProcessPayments( $this->integration_type );
-			$process->executePayment( $this->get_return_url( $order ), $cbURL );
-		} else {
+		if ( ! $order ) {
 			echo wp_json_encode(
 				array(
 					'result'  => 'failure',
-					'message' => 'Order not found',
+					'message' => 'Order not found. Order ID: ' . $order_id,
 				)
 			);
+			die();
 		}
+
+		// Validate invoice ID against the stored transaction
+		$trx         = new Transaction();
+		$transaction = $trx->getTransaction( $invoice_id );
+		if ( ! $transaction || $transaction->getOrderID() !== $order_id ) {
+			echo wp_json_encode(
+				array(
+					'result'  => 'failure',
+					'message' => 'Invoice ID mismatch or transaction not found.',
+				)
+			);
+			die();
+		}
+
+		$cbURL = get_site_url() . BKASH_FW_WC_API . $this->CALLBACK_URL . '?orderId=' . $order_id . '&invoiceID=' . $invoice_id;
+
+		$process = new ProcessPayments( $this->integration_type );
+		$process->executePayment( $this->get_return_url( $order ), $cbURL, $agreement_id );
+		die();
+	}
+
+	/**
+	 * Agreement Callback Handler
+	 *
+	 * Called when bKash redirects the user back after agreement approval/failure/cancel.
+	 * bKash sends: orderId, agreementId, status, signature (no paymentID or invoiceID).
+	 * Looks up the transaction by order_id, then calls handleAgreementCallback.
+	 */
+	final public function createAgreementCallbackProcess() {
+		$order_id = Utils::safeGetValue( 'orderId' );
+		$status   = Utils::safeGetValue( 'status' );
+		$agreement_id = Utils::safeGetValue( 'agreementId' );
+
+		header( 'Content-Type: application/json' );
+
+		if ( empty( $order_id ) ) {
+			wp_send_json_error( array( 'message' => 'Order ID is missing.' ) );
+		}
+
+		$order = wc_get_order( $order_id );
+		if ( ! $order ) {
+			wp_send_json_error( array( 'message' => 'Order not found.' ) );
+		}
+
+		$trx         = new Models\Transaction();
+		$transaction = $trx->getTransactionByOrderId( $order_id );
+
+		if ( ! $transaction || $transaction->getMode() !== '0000' ) {
+			wp_send_json_error( array( 'message' => 'Agreement transaction not found for this order.' ) );
+		}
+
+		$process = new ProcessPayments( $this->integration_type );
+		if ( $status === 'success' ) {
+			$transaction->update( array( 'status' => 'CALLBACK_REACHED' ) );
+
+			$agreementResult = $process->handleAgreementCallback(
+				$agreement_id,
+				$order->get_user_id()
+			);
+
+			if ( $agreementResult['success'] ) {
+				$transaction->update( array( 'status' => 'AgreementCompleted', 'mode' => '0001' ) );
+				add_post_meta( $order->get_id(), '_bkmode', '0001', true );
+
+				wp_send_json_success( array(
+					'message'     => 'Agreement created and executed successfully.',
+					'agreementID' => $agreementResult['agreementID'],
+					'data'        => $agreementResult['data'] ?? array(),
+				) );
+			} else {
+				$transaction->update( array( 'status' => 'AgreementFailed' ) );
+				$order->add_order_note( 'bKash Agreement failed: ' . ( $agreementResult['message'] ?? '' ) );
+
+				wp_send_json_error( array(
+					'message' => $agreementResult['message'] ?? 'Agreement execution failed.',
+					'data'    => $agreementResult['data'] ?? array(),
+				) );
+			}
+			die();
+		}
+
+		// Agreement was cancelled or failed at bKash
+		$statusLabel = str_replace( array( 'cancel', 'failure' ), array( 'Cancelled', 'Failed' ), $status );
+		$transaction->update( array( 'status' => $statusLabel ) );
+		$order->add_order_note( 'bKash Agreement ' . $statusLabel );
+
+		wp_send_json_error( array( 'message' => 'Agreement ' . $statusLabel ) );
 		die();
 	}
 
@@ -919,27 +992,26 @@ class PaymentGatewayBkash extends WC_Payment_Gateway {
 
 		$agreementModel = new Agreement();
 		$agreement      = $agreementModel->getAgreement( $agreement_id );
-		$isSameUser     = $agreement && ( (int) $agreement->getUserID() ) === get_current_user_id();
-		if ( $isSameUser ) {
+
+		if ( $agreement && ( (int) $agreement->getUserID() ) === get_current_user_id() ) {
 			$api            = new ApiComm();
-			$cancelUsingAPI = $api->agreementCancel( $agreement_id );
+			$cancelUsingAPI = $api->agreementCancel( $agreement->getAgreementID() );
 
-			$decoded_response = isset( $cancelUsingAPI['response'] ) && is_string( $cancelUsingAPI['response'] ) ?
-				json_decode( $cancelUsingAPI['response'], true ) : array();
-			if ( isset( $decoded_response['agreementStatus'] ) && $decoded_response['agreementStatus'] === BKASH_FW_CANCELLED_STATUS
-			) {
-				// CANCELED
-
-				$agreementModel->delete( $agreement_id );
+			$decoded_response = isset( $cancelUsingAPI['response'] ) && is_string( $cancelUsingAPI['response'] )
+									? json_decode( $cancelUsingAPI['response'], true )
+									: array();
+			if ( isset( $decoded_response['agreementStatus'] ) && $decoded_response['agreementStatus'] === BKASH_FW_CANCELLED_STATUS)
+			{
+				$agreementModel->delete( $agreement->getAgreementID() );
 				// Also attempt to remove corresponding WC payment token if present.
 				if ( method_exists( $agreementModel, 'deleteWcTokenByToken' ) ) {
-					$agreementModel->deleteWcTokenByToken( $agreement_id );
+					$agreementModel->deleteWcTokenByToken( $agreement->getAgreementID() );
 				}
 
 				echo wp_json_encode(
 					array(
 						'result'  => 'success',
-						'message' => 'Token for that agreement has been deleted',
+						'message' => 'Agreement Token has been deleted',
 					)
 				);
 				die();
@@ -1007,21 +1079,10 @@ class PaymentGatewayBkash extends WC_Payment_Gateway {
 					$transaction->getPaymentID(),
 					$transaction->getTrxID(),
 					$transaction->getOrderID(),
-					$reason ?? 'Refund Purpose'
+					! empty( $reason ) ? $reason : 'Refund Purpose'
 				);
 
 				if ( isset( $call['status_code'] ) && $call['status_code'] === 200 ) {
-					// response sample
-					// array(7) {
-					// ["completedTime"]=> string(32) "2021-02-21T15:40:17:162 GMT+0000"
-					// ["transactionStatus"]=> string(9) "Completed"
-					// ["originalTrxID"]=> string(10) "8BI704KGJX"
-					// ["refundTrxID"]=> string(10) "8BL204KJ0E"
-					// ["amount"]=> string(5) "10.00"
-					// ["currency"]=> string(3) "BDT"
-					// ["charge"]=> string(4) "0.00"
-					// }
-
 					$trx = array();
 					if ( isset( $call['response'] ) && is_string( $call['response'] ) ) {
 						$trx = json_decode( $call['response'], true );
@@ -1032,48 +1093,62 @@ class PaymentGatewayBkash extends WC_Payment_Gateway {
 						$trx = $trx['statusMessage'];
 					} elseif ( isset( $trx['errorCode'] ) ) { // If any error for checkout
 						$trx = $trx['errorMessage'] ?? '';
-					} elseif ( isset( $trx['transactionStatus'] ) && $trx['transactionStatus'] === 'Completed' ) {
-						if ( isset( $trx['refundTrxID'] ) && ! empty( $trx['refundTrxID'] ) ) {
-							$this->refundObj = $trx; // so that another class can get the information
+					} else {
+						// Normalize v2 keys to v1 keys for compatibility
+						$txnStatus  = $trx['refundTransactionStatus'] ?? $trx['transactionStatus'] ?? '';
+						$refundTrxId = $trx['refundTrxId'] ?? $trx['refundTrxID'] ?? '';
+						$originalTrxId = $trx['originalTrxId'] ?? $trx['originalTrxID'] ?? '';
+						$refundAmt  = $trx['refundAmount'] ?? $trx['amount'] ?? 0;
 
-							wc_create_refund(
-								array(
-									'amount'         => $amount,
-									'reason'         => $reason,
-									'order_id'       => $order_id,
-									'refund_payment' => false,
-								)
-							);
+						if ( $txnStatus === 'Completed' ) {
+							if ( ! empty( $refundTrxId ) ) {
+								$this->refundObj = $trx; // so that another class can get the information
 
-							$order->add_order_note(
-								sprintf(
-									'bKash PGW: Refunded %s - Refund ID: %s',
-									$refundAmount,
-									$trx['refundTrxID']
-								)
-							);
+								wc_create_refund(
+									array(
+										'amount'         => $amount,
+										'reason'         => $reason,
+										'order_id'       => $order_id,
+										'refund_payment' => false,
+									)
+								);
 
-							$transaction->update(
-								array(
-									'refund_id'     => $trx['refundTrxID'],
-									'refund_amount' => $trx['amount'] ?? 0,
-								),
-								array( 'invoice_id' => $transaction->getInvoiceID() )
-							);
+								$order->add_order_note(
+									sprintf(
+										'bKash PGW: Refunded %s - Refund ID: %s',
+										$refundAmount,
+										$refundTrxId
+									)
+								);
 
-							if ( $this->debug === 'yes' ) {
-								$this->safe_log( 'bKash PGW order #' . $order_id . ' refunded successfully!', 'info' );
+								$transaction->update(
+									array(
+										'refund_id'     => $refundTrxId,
+										'refund_amount' => $refundAmt,
+									),
+									array( 'invoice_id' => $transaction->getInvoiceID() )
+								);
+
+								if ( $this->debug === 'yes' ) {
+									$this->safe_log( 'bKash PGW order #' . $order_id . ' refunded successfully!', 'info' );
+								}
+
+								return true;
 							}
 
-							return true;
+							$trx = 'Refund was not successful, no refund id found, try again';
+						} else {
+							$trx = 'Refund was not successful, transaction is not in completed state, try again';
 						}
-
-						$trx = 'Refund was not successful, no refund id found, try again';
-					} else {
-						$trx = 'Refund was not successful, transaction is not in completed state, try again';
 					}
 				} else {
-					$trx = 'Cannot refund the transaction using bKash server right now, try again';
+					// Non-200 response — try to extract bKash error message
+					$errBody = array();
+					if ( isset( $call['response'] ) && is_string( $call['response'] ) ) {
+						$errBody = json_decode( $call['response'], true );
+					}
+					$trx = $errBody['errorMessageEn'] ?? $errBody['errorMessage'] ?? $errBody['statusMessage']
+						?? 'Cannot refund the transaction using bKash server right now, try again';
 				}
 			} else {
 				$trx = 'This transaction already has been refunded, try again';
@@ -1120,20 +1195,35 @@ class PaymentGatewayBkash extends WC_Payment_Gateway {
 		if ( $transaction ) {
 			if ( ! empty( $transaction->getRefundID() ) ) {
 				$comm = new ApiComm();
-				$call = $comm->refund(
-					null,
+				$call = $comm->refundStatus(
 					$transaction->getPaymentID(),
-					$transaction->getTrxID(),
-					null,
-					null
+					$transaction->getTrxID()
 				);
 
 				if ( isset( $call['status_code'] ) && $call['status_code'] === 200 ) {
-					return isset( $call['response'] ) && is_string( $call['response'] )
+					$data = isset( $call['response'] ) && is_string( $call['response'] )
 						? json_decode( $call['response'], true ) : array();
+
+					// Refund status API nests refund details inside refundTransactions array.
+					// Flatten the first entry into the top-level array so the template can read it.
+					if ( ! empty( $data['refundTransactions'] ) && is_array( $data['refundTransactions'] ) ) {
+						$first = $data['refundTransactions'][0];
+						$data  = array_merge( $data, $first );
+						unset( $data['refundTransactions'] );
+					}
+
+					return $data;
 				}
 
-				$trx = 'Cannot check refund status using bKash server right now, try again';
+				// Parse error message from non-200 response.
+				$error_msg = 'Cannot check refund status using bKash server right now, try again';
+				if ( isset( $call['response'] ) && is_string( $call['response'] ) ) {
+					$err_data = json_decode( $call['response'], true );
+					if ( is_array( $err_data ) ) {
+						$error_msg = $err_data['errorMessageEn'] ?? $err_data['errorMessage'] ?? $err_data['statusMessage'] ?? $error_msg;
+					}
+				}
+				$trx = $error_msg;
 			} else {
 				$trx = 'This transaction is not refunded yet, try again';
 			}

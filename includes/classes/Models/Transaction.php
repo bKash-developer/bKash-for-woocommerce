@@ -514,4 +514,32 @@ class Transaction {
 
 		return $transaction;
 	}
+
+	/**
+	 * Get the payment transaction (non-empty trx_id) for a given order.
+	 *
+	 * Unlike getTransactionByOrderId, this filters out agreement-only rows
+	 * (which have an empty trx_id) and returns the most recent payment row.
+	 *
+	 * @param string|int $order_id
+	 *
+	 * @return Transaction|null
+	 */
+	final public function getPaymentTransactionByOrderId( $order_id ) {
+		$tableName  = Utils::safeSqlString( $this->tableName );
+		$whereValue = Utils::safeSqlString( $order_id ?? '' );
+		$sqlQuery   = "SELECT * FROM $tableName WHERE `order_id` = %s AND `trx_id` IS NOT NULL AND `trx_id` != '' ORDER BY `id` DESC LIMIT 1";
+
+		if ( ! empty( $order_id ) && ! is_null( $this->wpdb ) ) {
+			$row = $this->wpdb->get_row(
+				$this->wpdb->prepare( $sqlQuery, $whereValue )
+			);
+
+			if ( $row ) {
+				return $this->buildTransaction( $row );
+			}
+		}
+
+		return null;
+	}
 }

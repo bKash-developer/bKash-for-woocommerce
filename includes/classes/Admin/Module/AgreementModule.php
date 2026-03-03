@@ -50,6 +50,44 @@ class AgreementModule {
 	}
 
 	/**
+	 * Search/query an agreement from bKash API by agreement ID.
+	 *
+	 * @return void
+	 */
+	public static function agreementSearch() {
+		try {
+			$agreement_id = Utils::safePostValue( 'agreement_id' );
+
+			if ( ! empty( $agreement_id ) ) {
+				$api  = new ApiComm();
+				$call = $api->queryAgreement( $agreement_id );
+
+				if ( isset( $call['status_code'] ) && $call['status_code'] === 200 ) {
+					$agreement = array();
+					if ( isset( $call['response'] ) && is_string( $call['response'] ) ) {
+						$agreement = json_decode( $call['response'], true );
+					}
+
+					// If any error
+					if ( isset( $agreement['errorMessageEn'] ) && ! empty( $agreement['errorMessageEn'] ) ) {
+						$agreement = $agreement['errorMessageEn'];
+					} elseif ( isset( $agreement['errorMessage'] ) && ! empty( $agreement['errorMessage'] ) ) {
+						$agreement = $agreement['errorMessage'];
+					} elseif ( isset( $agreement['statusMessage'] ) && $agreement['statusMessage'] !== 'Successful' ) {
+						$agreement = $agreement['statusMessage'];
+					}
+				} else {
+					$agreement = 'Cannot find the agreement from bKash server right now, try again';
+				}
+			}
+		} catch ( \Exception $ex ) {
+			$agreement = $ex->getMessage();
+		}
+
+		include_once BKASH_FW_BASE_PATH . '/includes/classes/Admin/pages/agreement_search.php';
+	}
+
+	/**
 	 * @return void
 	 */
 	private static function processCancelAgreementIfRequested() {

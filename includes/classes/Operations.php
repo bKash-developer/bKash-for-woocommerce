@@ -42,7 +42,13 @@ class Operations {
 				break;
 			case 'tokenized-both':
 				// agreement checking required
-				$mode = $isAgreement ? '0000' : '0001';
+				if ( $isAgreement ) {
+					$mode = '0000'; // create agreement
+				} elseif ( ! empty( $agreementID ) ) {
+					$mode = '0001'; // pay with existing agreement
+				} else {
+					$mode = '0011'; // no agreement → checkout-url flow
+				}
 				break;
 			default:
 				break;
@@ -74,14 +80,23 @@ class Operations {
 						case 'paymentid':
 							$clean_key = 'paymentID';
 							break;
-						case 'paymentid':
-							$clean_key = 'paymentID';
-							break;
 						case 'trxid':
 							$clean_key = 'trxID';
 							break;
 						case 'transactionstatus':
 							$clean_key = 'transactionStatus';
+							break;
+						case 'agreementid':
+							$clean_key = 'agreementID';
+							break;
+						case 'agreementstatus':
+							$clean_key = 'agreementStatus';
+							break;
+						case 'agreementexecutetime':
+							$clean_key = 'agreementExecuteTime';
+							break;
+						case 'payeraccount':
+							$clean_key = 'payerAccount';
 							break;
 						default:
 							// preserve original casing if not matched

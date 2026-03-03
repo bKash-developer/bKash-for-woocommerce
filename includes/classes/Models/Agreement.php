@@ -151,23 +151,6 @@ class Agreement {
 
 		$result = $insert > 0 ? $this : null; // if inserted then it will return value greater than zero or false on error.
 
-		// Also create a WooCommerce payment token for this agreement for future WC_Payment_Tokens migration.
-		if ( $result && class_exists( 'WC_Payment_Token' ) ) {
-			try {
-				$token = new \WC_Payment_Token();
-				$token->set_token( $this->agreementID );
-				$token->set_gateway_id( BKASH_FW_PLUGIN_SLUG );
-				$token->set_user_id( (int) $this->userID );
-				$token->set_type( 'bKash' );
-				// store mobile number in token meta (not last4)
-				$token->add_meta_data( 'phone', $this->mobileNo );
-				$token->save();
-			} catch ( \Exception $e ) {
-				// don't break saving if tokens are not available or fail; record but continue
-				$this->errorMessage .= ' | WC token create error: ' . $e->getMessage();
-			}
-		}
-
 		return $result;
 	}
 
@@ -224,6 +207,11 @@ class Agreement {
 	 * @return $this|null
 	 */
 	final public function getAgreement( string $agreementID = '', string $user_id = '', string $id = '' ) {
+		// Decode any HTML entities (e.g. &#10; &#9;) injected by FILTER_SANITIZE_SPECIAL_CHARS and trim whitespace.
+		$agreementID = trim( html_entity_decode( $agreementID, ENT_QUOTES | ENT_HTML5, 'UTF-8' ) );
+		$user_id     = trim( html_entity_decode( $user_id, ENT_QUOTES | ENT_HTML5, 'UTF-8' ) );
+		$id          = trim( html_entity_decode( $id, ENT_QUOTES | ENT_HTML5, 'UTF-8' ) );
+
 		$primaryKey = 'ID';
 		$tableName  = Utils::safeSqlString( $this->tableName );
 		if ( ! empty( $agreementID ) ) {

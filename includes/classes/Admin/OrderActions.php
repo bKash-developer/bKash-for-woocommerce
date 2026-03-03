@@ -59,7 +59,7 @@ class OrderActions {
 
         // Only allow buttons for authorized bKash transactions on on-hold orders
         $trxObj = new Transaction();
-        $transaction = $trxObj->getTransactionByOrderId( $order_id );
+        $transaction = $trxObj->getPaymentTransactionByOrderId( $order_id );
         if ( ! $transaction ) {
             return;
         }
@@ -238,7 +238,7 @@ class OrderActions {
         }
 
         $trxObj = new Transaction();
-        $transaction = $trxObj->getTransactionByOrderId( $order_id );
+        $transaction = $trxObj->getPaymentTransactionByOrderId( $order_id );
         if ( ! $transaction ) {
             return;
         }
@@ -384,7 +384,7 @@ class OrderActions {
         }
 
         $trxObj = new Transaction();
-        $transaction = $trxObj->getTransactionByOrderId( $order_id );
+        $transaction = $trxObj->getPaymentTransactionByOrderId( $order_id );
         if ( ! $transaction ) {
             if ( isset( $logger ) ) {
                 $logger->debug( 'transaction not found', array_merge( $log_context, array( 'order_id' => $order_id ) ) );
@@ -459,7 +459,7 @@ class OrderActions {
         }
 
         $trxObj = new Transaction();
-        $transaction = $trxObj->getTransactionByOrderId( $order->get_id() );
+        $transaction = $trxObj->getPaymentTransactionByOrderId( $order->get_id() );
         $intent = $transaction ? $transaction->getIntent() : '';
         $status = $transaction ? $transaction->getStatus() : '';
 
@@ -521,7 +521,7 @@ class OrderActions {
         }
 
         $trxObj = new Transaction();
-        $transaction = $trxObj->getTransactionByOrderId( $order_id );
+        $transaction = $trxObj->getPaymentTransactionByOrderId( $order_id );
         if ( ! $transaction || $transaction->getStatus() !== 'Authorized' ) {
             $this->redirect_back_with_message( $order_id, 'Transaction not authorized or not found', 'error' );
         }
@@ -537,7 +537,7 @@ class OrderActions {
 
         // Fallback: call directly
         $comm = new ApiComm();
-        $resp = $comm->capturePayment( $paymentID );
+        $resp = $comm->capturePayment( $paymentID, $transaction->getMode() ?? '0011' );
 
         $paymentResp = Operations::processResponse( $resp, 'trxID' );
 
@@ -626,7 +626,7 @@ class OrderActions {
         }
 
         $trxObj = new Transaction();
-        $transaction = $trxObj->getTransactionByOrderId( $order_id );
+        $transaction = $trxObj->getPaymentTransactionByOrderId( $order_id );
         if ( ! $transaction || $transaction->getStatus() !== 'Authorized' ) {
             $this->redirect_back_with_message( $order_id, 'Transaction not authorized or not found', 'error' );
         }
@@ -641,7 +641,7 @@ class OrderActions {
 
         // Fallback: call directly
         $comm = new ApiComm();
-        $resp = $comm->voidPayment( $paymentID );
+        $resp = $comm->voidPayment( $paymentID, $transaction->getMode() ?? '0011' );
 
         $paymentResp = Operations::processResponse( $resp, 'trxID' );
         if ( is_array( $paymentResp ) ) {
@@ -700,11 +700,12 @@ class OrderActions {
         if ( ! $order_id || empty( $paymentID ) ) {
             return;
         }
-        $comm = new ApiComm();
-        $resp = $comm->capturePayment( $paymentID );
-
         $trxObj = new Transaction();
-        $transaction = $trxObj->getTransactionByOrderId( $order_id );
+        $transaction = $trxObj->getPaymentTransactionByOrderId( $order_id );
+
+        $comm = new ApiComm();
+        $resp = $comm->capturePayment( $paymentID, $transaction ? $transaction->getMode() ?? '0011' : '0011' );
+
         $order = wc_get_order( $order_id );
 
         $paymentResp = Operations::processResponse( $resp, 'trxID' );
@@ -756,11 +757,12 @@ class OrderActions {
             return;
         }
 
-        $comm = new ApiComm();
-        $resp = $comm->voidPayment( $paymentID );
-
         $trxObj = new Transaction();
-        $transaction = $trxObj->getTransactionByOrderId( $order_id );
+        $transaction = $trxObj->getPaymentTransactionByOrderId( $order_id );
+
+        $comm = new ApiComm();
+        $resp = $comm->voidPayment( $paymentID, $transaction ? $transaction->getMode() ?? '0011' : '0011' );
+
         $order = wc_get_order( $order_id );
 
         $paymentResp = Operations::processResponse( $resp, 'trxID' );
@@ -814,14 +816,14 @@ class OrderActions {
         }
 
         $trxObj = new Transaction();
-        $transaction = $trxObj->getTransactionByOrderId( $order_id );
+        $transaction = $trxObj->getPaymentTransactionByOrderId( $order_id );
         if ( ! $transaction || $transaction->getStatus() !== 'Authorized' ) {
             wp_send_json_error( 'not-authorized', 400 );
         }
 
         $paymentID = $transaction->getPaymentID();
         $comm = new ApiComm();
-        $resp = $comm->capturePayment( $paymentID );
+        $resp = $comm->capturePayment( $paymentID, $transaction->getMode() ?? '0011' );
 
         $paymentResp = Operations::processResponse( $resp, 'trxID' );
         if ( is_array( $paymentResp ) ) {
@@ -904,14 +906,14 @@ class OrderActions {
         }
 
         $trxObj = new Transaction();
-        $transaction = $trxObj->getTransactionByOrderId( $order_id );
+        $transaction = $trxObj->getPaymentTransactionByOrderId( $order_id );
         if ( ! $transaction || $transaction->getStatus() !== 'Authorized' ) {
             wp_send_json_error( 'not-authorized', 400 );
         }
 
         $paymentID = $transaction->getPaymentID();
         $comm = new ApiComm();
-        $resp = $comm->voidPayment( $paymentID );
+        $resp = $comm->voidPayment( $paymentID, $transaction->getMode() ?? '0011' );
 
         $paymentResp = Operations::processResponse( $resp, 'trxID' );
         if ( is_array( $paymentResp ) ) {

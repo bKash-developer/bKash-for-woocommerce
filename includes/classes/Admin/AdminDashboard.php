@@ -14,7 +14,6 @@ namespace bKash\PGW\Admin;
 
 use bKash\PGW\Admin\Module\AgreementModule;
 use bKash\PGW\Admin\Module\TransactionModule;
-use bKash\PGW\Admin\Module\TransferModule;
 use bKash\PGW\Admin\Module\WebhookModule;
 use bKash\PGW\TableGeneration;
 
@@ -61,7 +60,6 @@ class AdminDashboard {
 	 */
 	private function addSubMenus() {
 		$pid                = BKASH_FW_PLUGIN_SLUG;
-		$is_b2c_enabled     = AdminUtility::getBKashOptions( $pid, 'enable_b2c' );
 		$is_webhook_enabled = AdminUtility::getBKashOptions( $pid, 'webhook' );
 		$integration_type   = AdminUtility::getBKashOptions( $pid, 'integration_type' );
 
@@ -95,38 +93,17 @@ class AdminDashboard {
 				'show'       => $is_webhook_enabled
 			),
 			array(
-				'title'      => 'Check Balances',
-				'menu_title' => 'Check Balances',
-				'route'      => '/balances',
-				'function'   => array( TransferModule::class, 'checkBalances' ),
-				'show'       => $integration_type === 'checkout'
-			),
-			array(
-				'title'      => 'Intra account transfer',
-				'menu_title' => 'Intra Account Transfer',
-				'route'      => '/intra_account',
-				'function'   => array( TransferModule::class, 'transferBalance' ),
-				'show'       => $integration_type === 'checkout'
-			),
-			array(
-				'title'      => 'B2C Payout - Disbursement',
-				'menu_title' => 'Disburse Money (B2C)',
-				'route'      => '/b2c_payout',
-				'function'   => array( TransferModule::class, 'disburseMoney' ),
-				'show'       => $integration_type === 'checkout' && $is_b2c_enabled
-			),
-			array(
-				'title'      => 'Transfer History',
-				'menu_title' => 'Transfer History',
-				'route'      => '/transfers',
-				'function'   => array( TransferModule::class, 'transferHistory' ),
-				'show'       => $integration_type === 'checkout'
-			),
-			array(
 				'title'      => 'Agreements',
 				'menu_title' => 'Agreements',
 				'route'      => '/agreements',
 				'function'   => array( AgreementModule::class, 'agreementList' ),
+				'show'       => strpos( $integration_type, 'tokenized' ) === 0
+			),
+			array(
+				'title'      => 'Search a bKash Agreement',
+				'menu_title' => 'Agreement Search',
+				'route'      => '/agreement_search',
+				'function'   => array( AgreementModule::class, 'agreementSearch' ),
 				'show'       => strpos( $integration_type, 'tokenized' ) === 0
 			),
 			array(

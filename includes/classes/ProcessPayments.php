@@ -14,6 +14,7 @@ namespace bKash\PGW;
 
 use bKash\PGW\Models\Agreement;
 use bKash\PGW\Models\Transaction;
+use bKash\PGW\Log;
 
 class ProcessPayments {
 	public $integration_type;
@@ -25,23 +26,226 @@ class ProcessPayments {
 	}
 
 	/**
+	 * Initiate payment process by creating a payment with bKash and redirecting the user to bKash for approval.
+	 * Handles both tokenized and checkout-url flows based on the integration type and agreement status.
+	 * 
+	 * @param string           $order_id
+	 * @param string           $intent
+	 * @param string           $callbackURL
+	 * @param Transaction|null $trx
+	 *
+	 * @return array|null
+	 * */
+	final public function createPayment(
+		string $order_id,
+		string $intent = 'sale',
+		string $callbackURL = '',
+		$transaction = null,
+		string $agreementCallbackURL = ''
+	): array {
+		$isAgreement = Utils::hasPostField( 'agreement' );
+		if ( ! $isAgreement ) {
+			$isAgreement = Utils::hasGetField( 'agreement' );
+		}
+		
+		$agreement_id = trim( html_entity_decode( Utils::safePostValue( 'agreement_id' ), ENT_QUOTES | ENT_HTML5, 'UTF-8' ) );
+		if ( ! $agreement_id ) {
+			$agreement_id = trim( html_entity_decode( Utils::safeGetValue( 'agreement_id' ), ENT_QUOTES | ENT_HTML5, 'UTF-8' ) );
+		}
+
+		// To receive order id and total
+		$order    = wc_get_order( $order_id );
+		$amount   = $order->get_total();
+		$currency = get_woocommerce_currency();
+
+		// To receive user id and order details
+		$merchantCustomerId = $order->get_user_id();
+		$merchantOrderId    = $order->get_order_number();
+
+		// Check if already has agreement
+		$storedAgreementID = '';
+		$mode              = null;
+
+		if ( $this->integration_type === 'tokenized' ) 
+		{
+			// ── tokenized (With Agreement) ──
+			// Tokenized requires logged-in user. Agreement is mandatory.
+			if ( empty( $merchantCustomerId ) ) {
+				wc_add_notice( 'Please login to proceed with bKash payment', 'error' );
+				return array( 'result' => 'failure' );
+			}
+
+			if ( $agreement_id === 'new' ) {
+				// Customer explicitly wants to add a new number → create agreement
+				return $this->initiateAgreementCreation( $order_id, $agreementCallbackURL, $intent );
+			} elseif ( $agreement_id && $agreement_id !== 'no' ) {
+				// Customer selected an existing agreement
+				$storedAgreementID = $agreement_id;
+			} else {
+				// No agreement_id provided → look up stored agreement
+				$agreementObj = new Agreement();
+				$agreement    = $agreementObj->getAgreement( '', $merchantCustomerId );
+				$storedAgreementID = $agreement ? $agreement->getAgreementID() : '';
+
+				// If no stored agreement resolved, initiate agreement creation
+				// Callback URL → same callback endpoint that triggers handleAgreementCallback
+				if ( empty( $storedAgreementID ) ) {
+					return $this->initiateAgreementCreation( $order_id, $agreementCallbackURL, $intent );
+				}
+			}
+		}
+		elseif ( $this->integration_type === 'tokenized-both' ) 
+		{
+			// ── tokenized-both (With or Without Agreement) ──
+			// Logged-in user with agreement → tokenized flow.
+			// Guest user without agreement → checkout-url flow.
+			if ( ! empty( $merchantCustomerId ) ) {
+				// Logged-in user
+				if ( $agreement_id === 'new' ) {
+					// User chose to create a new agreement → initiate agreement creation
+					return $this->initiateAgreementCreation( $order_id, $agreementCallbackURL, $intent );
+				} elseif ( $agreement_id === 'no' ) {
+					// User explicitly chose "no agreement" → checkout-url flow (0011)
+					$mode = '0011';
+				} elseif ( $agreement_id ) {
+					$storedAgreementID = $agreement_id;
+				} else {
+					// No selection → look up stored agreement, fallback to 0011
+					$agreementObj = new Agreement();
+					$agreement    = $agreementObj->getAgreement( '', $merchantCustomerId );
+					$storedAgreementID = $agreement ? $agreement->getAgreementID() : '';
+				}
+			}
+		}
+
+		// Validate storedAgreementID belongs to the logged-in user
+		if ( ! empty( $storedAgreementID ) && ! empty( $merchantCustomerId ) ) {
+			$agreementCheck = new Agreement();
+			$foundAgreement = $agreementCheck->getAgreement( $storedAgreementID );
+			if ( ! $foundAgreement || (int) $foundAgreement->getUserID() !== (int) $merchantCustomerId ) {
+				wc_add_notice( 'Selected agreement does not belong to your account.', 'error' );
+				return array( 'result' => 'failure', 'message' => 'Agreement validation failed.' );
+			}
+		}
+
+		if ( ! $mode ) {
+			$mode = Operations::getTokenizedPaymentMode(
+				$this->integration_type,
+				$isAgreement,
+				$storedAgreementID
+			);
+		}
+
+		$invoiceNumber = uniqid( 'bfw_', false ) . '_' . $merchantOrderId;
+		$payment_payload = array(
+			'payerReference'        => uniqid( 'bKash_', false ) . '_' . $merchantCustomerId,
+			'callbackURL'           => $callbackURL,
+			'amount'                => $amount,
+			'currency'              => $currency,
+			'intent'                => $intent,
+			'merchantInvoiceNumber' => $invoiceNumber,
+		);
+
+		// Add agreementID only for tokenized payment with agreement
+		if ( ! empty( $storedAgreementID ) ) {
+			$payment_payload['agreementId'] = $storedAgreementID;
+		}
+
+		// Store transaction in database if not created already during agreement creation flow
+		if ( empty( $transaction ) ) {
+			$transaction = new Transaction();
+			$transaction->setOrderID( $order_id );
+			$transaction->setAmount( $amount );
+			$transaction->setIntegrationType( $this->integration_type );
+			$transaction->setIntent( $intent );
+			$transaction->setCurrency( $currency );
+			$transaction->setMode( $mode );
+			$transaction->setStatus( 'Created' );
+			$transaction->setInvoiceID( $invoiceNumber );
+
+			if ( ! $transaction->save() ) {
+				$message = $transaction->errorMessage ?? 'Transaction save failed.';
+				wc_add_notice( $message, 'error' );
+				return array( 'result' => 'failure', 'message' => $message );
+			}
+		}
+
+		// Append invoiceID to callback URL
+		$payment_payload['callbackURL'] .= '&invoiceId=' . $transaction->getInvoiceID();
+
+		$createResponse = $this->bKashObj->paymentCreate( $payment_payload, $mode );
+		if ( ! isset( $createResponse['status_code'] ) || $createResponse['status_code'] !== 200 ) {
+			$message = $this->processResponse( 'Cannot process this payment right now, error in communication' );
+			wc_add_notice( $message, 'error' );
+			return array( 'result' => 'failure', 'message' => $message );
+		}
+
+		$response = array();
+		if ( isset( $createResponse['response'] ) && is_string( $createResponse['response'] ) ) {
+			$response = json_decode( $createResponse['response'], true );
+		}
+
+		if ( empty( $response ) ) {
+			$message = $this->processResponse( 'Cannot process this payment right now, not a valid response' );
+			wc_add_notice( $message, 'error' );
+			return array( 'result' => 'failure', 'message' => $message );
+		}
+
+		// Check for error responses
+		if ( isset( $response['statusMessage'] ) && $response['statusMessage'] !== 'Successful' ) {
+			$message = $this->processResponse( $response['statusMessage'] );
+			wc_add_notice( $message, 'error' );
+			return array( 'result' => 'failure', 'message' => $message );
+		}
+
+		if ( isset( $response['errorCode'] ) ) {
+			$message = $this->processResponse( $response['errorMessage'] ?? '' );
+			wc_add_notice( $message, 'error' );
+			return array( 'result' => 'failure', 'message' => $message );
+		}
+
+		// Successful response — must have paymentID and bkashURL
+		if ( empty( $response['paymentId'] ) || empty( $response['bkashURL'] ) ) {
+			$message = $this->processResponse( 'Cannot process this payment right now, missing payment data' );
+			wc_add_notice( $message, 'error' );
+			return array( 'result' => 'failure', 'message' => $message );
+		}
+
+		// Update transaction with paymentID and empty the cart
+		$updated = $transaction->update( array( 'payment_id' => $response['paymentId'] ) );
+		if ( ! $updated ) {
+			$message = $this->processResponse( 'Cannot process this payment right now, payment ID issue' );
+			wc_add_notice( $message, 'error' );
+			return array( 'result' => 'failure', 'message' => $message );
+		}
+
+		WC()->cart->empty_cart();
+		return array(
+			'result'   => 'success',
+			'redirect' => $response['bkashURL'],
+		);
+	}
+
+	/**
+	 * Initiate payment execution after bKash redirects back to callback URL.
+	 * 
 	 * @param string $orderPageURL
 	 * @param string $callbackURL
 	 *
 	 * @return void
 	 */
-	final public function executePayment( string $orderPageURL, string $callbackURL = '' ) {
+	final public function executePayment( string $orderPageURL, string $callbackURL = '', string $agreement_id = '' ) {
 		$message = '';
 
 		if ( Utils::hasGetField( 'orderId' ) ) {
 			$order_id   = Utils::safeGetValue( 'orderId' );
 			$payment_id = Utils::safeGetValue( 'paymentID' );
-			$invoice_id = Utils::safeGetValue( 'invoiceID' );
+			$invoice_id = Utils::safeGetValue( 'invoiceId' );
 			$status     = Utils::safeGetValue( 'status' );
 		} else {
 			$order_id   = Utils::safePostValue( 'orderId' );
 			$payment_id = Utils::safePostValue( 'paymentID' );
-			$invoice_id = Utils::safePostValue( 'invoiceID' );
+			$invoice_id = Utils::safePostValue( 'invoiceId' );
 			$status     = Utils::safePostValue( 'status' );
 		}
 
@@ -52,209 +256,116 @@ class ProcessPayments {
 
 		if ( $status === 'success' ) {
 			if ( $transaction && $transaction->getPaymentID() === $payment_id ) {
-				$transaction->update(
-					array(
-						'status' => 'CALLBACK_REACHED',
-					)
-				);
+				$mode = $transaction->getMode();
+				$transaction->update([
+					'status' => 'CALLBACK_REACHED',
+				]);
 
-				// EXECUTE OPERATION
-				$response = $this->bKashObj->executePayment( $transaction->getPaymentID() );
-
+				// Call executePayment API to finalize the payment.
+				$response = $this->bKashObj->executePayment( $transaction->getPaymentID(), $mode, $agreement_id );
 				if ( isset( $response['status_code'] ) && $response['status_code'] === 200 ) {
-					$mode = $transaction->getMode();
+					// GET TRXID FROM BKASH RESPONSE
+					$paymentResp = Operations::processResponse( $response, 'trxID' );
 
-					// 0011 - Checkout URL, 0000 - Create Agreement, 0001 - Create Payment
-					if ( $mode === '0000' ) {
-						$agreementResp = Operations::processResponse( $response, 'agreementID' );
-						if ( is_array( $agreementResp ) ) {
-							if ( $agreementResp['agreementStatus'] === 'Completed' ) {
-								$agreementObj = new Agreement();
-								$agreementObj->setAgreementID( $agreementResp['agreementID'] ?? '' );
-								$agreementObj->setMobileNo( $agreementResp['customerMsisdn'] ?? '' );
-								$agreementObj->setDateTime( $agreementResp['agreementExecuteTime'] ?? '' );
-								$agreementObj->setUserID( $order->get_user_id() );
-								$stored = $agreementObj->save();
+					if ( is_array( $paymentResp ) ) {
+						// PAYMENT IS DONE SUCCESSFULLY, NOW START REST OF THE PROCESS TO UPDATE WC ORDER
+						// Updating transaction status
+						$status  = $paymentResp['transactionStatus'] ?? 'NO_STATUS_EXECUTE';
+						$updated = $transaction->update([
+							'status' => $status,
+							'trx_id' => $paymentResp['trxID'] ?? '',
+						]);
 
-								if ( $stored ) {
-									$transaction->update(
-										array( 'mode' => '0001' ),
-										array( 'payment_id' => $transaction->getPaymentID() )
-									);
-									add_post_meta( $order->get_id(), '_bkmode', '0001', true );
-
-									$createResp = $this->createPayment(
-										$transaction->getOrderID(),
-										$transaction->getIntent(),
-										$callbackURL,
-										$transaction
-									);
-
-									if ( isset( $createResp['redirect'] ) ) {
-										wp_safe_redirect( $createResp['redirect'] );
-										die();
-									}
-
-									echo wp_json_encode( $createResp );
-								} else {
-									$message = 'Agreement cannot be done right now, cannot store in db, try again. ' . $agreementObj->errorMessage;
-									$message = $this->processResponse( $message );
-								}
+						if ( $updated && isset( $paymentResp['trxID'] ) && ! empty( $paymentResp['trxID'] ) ) {
+							// Payment complete.
+							if ( $paymentResp['transactionStatus'] === 'Authorized' ) {
+								$order->update_status( 'on-hold' );
+							} elseif ( $paymentResp['transactionStatus'] === 'Completed' ) {
+								$order->payment_complete();
 							} else {
-								$message = $this->processResponse( 'Agreement cannot be done right now, try again' );
+								$order->update_status( 'pending' );
 							}
-						} else {
-							$message = is_string( $agreementResp ) ? $agreementResp : '';
-							$message = $this->processResponse( $message );
+
+							// Store the transaction ID using the WC CRUD methods.
+							if ( method_exists( $order, 'set_transaction_id' ) ) {
+								$order->set_transaction_id( $paymentResp['trxID'] );
+							} else {
+								$order->update_meta_data( '_transaction_id', $paymentResp['trxID'] );
+							}
+
+							// Record completed time if provided by bKash (fallback to updateTime/createTime).
+							$completedRaw = $paymentResp['completedTime'] ?? $paymentResp['updateTime'] ?? $paymentResp['createTime'] ?? '';
+							$completedDatetime = '';
+							if ( ! empty( $completedRaw ) ) {
+								$clean = preg_replace( '/:(\d{3})/', '', $completedRaw );
+								$clean = str_replace( 'GMT', '', $clean );
+								$ts    = strtotime( $clean );
+								if ( $ts !== false ) {
+									$completedDatetime = date( 'Y-m-d H:i:s', $ts );
+								}
+							}
+
+							// Add order note for approval and completed time if available.
+							$note = sprintf( 'bKash PGW payment approved (ID: %s)', $paymentResp['trxID'] );
+							if ( $completedDatetime ) {
+								$note .= ' — Completed at: ' . $completedDatetime;
+								$order->update_meta_data( '_bkash_completed_time', $completedDatetime );
+							}
+							$order->add_order_note( $note );
+
+							if ( isset( $this->log ) && $this->log ) {
+								if ( function_exists( 'wc_get_logger' ) ) {
+									$logger = wc_get_logger();
+									$logger->info( 'bKash PGW payment approved (ID: ' . ( $paymentResp['trxID'] ?? '' ) . ')', array( 'source' => BKASH_FW_PLUGIN_SLUG ) );
+								}
+							}
+
+							// Reduce stock levels.
+							wc_reduce_stock_levels( $order_id );
+
+							if ( isset( $this->log ) && $this->log ) {
+								$this->log->add( $this->id, 'Stocked reduced.' );
+							}
+
+							// Persist order changes (transaction id, meta and notes) before redirect.
+							if ( method_exists( $order, 'save' ) ) {
+								$order->save();
+							}
+							wp_safe_redirect( $orderPageURL );
+							die();
 						}
+
+						if ( $updated && isset( $paymentResp['paymentID'] ) && ! empty( $paymentResp['paymentID'] ) ) {
+							$msg = 'Transaction was not successful, last transaction status: ' . $paymentResp['transactionStatus'] ?? 'NO_STATUS_EXECUTE';
+
+							wc_add_notice( $msg, 'error' );
+							wp_safe_redirect( wc_get_checkout_url() );
+							die();
+						}
+						$message = 'Could not get transaction status';
 					} else {
-						// GET TRXID FROM BKASH RESPONSE
-						$paymentResp = Operations::processResponse( $response, 'trxID' );
-
-						if ( is_array( $paymentResp ) ) {
-							// PAYMENT IS DONE SUCCESSFULLY, NOW START REST OF THE PROCESS TO UPDATE WC ORDER
-
-							// Updating transaction status
-							$status  = $paymentResp['transactionStatus'] ?? 'NO_STATUS_EXECUTE';
-							$updated = $transaction->update(
-								array(
-									'status' => $status,
-									'trx_id' => $paymentResp['trxID'] ?? '',
-								)
-							);
-
-							if ( $updated && isset( $paymentResp['trxID'] ) && ! empty( $paymentResp['trxID'] ) ) {
-								// Payment complete.
-								if ( $paymentResp['transactionStatus'] === 'Authorized' ) {
-									$order->update_status( 'on-hold' );
-								} elseif ( $paymentResp['transactionStatus'] === 'Completed' ) {
-									$order->payment_complete();
-								} else {
-									$order->update_status( 'pending' );
-								}
-
-								// Store the transaction ID using the WC CRUD methods.
-								if ( method_exists( $order, 'set_transaction_id' ) ) {
-									$order->set_transaction_id( $paymentResp['trxID'] );
-								} else {
-									$order->update_meta_data( '_transaction_id', $paymentResp['trxID'] );
-								}
-
-								// Record completed time if provided by bKash (fallback to updateTime/createTime).
-								$completedRaw = $paymentResp['completedTime'] ?? $paymentResp['updateTime'] ?? $paymentResp['createTime'] ?? '';
-								$completedDatetime = '';
-								if ( ! empty( $completedRaw ) ) {
-									$clean = preg_replace( '/:(\d{3})/', '', $completedRaw );
-									$clean = str_replace( 'GMT', '', $clean );
-									$ts    = strtotime( $clean );
-									if ( $ts !== false ) {
-										$completedDatetime = date( 'Y-m-d H:i:s', $ts );
-									}
-								}
-
-								// Add order note for approval and completed time if available.
-								$note = sprintf( 'bKash PGW payment approved (ID: %s)', $paymentResp['trxID'] );
-								if ( $completedDatetime ) {
-									$note .= ' — Completed at: ' . $completedDatetime;
-									$order->update_meta_data( '_bkash_completed_time', $completedDatetime );
-								}
-								$order->add_order_note( $note );
-
-								if ( isset( $this->log ) && $this->log ) {
-									if ( function_exists( 'wc_get_logger' ) ) {
-										$logger = wc_get_logger();
-										$logger->info( 'bKash PGW payment approved (ID: ' . ( $paymentResp['trxID'] ?? '' ) . ')', array( 'source' => BKASH_FW_PLUGIN_SLUG ) );
-									}
-								}
-
-								// Reduce stock levels.
-								wc_reduce_stock_levels( $order_id );
-
-								if ( isset( $this->log ) && $this->log ) {
-									$this->log->add( $this->id, 'Stocked reduced.' );
-								}
-
-								// Return thank you page redirect.
-								if ( $this->integration_type === 'checkout' ) {
-									// Ensure order changes are persisted before returning JSON for AJAX checkout flows.
-									if ( method_exists( $order, 'save' ) ) {
-										$order->save();
-									}
-									echo wp_json_encode(
-										array(
-											'result'   => 'success',
-											'redirect' => $orderPageURL,
-										)
-									);
-									die();
-								}
-								// Persist order changes (transaction id, meta and notes) before redirect.
-								if ( method_exists( $order, 'save' ) ) {
-									$order->save();
-								}
-								wp_safe_redirect( $orderPageURL );
-								die();
-							}
-
-							if ( $updated && isset( $paymentResp['paymentID'] ) && ! empty( $paymentResp['paymentID'] ) ) {
-								$msg = 'Transaction was not successful, last transaction status: ' . $paymentResp['transactionStatus'] ?? 'NO_STATUS_EXECUTE';
-								if ( $this->integration_type === 'checkout' ) {
-									echo wp_json_encode(
-										array(
-											'result'  => 'failure',
-											'message' => $msg,
-										)
-									);
-									die();
-								}
-
-								wc_add_notice( $msg, 'error' );
-								wp_safe_redirect( wc_get_checkout_url() );
-								die();
-							}
-							$message = 'Could not get transaction status';
-						} else {
-							$message = is_string( $paymentResp ) ? $paymentResp : '';
-						}
-
-						$transaction->update(
-							array(
-								'status' => 'Failed',
-							)
-						);
-						$order->add_order_note( 'bKash Payment: ' . $message );
-
-						$message = $this->processResponse( $message );
+						$message = is_string( $paymentResp ) ? $paymentResp : '';
 					}
+
+					$transaction->update([ 'status' => 'Failed' ]);
+					$order->add_order_note( 'bKash Payment: ' . $message );
+					$message = $this->processResponse( $message );
 				} else {
 					$message = $this->processResponse( 'Communication issue with payment gateway' );
 				}
 
-				if ( $this->integration_type === 'checkout' ) {
-					echo wp_json_encode(
-						array(
-							'result'  => 'failure',
-							'message' => $message,
-						)
-					);
-				} else {
-					wc_add_notice( $message, 'error' );
-					wp_safe_redirect( wc_get_checkout_url() );
-				}
-
+				wc_add_notice( $message, 'error' );
+				wp_safe_redirect( wc_get_checkout_url() );
 				die();
 			}
 			// payment ID not matching or transaction not found. or already processed
 			$message = $this->processResponse( 'Invalid payment ID or Invoice ID' );
 		} else {
+			Log::debug( 'Payment failed or cancelled. Status: ' . $status );
 			// transaction failed/cancelled.
 			$status = str_replace( array( 'cancel', 'failure' ), array( 'Cancelled', 'Failed' ), $status );
 			if ( $transaction->getStatus() !== 'Completed' ) {
-				$transaction->update(
-					array(
-						'status' => esc_html( $status ),
-					)
-				);
+				$transaction->update([ 'status' => esc_html( $status ) ]);
 				$order->add_order_note( 'bKash Payment is not successful. Status => ' . esc_html( $status ) );
 			} else {
 				$order->add_order_note(
@@ -268,17 +379,8 @@ class ProcessPayments {
 
 		$order->add_order_note( 'bKash PGW payment declined (' . $message . ')' );
 
-		if ( $this->integration_type === 'checkout' ) {
-			echo wp_json_encode(
-				array(
-					'result'  => 'failure',
-					'message' => $message,
-				)
-			);
-		} else {
-			wc_add_notice( $message, 'error' );
-			wp_safe_redirect( wc_get_cart_url() );
-		}
+		wc_add_notice( $message, 'error' );
+		wp_safe_redirect( wc_get_cart_url() );
 
 		// Return message to customer.
 		die();
@@ -289,192 +391,126 @@ class ProcessPayments {
 	}
 
 	/**
-	 * @param string           $order_id
-	 * @param string           $intent
-	 * @param string           $callbackURL
-	 * @param Transaction|null $trx
+	 * Initiate Agreement Creation
 	 *
-	 * @return array|null
-	 * */
-	final public function createPayment(
-		string $order_id,
-		string $intent = 'sale',
-		string $callbackURL = '',
-		$transaction = null
-	): array {
-		$isAgreement = Utils::hasPostField( 'agreement' );
-		if ( ! $isAgreement ) {
-			$isAgreement = Utils::hasGetField( 'agreement' );
-		}
-		$agreement_id = Utils::safePostValue( 'agreement_id' );
-		if ( ! $agreement_id ) {
-			$agreement_id = Utils::hasGetField( 'agreement_id' );
-		}
-
-		// To receive order id and total
-		$order    = wc_get_order( $order_id );
-		$amount   = $order->get_total();
-		$currency = get_woocommerce_currency();
-
-		// To receive user id and order details
+	 * Calls the bKash agreementCreate API and returns the redirect URL or failure array.
+	 * Reusable for both tokenized and tokenized-both integration types
+	 *
+	 * @param string $order_id      WooCommerce order ID
+	 * @param string $callbackURL   The callback URL (should be the checkout page)
+	 * @param string $intent        Payment intent (sale/authorization)
+	 *
+	 */
+	final public function initiateAgreementCreation( string $order_id, string $callbackURL, string $intent = 'sale' ): array {
+		$order              = wc_get_order( $order_id );
+		$amount             = $order->get_total();
+		$currency           = get_woocommerce_currency();
 		$merchantCustomerId = $order->get_user_id();
 		$merchantOrderId    = $order->get_order_number();
 
-		if ( $this->integration_type === 'checkout' ) {
-			$payment_payload = array(
-				'amount'                  => $amount,
-				'currency'                => $currency,
-				'intent'                  => $intent,
-				'merchantInvoiceNumber'   => uniqid( 'bfw_', false ) . '_' . $merchantOrderId,
-				'merchantAssociationInfo' => '',
-			);
-		} else {
-			// Check if already has agreement
-			$storedAgreementID = '';
-			$mode              = null;
+		$agreementPayload = array(
+			'payerReference' => uniqid( 'bKash_', false ) . '_' . $merchantCustomerId,
+			'callbackURL'    => $callbackURL,
+		);
 
-			// Check if user is logged in
-			if ( ! empty( $order->get_user_id() ) ) {
-				if ( $agreement_id === 'new' || $agreement_id === 'no' ) {
-					// If customer wants to add new number then, mode 0000, or without agreement 0011
-					$mode = $agreement_id === 'new' ? '0000' : '0011';
-				} elseif ( $agreement_id ) {
-					// Customer selected an agreement to pay
-					$storedAgreementID = $agreement_id;
-				} else {
-					// Proceed with stored most recent agreement id
-					$agreementObj = new Agreement();
-					$agreement    = $agreementObj->getAgreement( '', $order->get_user_id() );
-					if ( $agreement ) {
-						$storedAgreementID = $agreement->getAgreementID();
-					}
-				}
-			} else {
-				// Non-logged in user
-				if ( $this->integration_type === 'tokenized' ) {
-					wc_add_notice( 'Please login to proceed with tokenized payment', 'error' );
+		$agreementResponse = $this->bKashObj->agreementCreate( $agreementPayload );
+		if (
+			isset( $agreementResponse['status_code'] ) && $agreementResponse['status_code'] === 200 &&
+			isset( $agreementResponse['response'] ) && is_string( $agreementResponse['response'] )
+		) {
+			$agreementData = json_decode( $agreementResponse['response'], true );
+			if ( isset( $agreementData['bkashURL'] ) && ! empty( $agreementData['bkashURL'] ) ) {
+				// Store a pending transaction to track this agreement flow
+				$trx = new Transaction();
+				$trx->setOrderID( $order_id );
+				$trx->setAmount( $amount );
+				$trx->setIntegrationType( $this->integration_type );
+				$trx->setIntent( $intent );
+				$trx->setCurrency( $currency );
+				$trx->setMode( '0000' );
+				$trx->setStatus( 'AgreementInitiated' );
+				$trx->setInvoiceID( uniqid( 'bfw_', false ) . '_' . $merchantOrderId );
 
-					return array( 'result' => 'failure' );
+				if ( isset( $agreementData['paymentID'] ) ) {
+					$trx->setPaymentID( $agreementData['paymentID'] );
 				}
 
-				if ( $this->integration_type === 'tokenized-both' ) {
-					$mode = '0011';
-				}
-			}
-
-			if ( ! $mode ) {
-				$mode = Operations::getTokenizedPaymentMode(
-					$this->integration_type,
-					$isAgreement,
-					$storedAgreementID
+				$trxSaved = $trx->save();
+				// Redirect user to bKash for agreement approval
+				return array(
+					'result'   => 'success',
+					'redirect' => $agreementData['bkashURL'],
 				);
 			}
 
-			$payment_payload = array(
-				'mode'                  => $mode,
-				'payerReference'        => uniqid( 'bKash_', false ) . '_' . $merchantCustomerId,
-				'callbackURL'           => $callbackURL,
-				'agreementID'           => $storedAgreementID ?? '',
-				'amount'                => $amount,
-				'currency'              => $currency,
-				'intent'                => $intent,
-				'merchantInvoiceNumber' => uniqid( 'bfw_', false ) . '_' . $merchantOrderId,
+			// bkashURL missing
+			$errorMsg = $agreementData['statusMessage'] ?? 'Agreement creation failed, no redirect URL.';
+			wc_add_notice( $errorMsg, 'error' );
+			return array( 'result' => 'failure', 'message' => $errorMsg );
+		}
+
+		// API call failed
+		wc_add_notice( 'Error communicating with bKash for agreement creation.', 'error' );
+		return array( 'result' => 'failure', 'message' => 'Agreement creation failed.' );
+	}
+
+	/**
+	 * Handle Agreement Callback
+	 *
+	 * Called when bKash redirects the user back after agreement approval.
+	 * Executes the agreement, stores it in the database, and redirects to checkout.
+	 *
+	 * @param string $payment_id   The paymentID from bKash callback
+	 * @param int    $user_id      The WordPress user ID
+	 *
+	 * @return array ['success' => bool, 'agreementID' => string, 'message' => string]
+	 */
+	final public function handleAgreementCallback( string $agreement_id, int $user_id ): array {
+		$response = $this->bKashObj->agreementExecute( $agreement_id );
+		if ( isset( $response['status_code'] ) && $response['status_code'] === 200 ) {
+			$agreementResp = Operations::processResponse( $response, 'agreementId' );
+
+			if ( is_array( $agreementResp ) ) {
+				if ( ( $agreementResp['agreementStatus'] ?? '' ) === 'Completed' ) {
+					$agreementObj = new Agreement();
+					$agreementObj->setAgreementID( $agreementResp['agreementID'] ?? '' );
+					$agreementObj->setMobileNo( $agreementResp['payerAccount'] ?? '' );
+					$agreementObj->setDateTime( $agreementResp['agreementExecuteTime'] ?? '' );
+					$agreementObj->setUserID( $user_id );
+					$stored = $agreementObj->save();
+
+					if ( $stored ) {
+						return array(
+							'success'     => true,
+							'agreementID' => $agreementResp['agreementID'],
+							'message'     => 'Agreement created successfully.',
+							'data'        => $agreementResp,
+						);
+					}
+
+					return array(
+						'success' => false,
+						'message' => 'Could not store agreement. ' . $agreementObj->errorMessage,
+					);
+				}
+
+				return array(
+					'success' => false,
+					'message' => 'Agreement is not completed. Status: ' . ( $agreementResp['agreementStatus'] ?? 'unknown' ),
+					'data'    => $agreementResp,				
+				);
+			}
+
+			$errorMsg = is_string( $agreementResp ) ? $agreementResp : 'Invalid agreement response.';
+			return array(
+				'success' => false,
+				'message' => $errorMsg,
 			);
 		}
 
-		// if transaction is not prepared yet
-		if ( empty( $transaction ) ) {
-			/* Store Transaction in Database */
-			$trx = new Transaction();
-			$trx->setOrderID( $order_id );
-			$trx->setAmount( $amount );
-			$trx->setIntegrationType( $this->integration_type );
-			$trx->setIntent( $intent );
-			$trx->setCurrency( $currency );
-			$trx->setMode( $mode ?? '' );
-			$trx->setStatus( 'Created' );
-
-			if ( ! empty( $payment_payload['merchantInvoiceNumber'] ) ) {
-				$trx->setInvoiceID( $payment_payload['merchantInvoiceNumber'] );
-			}
-
-			$trxSaved = $trx->save();
-		} else {
-			$trxSaved = $transaction;
-		}
-
-		if ( $trxSaved ) {
-			// pass invoice number in callback string
-			if ( isset( $payment_payload['callbackURL'] ) ) {
-				$payment_payload['callbackURL'] .= '&invoiceID=' . $trxSaved->getInvoiceID();
-			}
-
-			$createResponse = $this->bKashObj->paymentCreate( $payment_payload );
-
-			if ( isset( $createResponse['status_code'] ) && $createResponse['status_code'] === 200 ) {
-				$response = array();
-				if ( isset( $createResponse['response'] ) && is_string( $createResponse['response'] ) ) {
-					$response = json_decode( $createResponse['response'], true );
-				}
-
-				if ( $response ) {
-					// If any error for tokenized
-					if ( isset( $response['statusMessage'] ) && $response['statusMessage'] !== 'Successful' ) {
-						$message = $response['statusMessage'];
-					} elseif ( isset( $response['errorCode'] ) ) { // If any error for checkout
-						$message = $response['errorMessage'] ?? '';
-					} elseif ( isset( $response['paymentID'] ) && ! empty( $response['paymentID'] ) ) {
-						// Remove items from cart.
-						WC()->cart->empty_cart();
-						if ( isset( $this->log ) && $this->log ) {
-							$this->log->add( $this->id, 'Cart emptied.' );
-						}
-
-						$updated = $trxSaved->update( array( 'payment_id' => $response['paymentID'] ) );
-						if ( $updated ) {
-							if ( $this->integration_type === 'checkout' ) {
-								return array(
-									'result'   => 'success',
-									'redirect' => null,
-									'order'    => array(
-										'orderId'   => $order_id,
-										'paymentID' => $response['paymentID'],
-										'invoiceID' => $trx->getInvoiceID(),
-										'amount'    => $amount,
-									),
-									'response' => $response,
-								);
-							}
-
-							return array(
-								'result'   => 'success',
-								'redirect' => $response['bkashURL'],
-							);
-						}
-
-						$message = $this->processResponse(
-							'Cannot process this payment right now, payment ID issue'
-						);
-					} else {
-						$message = $this->processResponse(
-							'Cannot process this payment right now, unknown error message'
-						);
-					}
-				} else {
-					$message = $this->processResponse( 'Cannot process this payment right now, not a valid response' );
-				}
-			} else {
-				$message = $this->processResponse( 'Cannot process this payment right now, error in communication' );
-			}
-		} else {
-			$message = $trx->errorMessage;
-		}
-
-		wc_add_notice( $message, 'error' );
-
 		return array(
-			'result'  => 'failure',
-			'message' => $message,
+			'success' => false,
+			'message' => 'Communication issue with payment gateway during agreement execution.',
 		);
 	}
 
