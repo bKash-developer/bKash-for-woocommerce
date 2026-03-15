@@ -413,12 +413,15 @@ class ApiComm {
 	 *
 	 * @return array
 	 */
-	final public function capturePayment( string $payment_id, string $mode = '0011' ): array {
+	final public function capturePayment( string $payment_id, string $mode = '0011', string $agreement_id = '' ): array {
 		$body = array( 'paymentId' => $payment_id );
 
 		if ( $mode === '0001' ) {
 			$url      = $this->constructed_url . 'payment-with-agreement/capture';
 			$apiTitle = 'Capture Payment With Agreement';
+			if ( ! empty( $agreement_id ) ) {
+				$body['agreementId'] = $agreement_id;
+			}
 		} elseif ( $mode === '0011' ) {
 			$url      = $this->constructed_url . 'payment/capture';
 			$apiTitle = 'Capture Payment';
@@ -457,12 +460,15 @@ class ApiComm {
 	 *
 	 * @return array
 	 */
-	final public function voidPayment( string $payment_id, string $mode = '0011' ): array {
+	final public function voidPayment( string $payment_id, string $mode = '0011', string $agreement_id = '' ): array {
 		$body = array( 'paymentId' => $payment_id );
 
 		if ( $mode === '0001' ) {
 			$url      = $this->constructed_url . 'payment-with-agreement/void';
 			$apiTitle = 'Void Payment With Agreement';
+			if ( ! empty( $agreement_id ) ) {
+				$body['agreementId'] = $agreement_id;
+			}
 		} elseif ( $mode === '0011' ) {
 			$url      = $this->constructed_url . 'payment/void';
 			$apiTitle = 'Void Payment';

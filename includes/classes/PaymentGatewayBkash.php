@@ -367,7 +367,8 @@ class PaymentGatewayBkash extends WC_Payment_Gateway {
 			if ( $transaction ) {
 				if ( $transaction->getStatus() === 'Authorized' ) {
 					$comm        = new ApiComm();
-					$captureCall = $comm->capturePayment( $transaction->getPaymentID(), $transaction->getMode() ?? '0011' );
+					$agreementId = $orderDetails->get_meta( '_bkash_agreement_id' ) ?: '';
+					$captureCall = $comm->capturePayment( $transaction->getPaymentID(), $transaction->getMode() ?? '0011', $agreementId );
 
 					if ( isset( $captureCall['status_code'] ) && $captureCall['status_code'] === 200 ) {
 						$captured = array();
@@ -375,15 +376,6 @@ class PaymentGatewayBkash extends WC_Payment_Gateway {
 							$captured = json_decode( $captureCall['response'], true );
 						}
 						if ( $captured ) {
-							// Sample payload - array(3)
-							// {
-							// ["status_code"]=> int(200)
-							// ["header"]=> NULL
-							// ["response"]=> string(177) "{"completedTime":"2021-02-21T18:46:18:085 GMT+0000",
-							// "trxID":"8BM304KJ37","transactionStatus":"Completed","amount":"10",
-							// "currency":"BDT","transferType":"Collection2Disbursement"}"
-							// }
-
 							// If any error for tokenized
 							if ( isset( $captured['statusMessage'] ) && $captured['statusMessage'] !== 'Successful' ) {
 								$trx = $captured['statusMessage'];
@@ -437,7 +429,6 @@ class PaymentGatewayBkash extends WC_Payment_Gateway {
 		if ( isset( $trx ) && ! empty( $trx ) ) {
 			if ( is_string( $trx ) ) {
 				// error occurred, show message
-				// $orderDetails->update_status('on-hold', $trx, false);
 				self::addFlashNotice( 'Capture Error, ' . $trx );
 			} elseif ( is_array( $trx ) ) {
 				// Capture Success
@@ -490,7 +481,8 @@ class PaymentGatewayBkash extends WC_Payment_Gateway {
 			if ( $transaction ) {
 				if ( $transaction->getStatus() === 'Authorized' ) {
 					$comm      = new ApiComm();
-					$void_call = $comm->voidPayment( $transaction->getPaymentID(), $transaction->getMode() ?? '0011' );
+					$agreementId = $orderDetails->get_meta( '_bkash_agreement_id' ) ?: '';
+					$void_call = $comm->voidPayment( $transaction->getPaymentID(), $transaction->getMode() ?? '0011', $agreementId );
 
 					if ( isset( $void_call['status_code'] ) && $void_call['status_code'] === 200 ) {
 						$voided = array();
@@ -499,13 +491,6 @@ class PaymentGatewayBkash extends WC_Payment_Gateway {
 						}
 
 						if ( $voided ) {
-							// Sample payload - array(3) {
-							// ["status_code"]=> int(200)
-							// ["header"]=> NULL
-							// ["response"]=> string(177) "{"completedTime":"2021-02-21T18:46:18:085 GMT+0000",
-							// "trxID":"8BM304KJ37","transactionStatus":"Completed","amount":"10",
-							// "currency":"BDT","transferType":"Collection2Disbursement"}" }
-
 							// If any error for tokenized
 							if ( isset( $voided['statusMessage'] ) && $voided['statusMessage'] !== 'Successful' ) {
 								$trx = $voided['statusMessage'];
@@ -894,22 +879,26 @@ class PaymentGatewayBkash extends WC_Payment_Gateway {
 		$status   = Utils::safeGetValue( 'status' );
 		$agreement_id = Utils::safeGetValue( 'agreementId' );
 
-		header( 'Content-Type: application/json' );
-
 		if ( empty( $order_id ) ) {
-			wp_send_json_error( array( 'message' => 'Order ID is missing.' ) );
+			wc_add_notice( 'Order ID is missing.', 'error' );
+			wp_safe_redirect( wc_get_checkout_url() );
+			die();
 		}
 
 		$order = wc_get_order( $order_id );
 		if ( ! $order ) {
-			wp_send_json_error( array( 'message' => 'Order not found.' ) );
+			wc_add_notice( 'Order not found.', 'error' );
+			wp_safe_redirect( wc_get_checkout_url() );
+			die();
 		}
 
 		$trx         = new Models\Transaction();
 		$transaction = $trx->getTransactionByOrderId( $order_id );
 
 		if ( ! $transaction || $transaction->getMode() !== '0000' ) {
-			wp_send_json_error( array( 'message' => 'Agreement transaction not found for this order.' ) );
+			wc_add_notice( 'Agreement transaction not found for this order.', 'error' );
+			wp_safe_redirect( wc_get_checkout_url() );
+			die();
 		}
 
 		$process = new ProcessPayments( $this->integration_type );
@@ -923,23 +912,41 @@ class PaymentGatewayBkash extends WC_Payment_Gateway {
 
 			if ( $agreementResult['success'] ) {
 				$transaction->update( array( 'status' => 'AgreementCompleted', 'mode' => '0001' ) );
-				add_post_meta( $order->get_id(), '_bkmode', '0001', true );
+				$order->update_meta_data( '_bkmode', '0001' );
+				if ( method_exists( $order, 'save' ) ) {
+					$order->save();
+				}
 
-				wp_send_json_success( array(
-					'message'     => 'Agreement created and executed successfully.',
-					'agreementID' => $agreementResult['agreementID'],
-					'data'        => $agreementResult['data'] ?? array(),
-				) );
+				// Agreement completed — now create the actual payment using the new agreement
+				$paymentCbURL = get_site_url() . BKASH_FW_WC_API . $this->CALLBACK_URL . '?orderId=' . $order_id;
+				$paymentResult = $process->createPayment(
+					$order_id,
+					$this->intent,
+					$paymentCbURL,
+					null,
+					'',
+					$agreementResult['agreementID']
+				);
+
+				if ( isset( $paymentResult['result'] ) && $paymentResult['result'] === 'success' && ! empty( $paymentResult['redirect'] ) ) {
+					wp_redirect( $paymentResult['redirect'] );
+					die();
+				}
+
+				// Payment creation failed after agreement success
+				$errorMsg = $paymentResult['message'] ?? 'Payment creation failed after agreement.';
+				$order->add_order_note( 'bKash Agreement succeeded but payment creation failed: ' . $errorMsg );
+				wc_add_notice( $errorMsg, 'error' );
+				wp_safe_redirect( wc_get_checkout_url() );
+				die();
 			} else {
 				$transaction->update( array( 'status' => 'AgreementFailed' ) );
 				$order->add_order_note( 'bKash Agreement failed: ' . ( $agreementResult['message'] ?? '' ) );
 
-				wp_send_json_error( array(
-					'message' => $agreementResult['message'] ?? 'Agreement execution failed.',
-					'data'    => $agreementResult['data'] ?? array(),
-				) );
+				wc_add_notice( $agreementResult['message'] ?? 'Agreement execution failed.', 'error' );
+				wp_safe_redirect( wc_get_checkout_url() );
+				die();
 			}
-			die();
 		}
 
 		// Agreement was cancelled or failed at bKash
@@ -947,7 +954,8 @@ class PaymentGatewayBkash extends WC_Payment_Gateway {
 		$transaction->update( array( 'status' => $statusLabel ) );
 		$order->add_order_note( 'bKash Agreement ' . $statusLabel );
 
-		wp_send_json_error( array( 'message' => 'Agreement ' . $statusLabel ) );
+		wc_add_notice( 'bKash Agreement ' . $statusLabel, 'error' );
+		wp_safe_redirect( wc_get_checkout_url() );
 		die();
 	}
 
@@ -1034,14 +1042,6 @@ class PaymentGatewayBkash extends WC_Payment_Gateway {
 		);
 		// Return message to customer.
 		die();
-	}
-
-	final public function paymentSuccess() {
-		// for later use
-	}
-
-	final public function paymentFailure() {
-		// for later use
 	}
 
 	/**

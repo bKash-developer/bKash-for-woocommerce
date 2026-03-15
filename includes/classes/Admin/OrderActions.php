@@ -528,6 +528,8 @@ class OrderActions {
 
         $paymentID = $transaction->getPaymentID();
 
+        $agreementId = $order->get_meta( '_bkash_agreement_id' ) ?: '';
+
         // Enqueue Action Scheduler job if available
         if ( function_exists( 'as_enqueue_async_action' ) ) {
             as_enqueue_async_action( 'bkash_capture_job', array( 'order_id' => $order_id, 'payment_id' => $paymentID ) );
@@ -537,7 +539,7 @@ class OrderActions {
 
         // Fallback: call directly
         $comm = new ApiComm();
-        $resp = $comm->capturePayment( $paymentID, $transaction->getMode() ?? '0011' );
+        $resp = $comm->capturePayment( $paymentID, $transaction->getMode() ?? '0011', $agreementId );
 
         $paymentResp = Operations::processResponse( $resp, 'trxID' );
 
@@ -633,6 +635,8 @@ class OrderActions {
 
         $paymentID = $transaction->getPaymentID();
 
+        $agreementId = $order->get_meta( '_bkash_agreement_id' ) ?: '';
+
         // Enqueue Action Scheduler job if available
         if ( function_exists( 'as_enqueue_async_action' ) ) {
             as_enqueue_async_action( 'bkash_void_job', array( 'order_id' => $order_id, 'payment_id' => $paymentID ) );
@@ -641,7 +645,7 @@ class OrderActions {
 
         // Fallback: call directly
         $comm = new ApiComm();
-        $resp = $comm->voidPayment( $paymentID, $transaction->getMode() ?? '0011' );
+        $resp = $comm->voidPayment( $paymentID, $transaction->getMode() ?? '0011', $agreementId );
 
         $paymentResp = Operations::processResponse( $resp, 'trxID' );
         if ( is_array( $paymentResp ) ) {
@@ -702,11 +706,11 @@ class OrderActions {
         }
         $trxObj = new Transaction();
         $transaction = $trxObj->getPaymentTransactionByOrderId( $order_id );
+        $order = wc_get_order( $order_id );
+        $agreementId = $order ? $order->get_meta( '_bkash_agreement_id' ) ?: '' : '';
 
         $comm = new ApiComm();
-        $resp = $comm->capturePayment( $paymentID, $transaction ? $transaction->getMode() ?? '0011' : '0011' );
-
-        $order = wc_get_order( $order_id );
+        $resp = $comm->capturePayment( $paymentID, $transaction ? $transaction->getMode() ?? '0011' : '0011', $agreementId );
 
         $paymentResp = Operations::processResponse( $resp, 'trxID' );
         if ( is_array( $paymentResp ) ) {
@@ -759,11 +763,11 @@ class OrderActions {
 
         $trxObj = new Transaction();
         $transaction = $trxObj->getPaymentTransactionByOrderId( $order_id );
+        $order = wc_get_order( $order_id );
+        $agreementId = $order ? $order->get_meta( '_bkash_agreement_id' ) ?: '' : '';
 
         $comm = new ApiComm();
-        $resp = $comm->voidPayment( $paymentID, $transaction ? $transaction->getMode() ?? '0011' : '0011' );
-
-        $order = wc_get_order( $order_id );
+        $resp = $comm->voidPayment( $paymentID, $transaction ? $transaction->getMode() ?? '0011' : '0011', $agreementId );
 
         $paymentResp = Operations::processResponse( $resp, 'trxID' );
         if ( is_array( $paymentResp ) ) {
@@ -822,8 +826,9 @@ class OrderActions {
         }
 
         $paymentID = $transaction->getPaymentID();
+        $agreementId = $order->get_meta( '_bkash_agreement_id' ) ?: '';
         $comm = new ApiComm();
-        $resp = $comm->capturePayment( $paymentID, $transaction->getMode() ?? '0011' );
+        $resp = $comm->capturePayment( $paymentID, $transaction->getMode() ?? '0011', $agreementId );
 
         $paymentResp = Operations::processResponse( $resp, 'trxID' );
         if ( is_array( $paymentResp ) ) {
@@ -912,8 +917,9 @@ class OrderActions {
         }
 
         $paymentID = $transaction->getPaymentID();
+        $agreementId = $order->get_meta( '_bkash_agreement_id' ) ?: '';
         $comm = new ApiComm();
-        $resp = $comm->voidPayment( $paymentID, $transaction->getMode() ?? '0011' );
+        $resp = $comm->voidPayment( $paymentID, $transaction->getMode() ?? '0011', $agreementId );
 
         $paymentResp = Operations::processResponse( $resp, 'trxID' );
         if ( is_array( $paymentResp ) ) {

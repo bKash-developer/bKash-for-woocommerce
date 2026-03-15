@@ -41,18 +41,9 @@ class ProcessPayments {
 		string $intent = 'sale',
 		string $callbackURL = '',
 		$transaction = null,
-		string $agreementCallbackURL = ''
+		string $agreementCallbackURL = '',
+		string $useAgreementId = ''
 	): array {
-		$isAgreement = Utils::hasPostField( 'agreement' );
-		if ( ! $isAgreement ) {
-			$isAgreement = Utils::hasGetField( 'agreement' );
-		}
-		
-		$agreement_id = trim( html_entity_decode( Utils::safePostValue( 'agreement_id' ), ENT_QUOTES | ENT_HTML5, 'UTF-8' ) );
-		if ( ! $agreement_id ) {
-			$agreement_id = trim( html_entity_decode( Utils::safeGetValue( 'agreement_id' ), ENT_QUOTES | ENT_HTML5, 'UTF-8' ) );
-		}
-
 		// To receive order id and total
 		$order    = wc_get_order( $order_id );
 		$amount   = $order->get_total();
@@ -66,54 +57,69 @@ class ProcessPayments {
 		$storedAgreementID = '';
 		$mode              = null;
 
-		if ( $this->integration_type === 'tokenized' ) 
-		{
-			// ── tokenized (With Agreement) ──
-			// Tokenized requires logged-in user. Agreement is mandatory.
-			if ( empty( $merchantCustomerId ) ) {
-				wc_add_notice( 'Please login to proceed with bKash payment', 'error' );
-				return array( 'result' => 'failure' );
+		if ( ! empty( $useAgreementId ) ) {
+			// Agreement ID passed directly (e.g. after agreement callback)
+			$storedAgreementID = $useAgreementId;
+		} elseif ( $this->integration_type === 'tokenized' || $this->integration_type === 'tokenized-both' ) {
+			$isAgreement = Utils::hasPostField( 'agreement' );
+			if ( ! $isAgreement ) {
+				$isAgreement = Utils::hasGetField( 'agreement' );
 			}
 
-			if ( $agreement_id === 'new' ) {
-				// Customer explicitly wants to add a new number → create agreement
-				return $this->initiateAgreementCreation( $order_id, $agreementCallbackURL, $intent );
-			} elseif ( $agreement_id && $agreement_id !== 'no' ) {
-				// Customer selected an existing agreement
-				$storedAgreementID = $agreement_id;
-			} else {
-				// No agreement_id provided → look up stored agreement
-				$agreementObj = new Agreement();
-				$agreement    = $agreementObj->getAgreement( '', $merchantCustomerId );
-				$storedAgreementID = $agreement ? $agreement->getAgreementID() : '';
+			$agreement_id = trim( html_entity_decode( Utils::safePostValue( 'agreement_id' ), ENT_QUOTES | ENT_HTML5, 'UTF-8' ) );
+			if ( ! $agreement_id ) {
+				$agreement_id = trim( html_entity_decode( Utils::safeGetValue( 'agreement_id' ), ENT_QUOTES | ENT_HTML5, 'UTF-8' ) );
+			}
 
-				// If no stored agreement resolved, initiate agreement creation
-				// Callback URL → same callback endpoint that triggers handleAgreementCallback
-				if ( empty( $storedAgreementID ) ) {
-					return $this->initiateAgreementCreation( $order_id, $agreementCallbackURL, $intent );
+			if ( $this->integration_type === 'tokenized' ) 
+			{
+				// ── tokenized (With Agreement) ──
+				// Tokenized requires logged-in user. Agreement is mandatory.
+				if ( empty( $merchantCustomerId ) ) {
+					wc_add_notice( 'Please login to proceed with bKash payment', 'error' );
+					return array( 'result' => 'failure' );
 				}
-			}
-		}
-		elseif ( $this->integration_type === 'tokenized-both' ) 
-		{
-			// ── tokenized-both (With or Without Agreement) ──
-			// Logged-in user with agreement → tokenized flow.
-			// Guest user without agreement → checkout-url flow.
-			if ( ! empty( $merchantCustomerId ) ) {
-				// Logged-in user
+
 				if ( $agreement_id === 'new' ) {
-					// User chose to create a new agreement → initiate agreement creation
+					// Customer explicitly wants to add a new number → create agreement
 					return $this->initiateAgreementCreation( $order_id, $agreementCallbackURL, $intent );
-				} elseif ( $agreement_id === 'no' ) {
-					// User explicitly chose "no agreement" → checkout-url flow (0011)
-					$mode = '0011';
-				} elseif ( $agreement_id ) {
+				} elseif ( $agreement_id && $agreement_id !== 'no' ) {
+					// Customer selected an existing agreement
 					$storedAgreementID = $agreement_id;
 				} else {
-					// No selection → look up stored agreement, fallback to 0011
+					// No agreement_id provided → look up stored agreement
 					$agreementObj = new Agreement();
 					$agreement    = $agreementObj->getAgreement( '', $merchantCustomerId );
 					$storedAgreementID = $agreement ? $agreement->getAgreementID() : '';
+
+					// If no stored agreement resolved, initiate agreement creation
+					// Callback URL → same callback endpoint that triggers handleAgreementCallback
+					if ( empty( $storedAgreementID ) ) {
+						return $this->initiateAgreementCreation( $order_id, $agreementCallbackURL, $intent );
+					}
+				}
+			}
+			elseif ( $this->integration_type === 'tokenized-both' ) 
+			{
+				// ── tokenized-both (With or Without Agreement) ──
+				// Logged-in user with agreement → tokenized flow.
+				// Guest user without agreement → checkout-url flow.
+				if ( ! empty( $merchantCustomerId ) ) {
+					// Logged-in user
+					if ( $agreement_id === 'new' ) {
+						// User chose to create a new agreement → initiate agreement creation
+						return $this->initiateAgreementCreation( $order_id, $agreementCallbackURL, $intent );
+					} elseif ( $agreement_id === 'no' ) {
+						// User explicitly chose "no agreement" → checkout-url flow (0011)
+						$mode = '0011';
+					} elseif ( $agreement_id ) {
+						$storedAgreementID = $agreement_id;
+					} else {
+						// No selection → look up stored agreement, fallback to 0011
+						$agreementObj = new Agreement();
+						$agreement    = $agreementObj->getAgreement( '', $merchantCustomerId );
+						$storedAgreementID = $agreement ? $agreement->getAgreementID() : '';
+					}
 				}
 			}
 		}
@@ -128,10 +134,10 @@ class ProcessPayments {
 			}
 		}
 
-		if ( ! $mode ) {
+			if ( ! $mode ) {
 			$mode = Operations::getTokenizedPaymentMode(
 				$this->integration_type,
-				$isAgreement,
+				! empty( $useAgreementId ) ? false : ( $isAgreement ?? false ),
 				$storedAgreementID
 			);
 		}
@@ -149,6 +155,12 @@ class ProcessPayments {
 		// Add agreementID only for tokenized payment with agreement
 		if ( ! empty( $storedAgreementID ) ) {
 			$payment_payload['agreementId'] = $storedAgreementID;
+
+			// Store agreementId in order meta for later use (capture/void)
+			$order->update_meta_data( '_bkash_agreement_id', $storedAgreementID );
+			if ( method_exists( $order, 'save' ) ) {
+				$order->save();
+			}
 		}
 
 		// Store transaction in database if not created already during agreement creation flow
@@ -291,6 +303,11 @@ class ProcessPayments {
 								$order->set_transaction_id( $paymentResp['trxID'] );
 							} else {
 								$order->update_meta_data( '_transaction_id', $paymentResp['trxID'] );
+							}
+
+							// Store agreementId from response if present (backup for capture/void)
+							if ( ! empty( $paymentResp['agreementId'] ) ) {
+								$order->update_meta_data( '_bkash_agreement_id', $paymentResp['agreementId'] );
 							}
 
 							// Record completed time if provided by bKash (fallback to updateTime/createTime).
