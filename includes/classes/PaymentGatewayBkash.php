@@ -1070,9 +1070,14 @@ class PaymentGatewayBkash extends WC_Payment_Gateway {
 		$trxObject   = new Transaction();
 		$transaction = $trxObject->getTransaction( '', $id );
 		if ( $transaction ) {
-			if ( empty( $transaction->getRefundID() ) ) {
-				$refundAmount = $amount ?? $transaction->getAmount();
+			$refundAmount = $amount ?? $transaction->getAmount();
+			$alreadyRefunded = floatval( $order->get_total_refunded() ?? 0 );
+			$totalAmount = floatval( $transaction->getAmount() );
+			$remainingAmount = $totalAmount - $alreadyRefunded;
 
+			if ( $refundAmount <= 0 || $refundAmount > $remainingAmount ) {
+				$trx = sprintf( 'Refund amount must be greater than zero and less than or equal to remaining refundable amount %.2f %s.', $remainingAmount, get_woocommerce_currency() );
+			} else {
 				$comm = new ApiComm();
 				$call = $comm->refund(
 					$refundAmount,
@@ -1095,10 +1100,10 @@ class PaymentGatewayBkash extends WC_Payment_Gateway {
 						$trx = $trx['errorMessage'] ?? '';
 					} else {
 						// Normalize v2 keys to v1 keys for compatibility
-						$txnStatus  = $trx['refundTransactionStatus'] ?? $trx['transactionStatus'] ?? '';
-						$refundTrxId = $trx['refundTrxId'] ?? $trx['refundTrxID'] ?? '';
+						$txnStatus     = $trx['refundTransactionStatus'] ?? $trx['transactionStatus'] ?? '';
+						$refundTrxId   = $trx['refundTrxId'] ?? $trx['refundTrxID'] ?? '';
 						$originalTrxId = $trx['originalTrxId'] ?? $trx['originalTrxID'] ?? '';
-						$refundAmt  = $trx['refundAmount'] ?? $trx['amount'] ?? 0;
+						$refundAmt     = floatval( $trx['refundAmount'] ?? $trx['amount'] ?? 0 );
 
 						if ( $txnStatus === 'Completed' ) {
 							if ( ! empty( $refundTrxId ) ) {
@@ -1121,10 +1126,15 @@ class PaymentGatewayBkash extends WC_Payment_Gateway {
 									)
 								);
 
+								$existingRefunded = floatval( $transaction->getRefundAmount() ?? 0 );
+								$newRefunded = $existingRefunded + $refundAmt;
+								$status = $refundAmt >= $totalAmount ? 'Refunded' : 'PartiallyRefunded';
+
 								$transaction->update(
 									array(
 										'refund_id'     => $refundTrxId,
-										'refund_amount' => $refundAmt,
+										'refund_amount' => $newRefunded,
+										'status'        => $status,
 									),
 									array( 'invoice_id' => $transaction->getInvoiceID() )
 								);
@@ -1150,8 +1160,6 @@ class PaymentGatewayBkash extends WC_Payment_Gateway {
 					$trx = $errBody['errorMessageEn'] ?? $errBody['errorMessage'] ?? $errBody['statusMessage']
 						?? 'Cannot refund the transaction using bKash server right now, try again';
 				}
-			} else {
-				$trx = 'This transaction already has been refunded, try again';
 			}
 		} else {
 			$trx = 'Cannot find the transaction to refund in your database, try again';
