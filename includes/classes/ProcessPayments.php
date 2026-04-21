@@ -82,7 +82,13 @@ class ProcessPayments {
 
 				if ( $agreement_id === 'new' ) {
 					// Customer explicitly wants to add a new number → create agreement
-					return $this->initiateAgreementCreation( $order_id, $agreementCallbackURL, $intent );
+					$agreementObj = new Agreement();
+					$existingAgreement = $agreementObj->getAgreement( '', $merchantCustomerId );
+					if ( $existingAgreement ) {
+						$storedAgreementID = $existingAgreement->getAgreementID();
+					} else {
+						return $this->initiateAgreementCreation( $order_id, $agreementCallbackURL, $intent );
+					}
 				} elseif ( $agreement_id && $agreement_id !== 'no' ) {
 					// Customer selected an existing agreement
 					$storedAgreementID = $agreement_id;
@@ -108,7 +114,13 @@ class ProcessPayments {
 					// Logged-in user
 					if ( $agreement_id === 'new' ) {
 						// User chose to create a new agreement → initiate agreement creation
-						return $this->initiateAgreementCreation( $order_id, $agreementCallbackURL, $intent );
+						$agreementObj = new Agreement();
+						$existingAgreement = $agreementObj->getAgreement( '', $merchantCustomerId );
+						if ( $existingAgreement ) {
+							$storedAgreementID = $existingAgreement->getAgreementID();
+						} else {
+							return $this->initiateAgreementCreation( $order_id, $agreementCallbackURL, $intent );
+						}
 					} elseif ( $agreement_id === 'no' ) {
 						// User explicitly chose "no agreement" → checkout-url flow (0011)
 						$mode = '0011';

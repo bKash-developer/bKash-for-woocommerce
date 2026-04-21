@@ -37,6 +37,16 @@ jQuery(
 							if (result.result && result.result === 'success') {
 								submit_error( result.message ? result.message : "Deleted", null, 'info', "Done" );
 								that.closest( 'tr' ).remove();
+
+								if ( $( 'table#payment-fields-table input[name="agreement_id"][value!="new"][value!="no"]' ).length === 0 ) {
+									if ( $( '#new-agreement' ).length === 0 ) {
+										$( 'table#payment-fields-table' ).append(
+											'<tr><td colspan="2"><label for="new-agreement"><input id="new-agreement" type="radio" name="agreement_id" value="new"/>Pay and remember a new bKash account</label></td></tr>'
+										);
+									}
+								}
+
+								$( 'body' ).trigger( 'update_checkout' );
 							} else {
 								submit_error( result.message ? result.message : "Cannot remove the agreement right now" );
 							}

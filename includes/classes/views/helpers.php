@@ -61,7 +61,7 @@ if ( ! function_exists( 'bkShowAgreementTable' ) ) {
 				<?php
 			}
 
-			if ( $isLoggedIn ) {
+			if ( $isLoggedIn && empty( $agreements ) ) {
 				?>
 				<tr>
 					<td colspan="2">

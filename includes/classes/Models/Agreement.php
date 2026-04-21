@@ -126,32 +126,63 @@ class Agreement {
 	/**
 	 * Save this transaction in DB table
 	 *
-	 * table name: wp_bkash_transactions where wp_ is the prefix set by application
+	 * table name: wp_bkash_agreement_mapping where wp_ is the prefix set by application
+	 * Ensures only one agreement per user by updating existing or inserting new.
 	 *
 	 * @return Agreement|false|null
 	 */
 	final public function save() {
 		if ( empty( $this->agreementID ) ) {
-			$this->errorMessage = 'Order ID field is missing, both are required';
+			$this->errorMessage = 'Agreement ID field is missing, it is required';
 
 			return false;
 		}
 
-		$insert = $this->wpdb->insert(
-			$this->tableName,
-			array(
-				'agreement_token' => $this->agreementID, // required.
-				'phone'           => $this->mobileNo,
-				'user_id'         => $this->userID,
-				'datetime'        => $this->dateTime,
+		if ( empty( $this->userID ) ) {
+			$this->errorMessage = 'User ID field is missing, it is required';
+
+			return false;
+		}
+
+		// Check if an agreement already exists for this user
+		$existing = $this->wpdb->get_row(
+			$this->wpdb->prepare(
+				"SELECT ID FROM {$this->tableName} WHERE user_id = %s",
+				$this->userID
 			)
 		);
 
-		$this->errorMessage = $this->wpdb->last_error; // set if any error or null
+		if ( $existing ) {
+			// Update existing agreement
+			$updated = $this->wpdb->update(
+				$this->tableName,
+				array(
+					'agreement_token' => $this->agreementID,
+					'phone'           => $this->mobileNo,
+					'datetime'        => $this->dateTime,
+				),
+				array( 'user_id' => $this->userID )
+			);
 
-		$result = $insert > 0 ? $this : null; // if inserted then it will return value greater than zero or false on error.
+			$this->errorMessage = $this->wpdb->last_error;
 
-		return $result;
+			return $updated !== false ? $this : null;
+		} else {
+			// Insert new agreement
+			$insert = $this->wpdb->insert(
+				$this->tableName,
+				array(
+					'agreement_token' => $this->agreementID,
+					'phone'           => $this->mobileNo,
+					'user_id'         => $this->userID,
+					'datetime'        => $this->dateTime,
+				)
+			);
+
+			$this->errorMessage = $this->wpdb->last_error;
+
+			return $insert > 0 ? $this : null;
+		}
 	}
 
 	/**
