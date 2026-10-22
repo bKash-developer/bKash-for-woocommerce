@@ -8,6 +8,11 @@
 ### Introduction
 Using this plugin, merchant can setup bKash payment gateway with selected product. Then merchant can start collecting payment from bKash customer for any requested service from merchant website.
 
+### Disclaimer
+This plugin codebase is provided for community learning and demonstration purposes only. It is not guaranteed to meet production-level security, reliability, or performance standards.
+
+Before using it in a production environment, thoroughly review, test, and validate its functionality and security. You are free to modify, extend, and reuse the code to suit your needs. Any production use is at your own risk and responsibility.
+
 ### Technical Requirements:
 * Wordpress (4.0 or above).
 * WooCommerce (2.0 or above).
@@ -16,10 +21,11 @@ Using this plugin, merchant can setup bKash payment gateway with selected produc
 * Change in Permalink so that .htaccess can be rewritable. (https://wpengine.com/resources/wordpress-permalinks/)
 * File write permission for wp-content directory.
 
-### Disclaimer
-This plugin codebase is provided for community learning and demonstration purposes only. It is not guaranteed to meet production-level security, reliability, or performance standards.
+This plugin codebase is provided solely as a community example for learning and reference purposes. Before using it in a professional or production environment, please thoroughly review and validate all relevant use cases, security considerations, and potential risks.
+Please note that this codebase is not guaranteed to meet production-level reliability, security, or performance standards. If you choose to reuse or deploy this codebase in a production environment, you are responsible for conducting the necessary reviews, testing, framework version upgrades, and modifications to ensure it meets your specific requirements.
+You are free to modify, extend, and adapt the codebase to suit your use case. However, any production use is undertaken at your own discretion and responsibility.
 
-Before using it in a production environment, thoroughly review, test, and validate its functionality and security. You are free to modify, extend, and reuse the code to suit your needs. Any production use is at your own risk and responsibility.
+
 
 ### Non-Technical Requirements:
 * Active bKash Merchant Wallet.
