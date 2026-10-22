@@ -16,6 +16,11 @@ Using this plugin, merchant can setup bKash payment gateway with selected produc
 * Change in Permalink so that .htaccess can be rewritable. (https://wpengine.com/resources/wordpress-permalinks/)
 * File write permission for wp-content directory.
 
+### Disclaimer
+This plugin codebase is provided for community learning and demonstration purposes only. It is not guaranteed to meet production-level security, reliability, or performance standards.
+
+Before using it in a production environment, thoroughly review, test, and validate its functionality and security. You are free to modify, extend, and reuse the code to suit your needs. Any production use is at your own risk and responsibility.
+
 ### Non-Technical Requirements:
 * Active bKash Merchant Wallet.
 * bKash payment gateway credentials (Sandbox and Production)
